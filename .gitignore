@@ -1,0 +1,16 @@
+.DS_Store
+.vscode
+.clang-format
+build
+builddebug
+benchmark/test*
+tree/insert.h
+tree/search.h
+tree/test*
+notes.md
+old_file
+scripts/plots/*
+output
+moduletest
+screenout
+outputs

@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -fdump-lang-class")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Wall /wd5045 /wd4464 /d1reportSingleClassLayoutNode4")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /Ob3")
@@ -21,13 +21,15 @@ endif()
 
 # for test 
 # set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wunused-function -Wunused-label -Wunused-value -Wunused-variable")
+set(CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE}   -fvisibility = default")
+set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} -fvisibility = default")
 
 add_subdirectory(tree)
-add_subdirectory(tree_mt)
-add_subdirectory(tree_mt_mc)
+# add_subdirectory(tree_mt)
+# add_subdirectory(tree_mt_mc)
 
 add_executable("Benchmark" "benchmark/benchmark.cpp")
-add_executable("BenchmarkMT" "benchmark_mt/benchmark.cpp")
+# add_executable("BenchmarkMT" "benchmark_mt/benchmark.cpp")
 
 target_link_libraries("Benchmark" btree)
-target_link_libraries("BenchmarkMT" btree_mt btree_mt_mc)
+# target_link_libraries("BenchmarkMT" btree_mt btree_mt_mc)

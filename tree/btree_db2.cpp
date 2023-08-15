@@ -432,7 +432,7 @@ bool BPTreeDB2::check_split_condition(DB2Node *node) {
 int BPTreeDB2::insert_binary(DB2Node *cursor, const char *key, int low, int high, bool &equal) {
     while (low <= high) {
         int mid = low + (high - low) / 2;
-        int cmp = char_cmp(key, cursor->keys.at(mid).value);
+        int cmp = char_cmp_old(key, cursor->keys.at(mid).value);
         if (cmp == 0) {
             equal = true;
             return mid + 1;
@@ -484,7 +484,7 @@ DB2Node *BPTreeDB2::search_leaf_node(DB2Node *searchroot, const char *key, vecto
 int BPTreeDB2::search_binary(DB2Node *cursor, const char *key, int low, int high) {
     while (low <= high) {
         int mid = low + (high - low) / 2;
-        int cmp = char_cmp(key, cursor->keys.at(mid).value);
+        int cmp = char_cmp_old(key, cursor->keys.at(mid).value);
         if (cmp == 0)
             return mid;
         else if (cmp > 0)

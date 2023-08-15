@@ -30,20 +30,20 @@ string head_compression_find_prefix_old(string lowerbound, string upperbound)
     return prefix;
 }
 
-char *head_compression_find_prefix(string lowerbound, string upperbound)
+char *head_compression_find_prefix(const char *lowerbound, const char *upperbound)
 {
     // string prefix = get_common_prefix(lowerbound, upperbound);
     // Can return a pair of (char*, len)
-    int lowerlen = lowerbound.length();
-    int upperlen = upperbound.length();
-    int prefixlen = get_common_prefix_len(lowerbound.data(), upperbound.data(), lowerlen, upperlen);
-    if (upperlen == prefixlen + 1 && lowerlen >= prefixlen + 1 && (upperbound.at(prefixlen) - lowerbound.at(prefixlen)) == 1)
+    int lowerlen = strlen(lowerbound);
+    int upperlen = strlen(upperbound);
+    int prefixlen = get_common_prefix_len(lowerbound, upperbound, lowerlen, upperlen);
+    if (upperlen == prefixlen + 1 && lowerlen >= prefixlen + 1 && (upperbound[prefixlen] - lowerbound[prefixlen] == 1))
     {
         prefixlen++;
     }
 
     char *prefix = new char[prefixlen + 1];
-    strncpy(prefix, lowerbound.data(), prefixlen);
+    strncpy(prefix, lowerbound, prefixlen);
     prefix[prefixlen] = '\0';
 
     return prefix;

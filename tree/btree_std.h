@@ -13,8 +13,7 @@ using namespace std;
 #define __TREE_H__
 
 // BP tree
-class BPTree
-{
+class BPTree {
 public:
     // Node *root;
     BPTree(bool head_compression = false, bool tail_compression = false);
@@ -40,13 +39,13 @@ private:
     bool tail_comp;
     void insert_leaf(Node *leaf, vector<Node *> &parents, char *key);
     void insert_nonleaf(Node *node, vector<Node *> &parents, int pos,
-                        splitReturn childsplit);
-    int search_insert_pos(Node *cursor, const char *key, int low, int high,
+                        splitReturn_new childsplit);
+    int search_insert_pos(Node *cursor, const char *key, int keylen, int low, int high,
                           bool &equal);
-    int search_in_nonleaf(Node *cursor, const char *key, int low, int high);
-    int search_in_leaf(Node *cursor, const char *key, int low, int high);
-    Node *search_leaf_node(Node *root, const char *key);
-    Node *search_leaf_node_for_insert(Node *root, const char *key,
+    int search_in_nonleaf(Node *cursor, const char *key, int keylen, int low, int high);
+    int search_in_leaf(Node *cursor, const char *key, int keylen, int low, int high);
+    Node *search_leaf_node(Node *root, const char *key, int keylen);
+    Node *search_leaf_node_for_insert(Node *root, const char *key, int keylen,
                                       vector<Node *> &parents);
 #ifdef DUPKEY
     bool check_split_condition(Node *node);
@@ -55,9 +54,9 @@ private:
     bool check_split_condition(Node *node, const char *key);
     int split_point(Node *node);
 #endif
-    splitReturn split_nonleaf(Node *node, vector<Node *> parents, int pos,
-                              splitReturn childsplit);
-    splitReturn split_leaf(Node *node, vector<Node *> &parents, char *newkey);
+    splitReturn_new split_nonleaf(Node *node, vector<Node *> parents, int pos,
+                                  splitReturn_new childsplit);
+    splitReturn_new split_leaf(Node *node, vector<Node *> &parents, char *newkey);
     int get_child_pos_in_parent(Node *parent, Node *node);
     void get_node_bounds(vector<Node *> parents, int pos, Node *node,
                          string &lower_bound, string &upper_bound);

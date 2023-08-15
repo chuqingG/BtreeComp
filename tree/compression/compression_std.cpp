@@ -6,8 +6,8 @@
 
 using namespace std;
 
-
-string tail_compress(string lastleft, string firstright){
+string tail_compress(string lastleft, string firstright)
+{
     string prefix = get_common_prefix(lastleft, firstright);
     string compressed = prefix;
     if (firstright.length() > prefix.length())
@@ -17,7 +17,8 @@ string tail_compress(string lastleft, string firstright){
     return compressed;
 }
 
-string head_compression_find_prefix(string lowerbound, string upperbound){
+string head_compression_find_prefix_old(string lowerbound, string upperbound)
+{
     string prefix = get_common_prefix(lowerbound, upperbound);
     int lowerlen = lowerbound.length();
     int upperlen = upperbound.length();
@@ -29,8 +30,28 @@ string head_compression_find_prefix(string lowerbound, string upperbound){
     return prefix;
 }
 
+char *head_compression_find_prefix(string lowerbound, string upperbound)
+{
+    // string prefix = get_common_prefix(lowerbound, upperbound);
+    // Can return a pair of (char*, len)
+    int lowerlen = lowerbound.length();
+    int upperlen = upperbound.length();
+    int prefixlen = get_common_prefix_len(lowerbound.data(), upperbound.data(), lowerlen, upperlen);
+    if (upperlen == prefixlen + 1 && lowerlen >= prefixlen + 1 && (upperbound.at(prefixlen) - lowerbound.at(prefixlen)) == 1)
+    {
+        prefixlen++;
+    }
+
+    char *prefix = new char[prefixlen + 1];
+    strncpy(prefix, lowerbound.data(), prefixlen);
+    prefix[prefixlen] = '\0';
+
+    return prefix;
+}
+
 #ifdef DUPKEY
-void prefix_compress_vector(vector<Key_c> &keys, string origprefix, int prefixlen){
+void prefix_compress_vector(vector<Key_c> &keys, string origprefix, int prefixlen)
+{
     for (uint32_t i = 0; i < keys.size(); i++)
     {
         string key = origprefix + keys.at(i).value;
@@ -39,12 +60,13 @@ void prefix_compress_vector(vector<Key_c> &keys, string origprefix, int prefixle
     }
 }
 #else
-void prefix_compress_vector(vector<char*> &keys, string origprefix, int prefixlen){
+void prefix_compress_vector(vector<char *> &keys, string origprefix, int prefixlen)
+{
 #endif
-    for (uint32_t i = 0; i < keys.size(); i++)
-    {
-        string key = origprefix + keys.at(i);
-        // The prefix after split should be longer, so strcpy is safe
-        strcpy(keys.at(i), key.data() + prefixlen);
-    }
+for (uint32_t i = 0; i < keys.size(); i++)
+{
+    string key = origprefix + keys.at(i);
+    // The prefix after split should be longer, so strcpy is safe
+    strcpy(keys.at(i), key.data() + prefixlen);
+}
 }

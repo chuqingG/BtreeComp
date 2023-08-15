@@ -79,6 +79,16 @@ string get_common_prefix(string x, string y)
     return prefix;
 }
 
+int get_common_prefix_len(const char *a, const char *b, int alen, int blen)
+{
+    int idx = 0;
+    while (idx < alen && idx < blen && a[idx] == b[idx])
+    {
+        idx++;
+    }
+    return idx;
+}
+
 int char_cmp(const char *a, const char *b)
 {
     // 1 : a > b

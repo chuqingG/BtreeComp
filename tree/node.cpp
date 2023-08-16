@@ -88,6 +88,10 @@ Node::Node()
     memusage = 0;
     prev = nullptr;
     next = nullptr;
+    lowkey = new char[10];
+    strcpy(lowkey, "");
+    highkey = new char[10];
+    strcpy(highkey, MAXHIGHKEY);
 }
 
 // Destructor of Node

@@ -65,6 +65,8 @@ public:
     ~Node();
 };
 #else
+const char MAXHIGHKEY[] = "infinity";
+
 class Node
 {
 public:
@@ -73,6 +75,8 @@ public:
     int size;
     vector<uint16_t> keys_offset;
     vector<Node *> ptrs;
+    char* lowkey;
+    char* highkey;
     Data prefix;
     Node *prev; // Prev node pointer
     Node *next; // Next node pointer

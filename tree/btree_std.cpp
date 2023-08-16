@@ -527,36 +527,41 @@ splitReturn_new BPTree::split_nonleaf(Node *node, vector<Node *> parents, int po
 
     char *firstright = GetKey(node, split);
     int pkey_len = strlen(firstright);
+    char *pkey_buf;
     if (this->head_comp) {
         pkey_len += node->prefix.size;
-        char *s = new char[pkey_len + 1];
-        sprintf(s, "%s%s", node->prefix.ptr, firstright);
-        newsplit.promotekey = new Data(s, pkey_len);
+        pkey_buf = new char[pkey_len + 1];
+        sprintf(pkey_buf, "%s%s", node->prefix.ptr, firstright);
+        newsplit.promotekey = new Data(pkey_buf, pkey_len);
         // newsplit.promotekey = node->prefix.ptr + firstright;
     }
     else {
-        char *s = new char[pkey_len + 1];
-        strcpy(s, firstright);
-        newsplit.promotekey = new Data(s, pkey_len);
+        pkey_buf = new char[pkey_len + 1];
+        strcpy(pkey_buf, firstright);
+        newsplit.promotekey = new Data(pkey_buf, pkey_len);
         // newsplit.promotekey = firstright;
     }
+    Data prevprefix = node->prefix;
     if (this->head_comp && pos >= 0) {
         // when pos < 0, it means we are spliting the root
 
-        string lower_bound("");
-        string upper_bound("");
-        get_node_bounds(parents, pos, node, lower_bound, upper_bound);
+        // string lower_bound("");
+        // string upper_bound("");
+        // get_node_bounds(parents, pos, node, lower_bound, upper_bound);
         string leftprefix =
-            head_compression_find_prefix(lower_bound.data(), newsplit.promotekey->ptr);
+            head_compression_find_prefix(node->lowkey, newsplit.promotekey->ptr);
+        left_mem = update_page_prefix(node, left_base, left_idx,
+                                      leftprefix.length(), 0, split);
+        node->prefix.from_string(leftprefix);
+
+        // Stop here
         string rightprefix =
             head_compression_find_prefix(newsplit.promotekey->ptr, upper_bound.data());
 
-        left_mem = update_page_prefix(node, left_base, left_idx,
-                                      leftprefix.length(), 0, split);
+    
         right_mem = update_page_prefix(node, right_base, right_idx,
                                        rightprefix.length(), split + 1, node->size);
 
-        node->prefix.from_string(leftprefix);
         right->prefix.from_string(rightprefix);
     }
     else {
@@ -587,6 +592,11 @@ splitReturn_new BPTree::split_nonleaf(Node *node, vector<Node *> parents, int po
     right->memusage = right_mem;
     right->keys_offset = right_idx;
     right->ptrs = rightptrs;
+
+    // set key bound
+    right->highkey = node->highkey;
+    node->highkey = pkey_buf;
+    right->lowkey = pkey_buf;
 
     // Set next pointers
     Node *next = node->next;
@@ -735,6 +745,11 @@ splitReturn_new BPTree::split_leaf(Node *node, vector<Node *> &parents,
     right->memusage = right_mem;
     right->keys_offset = right_idx;
     right->IS_LEAF = true;
+
+    // set key bound
+    right->highkey = node->highkey;
+    node->highkey = newsplit.promotekey->ptr;
+    right->lowkey = newsplit.promotekey->ptr;
 
     // Set next pointers
     Node *next = node->next;

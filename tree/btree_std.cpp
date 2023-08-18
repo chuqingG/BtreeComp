@@ -555,14 +555,21 @@ splitReturn_new BPTree::split_nonleaf(Node *node, vector<Node *> parents, int po
         node->prefix.from_string(leftprefix);
 
         // Stop here
-        string rightprefix =
-            head_compression_find_prefix(newsplit.promotekey->ptr, upper_bound.data());
+        if(!strcmp(node->highkey, MAXHIGHKEY)){
+            string rightprefix =
+            head_compression_find_prefix(newsplit.promotekey->ptr, node->highkey);
 
     
-        right_mem = update_page_prefix(node, right_base, right_idx,
+            right_mem = update_page_prefix(node, right_base, right_idx,
                                        rightprefix.length(), split + 1, node->size);
 
-        right->prefix.from_string(rightprefix);
+            right->prefix.from_string(rightprefix);
+        }else{
+            right->prefix = prevprefix;
+            right_mem = update_page_prefix(node, right_base, right_idx,
+                                       prevprefix.size, split + 1, node->size);
+        }
+        
     }
     else {
         // split + 1: the two parent are like: |p-k-p|  |p-k-p-k-p|, no need to

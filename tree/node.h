@@ -16,20 +16,26 @@ int MAX_NODE_SIZE = 4;
 // str representation of rids for easy comparison and prefix compression
 // if other approaches are used
 
-class Data
-{
+class Data {
 public:
-    char *ptr;
+    // const char *ptr;
     uint8_t size; // Be careful;
-    Data() : ptr(""), size(0){};
-    Data(char *str);
-    Data(char *p, int len);
+    Data() :
+        addr_(""), size(0){};
+    Data(const char *str);
+    Data(const char *p, int len);
+    Data(const std::string &s);
     ~Data();
-    void from_string(string s);
+    Data(const Data &) = default;
+    Data &operator=(const Data &) = default;
+    const char *addr();
+    // void set(const char *p, int s);
+    // void from_string(string s);
+private:
+    char *addr_;
 };
 
-class Key
-{
+class Key {
 public:
     vector<string> ridList;
     string value;
@@ -38,8 +44,7 @@ public:
     int getSize();
 };
 
-class Key_c
-{
+class Key_c {
 public:
     vector<int> ridList;
     char *value;
@@ -51,8 +56,7 @@ public:
 
 // BP-std node
 #ifdef DUPKEY
-class Node
-{
+class Node {
 public:
     bool IS_LEAF;
     vector<Key_c> keys;
@@ -67,17 +71,16 @@ public:
 #else
 const char MAXHIGHKEY[] = "infinity";
 
-class Node
-{
+class Node {
 public:
     bool IS_LEAF;
     char *base;
     int size;
     vector<uint16_t> keys_offset;
     vector<Node *> ptrs;
-    char* lowkey;
-    char* highkey;
-    Data prefix;
+    Data *lowkey;
+    Data *highkey;
+    Data *prefix;
     Node *prev; // Prev node pointer
     Node *next; // Next node pointer
     uint16_t memusage;
@@ -86,8 +89,7 @@ public:
 };
 #endif
 
-class PrefixMetaData
-{
+class PrefixMetaData {
 public:
     int low;
     int high;
@@ -96,8 +98,7 @@ public:
     PrefixMetaData(string p, int l, int h);
 };
 
-class DB2Node
-{
+class DB2Node {
 public:
     bool IS_LEAF;
     vector<Key_c> keys;
@@ -112,8 +113,7 @@ public:
 
 // Key with prefix and suffix encoding
 // Duplicates represented as <key, {rid list}>
-class KeyMyISAM
-{
+class KeyMyISAM {
 public:
     string value;
     vector<string> ridList;
@@ -128,8 +128,7 @@ public:
     int getSize();
 };
 
-class NodeMyISAM
-{
+class NodeMyISAM {
 public:
     bool IS_LEAF;
     vector<KeyMyISAM> keys;
@@ -142,8 +141,7 @@ public:
 };
 
 // Duplicates represented as <key, {rid list}>
-class KeyWT
-{
+class KeyWT {
 public:
     string value;
     vector<string> ridList;
@@ -156,8 +154,7 @@ public:
     int getSize();
 };
 
-class NodeWT
-{
+class NodeWT {
 public:
     bool IS_LEAF;
     vector<KeyWT> keys;
@@ -174,8 +171,7 @@ public:
 const int PKB_LEN = 2;
 
 // Duplicates represented as <key, {rid list}>
-class KeyPkB
-{
+class KeyPkB {
 public:
     int16_t offset;
     char partialKey[PKB_LEN + 1];
@@ -189,8 +185,7 @@ public:
     void updateOffset(int offset);
 };
 
-class NodePkB
-{
+class NodePkB {
 public:
     bool IS_LEAF;
     vector<KeyPkB> keys;
@@ -202,57 +197,49 @@ public:
     ~NodePkB();
 };
 
-struct uncompressedKey
-{ // for pkb
+struct uncompressedKey { // for pkb
     string key;
     char *keyptr;
 };
 
-struct splitReturn
-{
+struct splitReturn {
     string promotekey;
     Node *left;
     Node *right;
 };
 
-struct splitReturn_new
-{
+struct splitReturn_new {
     Data *promotekey;
     Node *left;
     Node *right;
 };
 
-struct splitReturnDB2
-{
+struct splitReturnDB2 {
     string promotekey;
     DB2Node *left;
     DB2Node *right;
 };
 
-struct splitReturnMyISAM
-{
+struct splitReturnMyISAM {
     string promotekey;
     NodeMyISAM *left;
     NodeMyISAM *right;
 };
 
-struct splitReturnWT
-{
+struct splitReturnWT {
     string promotekey;
     NodeWT *left;
     NodeWT *right;
 };
 
-struct splitReturnPkB
-{
+struct splitReturnPkB {
     string promotekey;
     char *keyptr;
     NodePkB *left;
     NodePkB *right;
 };
 
-struct nodeBounds
-{
+struct nodeBounds {
     string lowerbound;
     string upperbound;
 };
@@ -292,8 +279,7 @@ void printKeys_pkb(NodePkB *node, bool compressed);
 
 // Copy node->keys[low, high) to Page(base, mem, idx)
 #define CopyKeyToPage(node, low, high, base, mem, idx) \
-    for (int i = low; i < high; i++)                   \
-    {                                                  \
+    for (int i = low; i < high; i++) {                 \
         char *k = GetKey(node, i);                     \
         strcpy(base + mem, k);                         \
         idx.push_back(mem);                            \

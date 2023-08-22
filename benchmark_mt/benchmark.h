@@ -7,7 +7,7 @@
 #include <cmath>
 #include "../include/config.h"
 #include "../include/util.h"
-#ifndef MULTICOL_COMPRESSION
+
 #include "../tree_mt/btree_std_mt.cpp"
 
 #ifndef CHARALL
@@ -17,13 +17,6 @@
 #include "../tree_mt/btree_pkb_mt.cpp"
 #endif
 
-#else 
-#include "../tree_mt_mc/btree_std_mt_mc.cpp"
-#include "../tree_mt_mc/btree_db2_mt_mc.cpp"
-#include "../tree_mt_mc/btree_myisam_mt_mc.cpp"
-#include "../tree_mt_mc/btree_wt_mt_mc.cpp"
-#include "../tree_mt_mc/btree_pkb_mt_mc.cpp"
-#endif
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/atomic.hpp>
@@ -44,8 +37,8 @@ public:
     virtual ~Benchmark() = default;
     virtual void InitializeStructure(int thread_num, int col = 1) = 0;
     virtual void DeleteStructure() = 0;
-    virtual void Insert(const std::vector<char*>& numbers) = 0;
-    virtual bool Search(const std::vector<char*>& numbers) = 0;
+    virtual void Insert(const std::vector<char *> &numbers) = 0;
+    virtual bool Search(const std::vector<char *> &numbers) = 0;
 #ifndef CHARALL
     virtual bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) = 0;
     virtual bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) = 0;
@@ -79,7 +72,7 @@ public:
         tree_ = nullptr;
     }
 
-    void Insert(const vector<char*>& values) override {
+    void Insert(const vector<char *> &values) override {
 #ifndef MYDEBUG
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
@@ -93,13 +86,12 @@ public:
 #else
         for (uint32_t i = 0; i < values.size(); ++i)
             tree_->insert(values.at(i));
-        // vector<bool> flag(values.size());
-        // tree_->printTree(tree_->getRoot(), flag, true);
+            // vector<bool> flag(values.size());
+            // tree_->printTree(tree_->getRoot(), flag, true);
 #endif
     }
 
-
-    bool Search(const std::vector<char*>& values) override {
+    bool Search(const std::vector<char *> &values) override {
 #ifndef MYDEBUG
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
@@ -110,7 +102,7 @@ public:
                     cout << "Failed for " << values.at(i) << endl;
                     non_successful_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_searches == 0;
@@ -121,7 +113,6 @@ public:
                 cout << "Failed for " << values.at(i) << endl;
                 non_successful_searches += 1;
             }
-
         }
         return non_successful_searches == 0;
 #endif
@@ -136,8 +127,9 @@ public:
                 non_successful_searches += 1;
             }
             atomicTotalTime += static_cast<double>(std::chrono::duration_cast<
-                std::chrono::nanoseconds>(std::chrono::system_clock::now() - t1).count()) / 1e9;
-
+                                                       std::chrono::nanoseconds>(std::chrono::system_clock::now() - t1)
+                                                       .count())
+                               / 1e9;
         }
         // pool.wait();
         timeSpent = atomicTotalTime;
@@ -145,9 +137,8 @@ public:
 #endif
     }
 
-
-#ifndef CHARALL   
-    //Values must be sorted
+#ifndef CHARALL
+    // Values must be sorted
     bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
         int range_size = valuesFreq.size() / 3;
         vector<string> keys = get_map_keys(valuesFreq);
@@ -165,7 +156,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_range_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_range_searches == 0;
@@ -187,7 +178,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_backward_scans += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_backward_scans == 0;
@@ -209,7 +200,7 @@ public:
     }
 
 private:
-    BPTreeMT* tree_;
+    BPTreeMT *tree_;
 };
 
 class BPTreeHeadCompBenchmark : public Benchmark {
@@ -232,7 +223,7 @@ public:
         tree_ = nullptr;
     }
 
-    void Insert(const vector<char*>& values) override {
+    void Insert(const vector<char *> &values) override {
 #ifndef MYDEBUG
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
@@ -256,7 +247,7 @@ public:
 #endif
     }
 
-    bool Search(const std::vector<char*>& values) override {
+    bool Search(const std::vector<char *> &values) override {
 #ifndef MYDEBUG
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
@@ -267,10 +258,10 @@ public:
                     cout << "Failed for " << values.at(i) << endl;
                     non_successful_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
-#else   
+#else
         atomic<int> non_successful_searches(0);
         for (uint32_t i = 0; i < values.size(); ++i) {
             if (tree_->search(values.at(i)) == -1) {
@@ -284,7 +275,7 @@ public:
     }
 
 #ifndef CHARALL
-    //Values must be sorted
+    // Values must be sorted
     bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
         int range_size = valuesFreq.size() / 3;
         vector<string> keys = get_map_keys(valuesFreq);
@@ -302,7 +293,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_range_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_range_searches == 0;
@@ -324,7 +315,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_backward_scans += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_backward_scans == 0;
@@ -346,7 +337,7 @@ public:
     }
 
 private:
-    BPTreeMT* tree_;
+    BPTreeMT *tree_;
 };
 
 class BPTreeTailCompBenchmark : public Benchmark {
@@ -369,7 +360,7 @@ public:
         tree_ = nullptr;
     }
 
-    void Insert(const vector<char*>& values) override {
+    void Insert(const vector<char *> &values) override {
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         for (uint32_t i = 0; i < values.size(); ++i) {
@@ -382,7 +373,7 @@ public:
         // tree_->printTree(tree_->getRoot(), flag, true);
     }
 
-    bool Search(const std::vector<char*>& values) override {
+    bool Search(const std::vector<char *> &values) override {
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         atomic<int> non_successful_searches(0);
@@ -392,14 +383,14 @@ public:
                     cout << "Failed for " << values.at(i) << endl;
                     non_successful_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_searches == 0;
     }
 
 #ifndef CHARALL
-    //Values must be sorted
+    // Values must be sorted
     bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
         int range_size = valuesFreq.size() / 3;
         vector<string> keys = get_map_keys(valuesFreq);
@@ -417,7 +408,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_range_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_range_searches == 0;
@@ -439,7 +430,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_backward_scans += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_backward_scans == 0;
@@ -462,7 +453,7 @@ public:
     }
 
 private:
-    BPTreeMT* tree_;
+    BPTreeMT *tree_;
 };
 
 class BPTreeHeadTailCompBenchmark : public Benchmark {
@@ -485,7 +476,7 @@ public:
         tree_ = nullptr;
     }
 
-    void Insert(const vector<char*>& values) override {
+    void Insert(const vector<char *> &values) override {
 #ifndef MYDEBUG
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
@@ -494,7 +485,7 @@ public:
         }
         // Wait for all tasks to be completed
         pool.wait();
-#else   
+#else
         for (uint32_t i = 0; i < values.size(); ++i)
             tree_->insert(values.at(i));
         vector<bool> flag(values.size());
@@ -502,7 +493,7 @@ public:
 #endif
     }
 
-    bool Search(const std::vector<char*>& values) override {
+    bool Search(const std::vector<char *> &values) override {
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         atomic<int> non_successful_searches(0);
@@ -512,7 +503,7 @@ public:
                     cout << "Failed for " << values.at(i) << endl;
                     non_successful_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_searches == 0;
@@ -520,7 +511,7 @@ public:
 
 #ifndef CHARALL
 
-    //Values must be sorted
+    // Values must be sorted
     bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
         int range_size = valuesFreq.size() / 3;
         vector<string> keys = get_map_keys(valuesFreq);
@@ -538,7 +529,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_range_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_range_searches == 0;
@@ -560,7 +551,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_backward_scans += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_backward_scans == 0;
@@ -583,9 +574,8 @@ public:
     }
 
 private:
-    BPTreeMT* tree_;
+    BPTreeMT *tree_;
 };
-
 
 #ifndef CHARALL
 
@@ -606,7 +596,7 @@ public:
         tree_ = nullptr;
     }
 
-    void Insert(const vector<string>& values) override {
+    void Insert(const vector<string> &values) override {
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         for (uint32_t i = 0; i < values.size(); ++i) {
@@ -619,7 +609,7 @@ public:
         // tree_->printTree(tree_->getRoot(), flag, true);
     }
 
-    bool Search(const std::vector<string>& values) override {
+    bool Search(const std::vector<string> &values) override {
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         atomic<int> non_successful_searches(0);
@@ -629,13 +619,13 @@ public:
                     cout << "Failed for " << values.at(i) << endl;
                     non_successful_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_searches == 0;
     }
 
-    //Values must be sorted
+    // Values must be sorted
     bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
         int range_size = valuesFreq.size() / 3;
         vector<string> keys = get_map_keys(valuesFreq);
@@ -653,7 +643,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_range_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_range_searches == 0;
@@ -675,7 +665,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_backward_scans += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_backward_scans == 0;
@@ -696,7 +686,7 @@ public:
     }
 
 private:
-    BPTreeDB2MT* tree_;
+    BPTreeDB2MT *tree_;
 };
 
 class BPTreeMyISAMBenchmark : public Benchmark {
@@ -716,7 +706,7 @@ public:
         tree_ = nullptr;
     }
 
-    void Insert(const vector<string>& values) override {
+    void Insert(const vector<string> &values) override {
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         for (uint32_t i = 0; i < values.size(); ++i) {
@@ -729,7 +719,7 @@ public:
         // tree_->printTree(tree_->getRoot(), flag, true);
     }
 
-    bool Search(const std::vector<string>& values) override {
+    bool Search(const std::vector<string> &values) override {
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         atomic<int> non_successful_searches(0);
@@ -739,13 +729,13 @@ public:
                     cout << "Failed for " << values.at(i) << endl;
                     non_successful_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_searches == 0;
     }
 
-    //Values must be sorted
+    // Values must be sorted
     bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
         int range_size = valuesFreq.size() / 3;
         vector<string> keys = get_map_keys(valuesFreq);
@@ -763,7 +753,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_range_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_range_searches == 0;
@@ -785,7 +775,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_backward_scans += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_backward_scans == 0;
@@ -804,8 +794,9 @@ public:
         cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
         return statistics;
     }
+
 private:
-    BPTreeMyISAMMT* tree_;
+    BPTreeMyISAMMT *tree_;
 };
 
 class BPTreeWTBenchmark : public Benchmark {
@@ -825,7 +816,7 @@ public:
         tree_ = nullptr;
     }
 
-    void Insert(const vector<string>& values) override {
+    void Insert(const vector<string> &values) override {
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         for (uint32_t i = 0; i < values.size(); ++i) {
@@ -838,7 +829,7 @@ public:
         // tree_->printTree(tree_->getRoot(), flag, true);
     }
 
-    bool Search(const std::vector<string>& values) override {
+    bool Search(const std::vector<string> &values) override {
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         atomic<int> non_successful_searches(0);
@@ -848,13 +839,13 @@ public:
                     cout << "Failed for " << values.at(i) << endl;
                     non_successful_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_searches == 0;
     }
 
-    //Values must be sorted
+    // Values must be sorted
     bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
         int range_size = valuesFreq.size() / 3;
         vector<string> keys = get_map_keys(valuesFreq);
@@ -871,7 +862,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_range_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_range_searches == 0;
@@ -893,7 +884,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_backward_scans += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_backward_scans == 0;
@@ -914,7 +905,7 @@ public:
     }
 
 private:
-    BPTreeWTMT* tree_;
+    BPTreeWTMT *tree_;
 };
 
 class BPTreePkBBenchmark : public Benchmark {
@@ -934,9 +925,9 @@ public:
         tree_ = nullptr;
     }
 
-    void Insert(const vector<string>& values) override {
+    void Insert(const vector<string> &values) override {
         for (uint32_t i = 0; i < values.size(); i++) {
-            char* ptr = new char[values.at(i).length() + 1];
+            char *ptr = new char[values.at(i).length() + 1];
             strcpy(ptr, values.at(i).c_str());
             tree_->strPtrMap[ptr] = ptr;
         }
@@ -950,7 +941,7 @@ public:
         pool.wait();
     }
 
-    bool Search(const std::vector<string>& values) override {
+    bool Search(const std::vector<string> &values) override {
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         atomic<int> non_successful_searches(0);
@@ -960,13 +951,13 @@ public:
                     cout << "Failed for " << values.at(i) << endl;
                     non_successful_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_searches == 0;
     }
 
-    //Values must be sorted
+    // Values must be sorted
     bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
         int range_size = valuesFreq.size() / 3;
         vector<string> keys = get_map_keys(valuesFreq);
@@ -984,7 +975,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_range_searches += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_range_searches == 0;
@@ -1006,7 +997,7 @@ public:
                     cout << "Failure number of entries " << entries << " , expected " << expected << endl;
                     non_successful_backward_scans += 1;
                 }
-                });
+            });
         }
         pool.wait();
         return non_successful_backward_scans == 0;
@@ -1025,8 +1016,9 @@ public:
         cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
         return statistics;
     }
+
 private:
-    BPTreePkBMT* tree_;
+    BPTreePkBMT *tree_;
 };
 
 #endif

@@ -26,10 +26,9 @@ set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} -fvisibility = default
 
 add_subdirectory(tree)
 # add_subdirectory(tree_mt)
-# add_subdirectory(tree_mt_mc)
 
 add_executable("Benchmark" "benchmark/benchmark.cpp")
 # add_executable("BenchmarkMT" "benchmark_mt/benchmark.cpp")
 
 target_link_libraries("Benchmark" btree)
-# target_link_libraries("BenchmarkMT" btree_mt btree_mt_mc)
+# target_link_libraries("BenchmarkMT" btree_mt)

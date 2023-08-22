@@ -74,7 +74,6 @@ const char MAXHIGHKEY[] = "infinity";
 class Node {
 public:
     bool IS_LEAF;
-    char *base;
     int size;
     vector<uint16_t> keys_offset;
     vector<Node *> ptrs;
@@ -84,6 +83,7 @@ public:
     Node *prev; // Prev node pointer
     Node *next; // Next node pointer
     uint16_t memusage;
+    char *base;
     Node();
     ~Node();
 };

@@ -36,6 +36,7 @@ int BPTree::search(const char *key) {
 }
 
 void BPTree::insert(char *x) {
+    int keylen = strlen(x);
     if (_root == nullptr) {
         _root = new Node;
 #ifdef DUPKEY
@@ -43,15 +44,15 @@ void BPTree::insert(char *x) {
         _root->keys.push_back(Key_c(x, rid));
         _root->size = 1;
 #else
-        InsertKey(_root, 0, x);
+        InsertKey(_root, 0, x, keylen);
 #endif
         _root->IS_LEAF = true;
         return;
     }
     vector<Node *> parents;
 
-    Node *leaf = search_leaf_node_for_insert(_root, x, strlen(x), parents);
-    insert_leaf(leaf, parents, x);
+    Node *leaf = search_leaf_node_for_insert(_root, x, keylen, parents);
+    insert_leaf(leaf, parents, x, keylen);
 }
 
 #ifdef TIME_DEBUG
@@ -173,7 +174,7 @@ void BPTree::insert_nonleaf(Node *node, vector<Node *> &parents,
             int rid = rand();
             newRoot->keys.push_back(Key_c(string_to_char(currsplit.promotekey), rid));
 #endif
-            InsertKey(newRoot, 0, currsplit.promotekey->addr());
+            InsertKey(newRoot, 0, currsplit.promotekey->addr(), currsplit.promotekey->size);
             newRoot->ptrs.push_back(currsplit.left);
             newRoot->ptrs.push_back(currsplit.right);
             newRoot->IS_LEAF = false;
@@ -222,10 +223,10 @@ void BPTree::insert_nonleaf(Node *node, vector<Node *> &parents,
         // Insert promotekey into node->keys[insertpos]
         if (this->head_comp) {
             const char *key_comp = newkey->addr() + node->prefix->size;
-            InsertKey(node, insertpos, key_comp);
+            InsertKey(node, insertpos, key_comp, newkey->size - node->prefix->size);
         }
         else {
-            InsertKey(node, insertpos, newkey->addr());
+            InsertKey(node, insertpos, newkey->addr(), newkey->size);
         }
 
         // Insert the new childsplit.right into node->ptrs[insertpos + 1]
@@ -234,10 +235,10 @@ void BPTree::insert_nonleaf(Node *node, vector<Node *> &parents,
     }
 }
 
-void BPTree::insert_leaf(Node *leaf, vector<Node *> &parents, char *key) {
+void BPTree::insert_leaf(Node *leaf, vector<Node *> &parents, char *key, int keylen) {
     // TODO: modify check split to make sure the new key can always been inserted
     if (check_split_condition(leaf, key)) {
-        splitReturn_new split = split_leaf(leaf, parents, key);
+        splitReturn_new split = split_leaf(leaf, parents, key, keylen);
         if (leaf == _root) {
             Node *newRoot = new Node;
 #ifdef DUPKEY
@@ -245,7 +246,7 @@ void BPTree::insert_leaf(Node *leaf, vector<Node *> &parents, char *key) {
             newRoot->keys.push_back(Key_c(string_to_char(split.promotekey), rid));
             // TODO: to fix
 #endif
-            InsertKey(newRoot, 0, split.promotekey->addr());
+            InsertKey(newRoot, 0, split.promotekey->addr(), split.promotekey->size);
             newRoot->ptrs.push_back(split.left);
             newRoot->ptrs.push_back(split.right);
             newRoot->IS_LEAF = false;
@@ -262,11 +263,11 @@ void BPTree::insert_leaf(Node *leaf, vector<Node *> &parents, char *key) {
         int insertpos;
         bool equal = false;
         if (this->head_comp) {
-            insertpos = search_insert_pos(leaf, key + leaf->prefix->size, strlen(key) - leaf->prefix->size, 0,
+            insertpos = search_insert_pos(leaf, key + leaf->prefix->size, keylen - leaf->prefix->size, 0,
                                           leaf->size - 1, equal);
         }
         else {
-            insertpos = search_insert_pos(leaf, key, strlen(key), 0, leaf->size - 1, equal);
+            insertpos = search_insert_pos(leaf, key, keylen, 0, leaf->size - 1, equal);
         }
 #ifdef DUPKEY
         vector<Key_c> allkeys;
@@ -298,10 +299,10 @@ void BPTree::insert_leaf(Node *leaf, vector<Node *> &parents, char *key) {
         if (!equal) {
             if (this->head_comp) {
                 char *key_comp = key + leaf->prefix->size;
-                InsertKey(leaf, insertpos, key_comp);
+                InsertKey(leaf, insertpos, key_comp, keylen - leaf->prefix->size);
             }
             else {
-                InsertKey(leaf, insertpos, key);
+                InsertKey(leaf, insertpos, key, keylen);
             }
         }
         else {
@@ -462,16 +463,17 @@ splitReturn_new BPTree::split_nonleaf(Node *node, vector<Node *> parents, int po
                                       splitReturn_new childsplit) {
     splitReturn_new newsplit;
     const char *newkey = childsplit.promotekey->addr();
+    int newkey_len = childsplit.promotekey->size;
     int insertpos;
     bool equal = false;
 
     if (this->head_comp) {
         // promotekey = promotekey.substr(node->prefix.length());
-        insertpos = search_insert_pos(node, newkey + node->prefix->size, strlen(newkey) - node->prefix->size, 0,
+        insertpos = search_insert_pos(node, newkey + node->prefix->size, newkey_len - node->prefix->size, 0,
                                       node->size - 1, equal);
     }
     else {
-        insertpos = search_insert_pos(node, newkey, strlen(newkey), 0, node->size - 1, equal);
+        insertpos = search_insert_pos(node, newkey, newkey_len, 0, node->size - 1, equal);
     }
 
     vector<Node *> allptrs;
@@ -500,10 +502,10 @@ splitReturn_new BPTree::split_nonleaf(Node *node, vector<Node *> parents, int po
     // so always insert newkey into the page for split
     // The promotekey has already been compressed
     if (this->head_comp) {
-        InsertKey(node, insertpos, newkey + node->prefix->size);
+        InsertKey(node, insertpos, newkey + node->prefix->size, newkey_len - node->prefix->size);
     }
     else {
-        InsertKey(node, insertpos, newkey);
+        InsertKey(node, insertpos, newkey, newkey_len);
     }
 
     // Insert the new right node to its parent
@@ -624,17 +626,17 @@ splitReturn_new BPTree::split_nonleaf(Node *node, vector<Node *> parents, int po
 }
 
 splitReturn_new BPTree::split_leaf(Node *node, vector<Node *> &parents,
-                                   char *newkey) {
+                                   char *newkey, int newkey_len) {
     splitReturn_new newsplit;
     Node *right = new Node;
     int insertpos;
     bool equal = false;
     if (this->head_comp) {
-        insertpos = search_insert_pos(node, newkey + node->prefix->size, strlen(newkey) - node->prefix->size, 0,
+        insertpos = search_insert_pos(node, newkey + node->prefix->size, newkey_len - node->prefix->size, 0,
                                       node->size - 1, equal);
     }
     else {
-        insertpos = search_insert_pos(node, newkey, strlen(newkey), 0, node->size - 1, equal);
+        insertpos = search_insert_pos(node, newkey, newkey_len, 0, node->size - 1, equal);
     }
 
 #ifdef DUPKEY
@@ -673,10 +675,10 @@ splitReturn_new BPTree::split_leaf(Node *node, vector<Node *> &parents,
     if (!equal) {
         if (this->head_comp) {
             char *key_comp = newkey + node->prefix->size;
-            InsertKey(node, insertpos, key_comp);
+            InsertKey(node, insertpos, key_comp, newkey_len - node->prefix->size);
         }
         else {
-            InsertKey(node, insertpos, newkey);
+            InsertKey(node, insertpos, newkey, newkey_len);
         }
     }
     else {

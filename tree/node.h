@@ -76,6 +76,7 @@ public:
     bool IS_LEAF;
     int size;
     vector<uint16_t> keys_offset;
+    vector<uint8_t> keys_size;
     vector<Node *> ptrs;
     Data *lowkey;
     Data *highkey;
@@ -257,6 +258,9 @@ void printKeys_pkb(NodePkB *node, bool compressed);
 #define InsertOffset(nptr, pos, offset) \
     nptr->keys_offset.emplace(nptr->keys_offset.begin() + pos, offset)
 
+#define InsertSize(nptr, pos, len) \
+    nptr->keys_size.emplace(nptr->keys_size.begin() + pos, len)
+
 #define InsertNode(nptr, pos, newnode) \
     nptr->ptrs.emplace(nptr->ptrs.begin() + pos, newnode)
 
@@ -269,11 +273,11 @@ void printKeys_pkb(NodePkB *node, bool compressed);
     }
 
 // Insert k into nptr[pos]
-#define InsertKey(nptr, pos, k)                  \
+#define InsertKey(nptr, pos, k, klen)            \
     {                                            \
         strcpy(PageTail(nptr), k);               \
         InsertOffset(nptr, pos, nptr->memusage); \
-        nptr->memusage += strlen(k) + 1;         \
+        nptr->memusage += klen + 1;              \
         nptr->size += 1;                         \
     }
 

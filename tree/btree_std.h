@@ -37,7 +37,7 @@ private:
     Node *_root;
     bool head_comp;
     bool tail_comp;
-    void insert_leaf(Node *leaf, vector<Node *> &parents, char *key);
+    void insert_leaf(Node *leaf, vector<Node *> &parents, char *key, int keylen);
     void insert_nonleaf(Node *node, vector<Node *> &parents, int pos,
                         splitReturn_new childsplit);
     int search_insert_pos(Node *cursor, const char *key, int keylen, int low, int high,
@@ -56,7 +56,7 @@ private:
 #endif
     splitReturn_new split_nonleaf(Node *node, vector<Node *> parents, int pos,
                                   splitReturn_new childsplit);
-    splitReturn_new split_leaf(Node *node, vector<Node *> &parents, char *newkey);
+    splitReturn_new split_leaf(Node *node, vector<Node *> &parents, char *newkey, int newkey_len);
     int get_child_pos_in_parent(Node *parent, Node *node);
     void get_node_bounds(vector<Node *> parents, int pos, Node *node,
                          string &lower_bound, string &upper_bound);

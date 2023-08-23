@@ -32,8 +32,6 @@ int BPTree::search(const char *key) {
     else {
         return search_in_leaf(leaf, key, keylen, 0, leaf->size - 1);
     }
-    // key = key.substr(leaf->prefix.length());
-    // return search_in_leaf(leaf, key, 0, leaf->size - 1);
 }
 
 void BPTree::insert(char *x) {

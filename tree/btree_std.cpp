@@ -4,6 +4,7 @@
 // Initialise the BPTree Node
 BPTree::BPTree(bool head_compression, bool tail_compression) {
     _root = NULL;
+    max_level = 1;
     head_comp = head_compression;
     tail_comp = tail_compression;
 }
@@ -49,37 +50,14 @@ void BPTree::insert(char *x) {
         _root->IS_LEAF = true;
         return;
     }
-    vector<Node *> parents;
-
-    Node *leaf = search_leaf_node_for_insert(_root, x, keylen, parents);
-    insert_leaf(leaf, parents, x, keylen);
+    
+    Node* search_path[max_level];
+    int path_level = 0;
+    Node *leaf = search_leaf_node_for_insert(_root, x, keylen, search_path, path_level);
+    insert_leaf(leaf, search_path, path_level, x, keylen);
+    
 }
 
-#ifdef TIME_DEBUG
-void BPTree::insert_time(char *x, double &prefix_calc, double &prefix_update,
-                         double &search, double &insert) {
-    if (__root == nullptr) {
-        __root = new Node;
-#ifdef DUPKEY
-        int rid = rand();
-        _root->keys.push_back(Key_c(x, rid));
-#else
-        _root->keys.push_back(x);
-#endif
-        _root->IS_LEAF = true;
-        _root->size = 1;
-        return;
-    }
-    vector<Node *> parents;
-    // shared_ptr<char[]> temp_ptr(new char[strlen(x) + 1]);
-    // strcpy(temp_ptr.get(), x);
-
-    Node *leaf = search_leaf_node(_root, x, parents);
-    TIMECOUNT(insert, insert_leaf_time, leaf, parents, x, prefix_calc,
-              prefix_update);
-    // insert_leaf_time(leaf, parents, x, prefix_calc, prefix_update);
-}
-#endif
 
 #ifdef TOFIX
 // Function to peform range query on B+Tree
@@ -159,15 +137,15 @@ vector<string> BPTree::decompress_keys(Node *node, int pos) {
 }
 #endif
 
-void BPTree::insert_nonleaf(Node *node, vector<Node *> &parents,
+void BPTree::insert_nonleaf(Node *node, Node **path,
                             int parentlevel, splitReturn_new childsplit) {
     if (check_split_condition(node, childsplit.promotekey->addr())) {
         Node *parent = nullptr;
         if (parentlevel >= 0) {
-            parent = parents.at(parentlevel);
+            parent = path[parentlevel];
         }
         splitReturn_new currsplit =
-            split_nonleaf(node, parents, parentlevel, childsplit);
+            split_nonleaf(node, parentlevel, childsplit);
         if (node == _root) {
             Node *newRoot = new Node;
 #ifdef DUPKEY
@@ -179,12 +157,13 @@ void BPTree::insert_nonleaf(Node *node, vector<Node *> &parents,
             newRoot->ptrs.push_back(currsplit.right);
             newRoot->IS_LEAF = false;
             _root = newRoot;
+            max_level++;
         }
         else {
             if (parent == nullptr) {
                 return;
             }
-            insert_nonleaf(parent, parents, parentlevel - 1, currsplit);
+            insert_nonleaf(parent, path, parentlevel - 1, currsplit);
         }
     }
     else {
@@ -235,10 +214,10 @@ void BPTree::insert_nonleaf(Node *node, vector<Node *> &parents,
     }
 }
 
-void BPTree::insert_leaf(Node *leaf, vector<Node *> &parents, char *key, int keylen) {
+void BPTree::insert_leaf(Node *leaf, Node** path, int path_level, char *key, int keylen) {
     // TODO: modify check split to make sure the new key can always been inserted
     if (check_split_condition(leaf, key)) {
-        splitReturn_new split = split_leaf(leaf, parents, key, keylen);
+        splitReturn_new split = split_leaf(leaf, key, keylen);
         if (leaf == _root) {
             Node *newRoot = new Node;
 #ifdef DUPKEY
@@ -251,11 +230,12 @@ void BPTree::insert_leaf(Node *leaf, vector<Node *> &parents, char *key, int key
             newRoot->ptrs.push_back(split.right);
             newRoot->IS_LEAF = false;
             _root = newRoot;
+            max_level++;
         }
         else {
             // nearest parent
-            Node *parent = parents.at(parents.size() - 1);
-            insert_nonleaf(parent, parents, parents.size() - 2, split);
+            Node *parent = path[path_level - 1];
+            insert_nonleaf(parent, path, path_level - 2, split);
         }
     }
     // Don't need to split
@@ -459,8 +439,7 @@ int BPTree::split_point(Node *node) {
 }
 #endif
 
-splitReturn_new BPTree::split_nonleaf(Node *node, vector<Node *> parents, int pos,
-                                      splitReturn_new childsplit) {
+splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new childsplit) {
     splitReturn_new newsplit;
     const char *newkey = childsplit.promotekey->addr();
     int newkey_len = childsplit.promotekey->size;
@@ -625,8 +604,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, vector<Node *> parents, int po
     return newsplit;
 }
 
-splitReturn_new BPTree::split_leaf(Node *node, vector<Node *> &parents,
-                                   char *newkey, int newkey_len) {
+splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     splitReturn_new newsplit;
     Node *right = new Node;
     int insertpos;
@@ -1018,7 +996,7 @@ Node *BPTree::search_leaf_node(Node *searchroot, const char *key, int keylen) {
 }
 
 Node *BPTree::search_leaf_node_for_insert(Node *searchroot, const char *key, int keylen,
-                                          vector<Node *> &parents) {
+                                          Node ** path, int &path_level) {
     // Tree is empty
     if (searchroot == NULL) {
         cout << "Tree is empty" << endl;
@@ -1027,10 +1005,12 @@ Node *BPTree::search_leaf_node_for_insert(Node *searchroot, const char *key, int
 
     Node *cursor = searchroot;
     bool equal = false;
+    // int path_level = 0;
     // Till we reach leaf node
     while (!cursor->IS_LEAF) {
         // string_view searchkey = key;
-        parents.push_back(cursor);
+        // parents.push_back(cursor);
+        path[path_level++] = cursor;
         int pos;
         if (this->head_comp) {
             pos = search_insert_pos(cursor, key + cursor->prefix->size, keylen - cursor->prefix->size, 0,

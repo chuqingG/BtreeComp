@@ -312,7 +312,7 @@ void PerformanceBenchmarkResults(
             const double med =
                 times.size() % 2 == 1 ? times[times.size() / 2] : (times[times.size() / 2] + times[times.size() / 2 + 1]) / 2.0;
 
-            std::cout << name << "\t" << benchmarkStrMap.at(benchmark) << "\t";
+            std::cout << name  << "\t";
 
             const double avg_ops = key_numbers / avg / 1e6;
             const double med_ops = key_numbers / med / 1e6;
@@ -345,8 +345,8 @@ void TreeStatisticBenchmarkResults(
     std::cout << "==============================================================="
                  "=================================================="
               << std::endl;
-    std::cout << "Index Structure\t|      Height\t|      Avg Key Size\t|      "
-                 "Avg Prefix Size\t|      Avg Branching degree\t| Nodes\t| "
+    std::cout << "Index Structure\t|      Height\t| Avg Key Size\t|"
+                 "Avg Prefix Size\t| Avg Fanout\t| Nodes\t| "
                  "Non-leaf Nodes\t|"
               << std::endl;
     std::cout << "---------------------------------------------------------------"

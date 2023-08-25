@@ -105,10 +105,10 @@ Node::Node(bool tail_comp) {
     highkey = new Data("infinity");
     ptr_cnt = 0;
     // ptrs = new Node*[kNumberBound + 1];
-    keys_size = new uint8_t[kNumberBound + tail_comp * TAIL_COMP_RELAX];
+    keys_size = new uint8_t[kNumberBound + tail_comp * TAIL_COMP_RELAX * kNumberBound];
     std::memset(keys_size, 0, 
-                (kNumberBound + tail_comp * TAIL_COMP_RELAX) * sizeof(uint8_t));
-    keys_offset = new uint16_t[kNumberBound + tail_comp * TAIL_COMP_RELAX];
+                (kNumberBound + tail_comp * TAIL_COMP_RELAX * kNumberBound) * sizeof(uint8_t));
+    keys_offset = new uint16_t[kNumberBound + tail_comp * TAIL_COMP_RELAX * kNumberBound];
 }
 
 // Destructor of Node

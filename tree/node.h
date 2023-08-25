@@ -293,10 +293,10 @@ void printKeys_pkb(NodePkB *node, bool compressed);
         node->ptr_cnt = num;     \
     }
 
-#define UpdatePtrs(node, newptrs, num) \ 
+#define UpdateSize(node, newsize) \ 
 {\
-    node->ptrs = newptrs; \
-    node->ptr_cnt = num; \
+    delete node->keys_size; \
+    node->keys_size = newsize; \
 }
 
 #define UpdateOffset(node, newoffset) \
@@ -351,11 +351,13 @@ void printKeys_pkb(NodePkB *node, bool compressed);
 
 // Copy node->keys[low, high) to Page(base, mem, idx)
 
-#define CopyKeyToPage(node, low, high, base, mem, idx) \
+#define CopyKeyToPage(node, low, high, base, mem, idx, size) \
     for (int i = low; i < high; i++)                   \
     {                                                  \
         char *k = GetKey(node, i);                   \
+        int klen = node->keys_size[i];              \
         strcpy(base + mem, k);                         \
         idx[i - (low)] = mem;                            \
-        mem += strlen(k) + 1;                          \
+        size[i - (low)] = klen;\
+        mem += klen + 1;                          \
     }

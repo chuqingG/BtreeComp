@@ -7,13 +7,33 @@
 
 using namespace std;
 
-string tail_compress(string lastleft, string firstright) {
+string tail_compress_old(string lastleft, string firstright) {
     string prefix = get_common_prefix(lastleft, firstright);
     string compressed = prefix;
     if (firstright.length() > prefix.length()) {
         compressed = compressed + firstright.at(prefix.length());
     }
     return compressed;
+}
+
+char* tail_compress(const char* lastleft, const char* firstright, int len_ll, int len_fr) {
+    int prefixlen = get_common_prefix_len(lastleft, firstright, len_ll, len_fr);
+    if (len_fr > prefixlen) {
+        prefixlen++;
+    }
+    char *separator = new char[prefixlen + 1];
+    strncpy(separator, firstright, prefixlen);
+    separator[prefixlen] = '\0';
+
+    return separator;
+}
+
+int tail_compress_length(const char* lastleft, const char* firstright, int len_ll, int len_fr) {
+    int prefixlen = get_common_prefix_len(lastleft, firstright, len_ll, len_fr);
+    if (len_fr > prefixlen) {
+        prefixlen++;
+    }
+    return prefixlen;
 }
 
 string head_compression_find_prefix_old(string lowerbound, string upperbound) {

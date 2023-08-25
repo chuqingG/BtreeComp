@@ -426,10 +426,10 @@ int BPTree::split_point(Node *node) {
         int minlen = INT16_MAX;
         for (int i = split_range_low; i < split_range_high - 1; i++) {
             if (i + 1 < size) {
-                string compressed = tail_compress(GetKey(node, i), GetKey(node, i + 1));
-
-                if (compressed.length() < minlen) {
-                    minlen = compressed.length();
+                int cur_len = tail_compress_length(GetKey(node, i), GetKey(node, i + 1),
+                                            node->keys_size[i], node->keys_size[i + 1]);
+                if (cur_len < minlen) {
+                    minlen = cur_len;
                     bestsplit = i + 1;
                 }
             }
@@ -512,8 +512,11 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new child
     }
 
     // Copy the two parts into new pages
-    uint16_t* left_idx = new uint16_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX];
-    uint16_t* right_idx = new uint16_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX];
+    // TODO: directly use the space of new right page
+    uint16_t* left_idx = new uint16_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX * kNumberBound];
+    uint16_t* right_idx = new uint16_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX * kNumberBound];
+    uint8_t* left_size = new uint8_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX * kNumberBound];
+    uint8_t* right_size = new uint8_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX * kNumberBound];
     char *left_base;
     char *right_base;
     int left_mem = 0;
@@ -536,19 +539,19 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new child
         string rightprefix =
             head_compression_find_prefix(newsplit.promotekey, node->highkey);
 
-        left_mem = update_page_prefix(node, left_base, left_idx,
+        left_mem = update_page_prefix(node, left_base, left_idx, left_size,
                                       leftprefix.length(), 0, split);
 
         // Stop here
         if (strcmp(node->highkey->addr(), MAXHIGHKEY) != 0) {
-            right_mem = update_page_prefix(node, right_base, right_idx,
+            right_mem = update_page_prefix(node, right_base, right_idx, right_size,
                                            rightprefix.length(), split + 1, node->size);
 
             right->prefix = new Data(rightprefix);
         }
         else {
             right->prefix = new Data(prevprefix.addr(), prevprefix.size);
-            right_mem = update_page_prefix(node, right_base, right_idx,
+            right_mem = update_page_prefix(node, right_base, right_idx, right_size,
                                            prevprefix.size, split + 1, node->size);
         }
         // change early may change right_node udpate
@@ -557,9 +560,9 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new child
     else {
         // split + 1: the two parent are like: |p-k-p|  |p-k-p-k-p|, no need to
         // insert a k between them
-        CopyKeyToPage(node, 0, split, left_base, left_mem, left_idx);
+        CopyKeyToPage(node, 0, split, left_base, left_mem, left_idx, left_size);
         CopyKeyToPage(node, split + 1, node->size, right_base, right_mem,
-                      right_idx);
+                      right_idx, right_size);
     }
 
     // Separate the ptrs
@@ -584,6 +587,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new child
     right->IS_LEAF = false;
     right->memusage = right_mem;
     right->keys_offset = right_idx;
+    right->keys_size = right_size;
     right->ptrs = rightptrs;
     right->ptr_cnt = node->size - split;
 
@@ -592,6 +596,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new child
     UpdateOffset(node, left_idx);
     UpdatePtrs(node, leftptrs, split + 1);
     UpdateBase(node, left_base);
+    UpdateSize(node, left_size);
 
     // set key bound
     right->highkey = node->highkey;
@@ -675,16 +680,26 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
 
     // calculate the separator
     if (this->tail_comp) {
-        string lastleft = GetKey(node, split - 1);
-        string firstright = GetKey(node, split);
+        char* lastleft = GetKey(node, split - 1);
+        char* firstright = GetKey(node, split);
+        int s_len = tail_compress_length(lastleft, firstright, 
+                            node->keys_size[split - 1], node->keys_size[split]);
+        char *s;
         if (this->head_comp) {
-            lastleft = node->prefix->addr() + lastleft;
-            firstright = node->prefix->addr() + firstright;
+            int pfxlen = node->prefix->size;
+            s = new char[s_len + pfxlen + 1];
+            strncpy(s, node->prefix->addr(), pfxlen);
+            strncpy(s + pfxlen, firstright, s_len);
+            s_len += pfxlen;
+        }else{
+            s = new char[s_len + 1];
+            strncpy(s, firstright, s_len);
         }
-        // newsplit.promotekey = tail_compress(lastleft, firstright);
-        // newsplit.promotekey = new Data();
-        string s = tail_compress(lastleft, firstright);
-        newsplit.promotekey = new Data(s);
+        s[s_len] = '\0';
+
+        // string s = tail_compress(lastleft, firstright);
+
+        newsplit.promotekey = new Data(s, s_len);
     }
     else {
         char *firstright = GetKey(node, split);
@@ -708,8 +723,10 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     // vector<uint16_t> right_idx(node->size - split);
     // vector<uint16_t> left_idx;
     // vector<uint16_t> right_idx;
-    uint16_t* left_idx = new uint16_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX];
-    uint16_t* right_idx = new uint16_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX];
+    uint16_t* left_idx = new uint16_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX * kNumberBound];
+    uint16_t* right_idx = new uint16_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX * kNumberBound];
+    uint8_t* left_size = new uint8_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX * kNumberBound];
+    uint8_t* right_size = new uint8_t[kNumberBound + this->tail_comp * TAIL_COMP_RELAX * kNumberBound];
     char *left_base;
     char *right_base;
     int left_mem = 0;
@@ -717,6 +734,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
 
     left_base = NewPage();
     right_base = right->base;
+    //TODO: fix keys_size for head comp
     if (this->head_comp) {
         // string lower_bound = "";
         // string upper_bound = "";
@@ -727,17 +745,17 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
         string rightprefix =
             head_compression_find_prefix(newsplit.promotekey, node->highkey);
 
-        left_mem = update_page_prefix(node, left_base, left_idx,
+        left_mem = update_page_prefix(node, left_base, left_idx, left_size,
                                       leftprefix.length(), 0, split);
-        right_mem = update_page_prefix(node, right_base, right_idx,
+        right_mem = update_page_prefix(node, right_base, right_idx, right_size,
                                        rightprefix.length(), split, node->size);
 
         node->prefix = new Data(leftprefix);
         right->prefix = new Data(rightprefix);
     }
     else {
-        CopyKeyToPage(node, 0, split, left_base, left_mem, left_idx);
-        CopyKeyToPage(node, split, node->size, right_base, right_mem, right_idx);
+        CopyKeyToPage(node, 0, split, left_base, left_mem, left_idx, left_size);
+        CopyKeyToPage(node, split, node->size, right_base, right_mem, right_idx, right_size);
     }
 
     // rewrite left page to origin node, set the new right node
@@ -746,12 +764,14 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     right->size = node->size - split;
     right->memusage = right_mem;
     right->keys_offset = right_idx;
+    right->keys_size = right_size;
     right->IS_LEAF = true;
 
     node->size = split;
     node->memusage = left_mem;
     UpdateOffset(node, left_idx);
     UpdateBase(node, left_base);
+    UpdateSize(node, left_size)
 
     // set key bound
     right->highkey = node->highkey;
@@ -959,7 +979,7 @@ bool BPTree::check_split_condition(Node *node, const char *key) {
     // only works when the S_newkey <= S_prevkey + S_limit
     if(node->memusage + 2 * strlen(key) >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
-    if(this->tail_comp && !node->IS_LEAF && node->size > kNumberBound - 2)
+    if(this->tail_comp && !node->IS_LEAF && node->size > kNumberBound * MAX_COMP_RATIO - 2)
         return true;
     return false;
     // return (node->memusage + 2 * strlen(key) >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT);
@@ -1172,7 +1192,7 @@ void BPTree::get_node_bounds(vector<Node *> parents, int pos, Node *node,
 }
 #endif
 
-int BPTree::update_page_prefix(Node *node, char *page, uint16_t *idx,
+int BPTree::update_page_prefix(Node *node, char *page, uint16_t *idx, uint8_t *lens,
                                int prefixlen, int low, int high) {
     // Compress node[low:high) to *page, return memusage
     uint16_t memusage = 0;
@@ -1180,9 +1200,11 @@ int BPTree::update_page_prefix(Node *node, char *page, uint16_t *idx,
     int cutoff = prefixlen - node->prefix->size;
     for (int i = low; i < high; i++) {
         char *k = GetKey(node, i) + cutoff;
+        int klen = strlen(k);
         strcpy(page + memusage, k);
         idx[i - low] = memusage;
-        memusage += strlen(k) + 1;
+        lens[i - low] = klen;
+        memusage += klen + 1;
     }
     return memusage;
 }

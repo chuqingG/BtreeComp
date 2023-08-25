@@ -62,7 +62,7 @@ private:
     void get_node_bounds(vector<Node *> parents, int pos, Node *node,
                          string &lower_bound, string &upper_bound);
     vector<string> decompress_keys(Node *node, int pos = -1);
-    int update_page_prefix(Node *node, char *page, uint16_t *idx,
+    int update_page_prefix(Node *node, char *page, uint16_t *idx, uint8_t *lens,
                            int prefixlen, int low, int high);
 
 #ifdef TIME_DEBUG

@@ -20,7 +20,7 @@
 #define SPLIT_LIMIT 32
 #define DEFAULT_DATASET_SIZE 100000
 #define APPROX_KEY_SIZE 32
-#define MAX_COMP_RATIO 20
+#define MAX_COMP_RATIO 16
 #define TAIL_COMP_RELAX (MAX_COMP_RATIO - 1)
 
 // Be careful when key length is variable, 

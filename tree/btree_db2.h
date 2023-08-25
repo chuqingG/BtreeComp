@@ -19,10 +19,7 @@ public:
     ~BPTreeDB2();
     int search(const char *);
     void insert(char *);
-#ifdef TOFIX
-    int searchRange(string, string);
-    int backwardScan(string, string);
-#endif
+
     void getSize(DB2Node *, int &, int &, int &, int &, unsigned long &, int &);
     int getHeight(DB2Node *);
     DB2Node *getRoot();
@@ -42,8 +39,5 @@ private:
 
     splitReturnDB2 split_nonleaf(DB2Node *node, vector<DB2Node *> parents, int pos, splitReturnDB2 childsplit);
     splitReturnDB2 split_leaf(DB2Node *node, vector<DB2Node *> &parents, char *newkey);
-#ifdef TOFIX
-    vector<string> decompress_keys(DB2Node *node, int pos = -1);
-#endif
 };
 #endif

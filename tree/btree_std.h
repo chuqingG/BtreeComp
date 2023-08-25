@@ -23,10 +23,6 @@ public:
     void insert_time(char *, double &, double &, double &, double &);
 #endif
     int search(const char *);
-#ifdef TOFIX
-    int searchRange(string, string);
-    int backwardScan(string, string);
-#endif
     void getSize(Node *, int &, int &, int &, int &, unsigned long &, int &);
     int getHeight(Node *);
     Node *getRoot();
@@ -61,7 +57,6 @@ private:
     int get_child_pos_in_parent(Node *parent, Node *node);
     void get_node_bounds(vector<Node *> parents, int pos, Node *node,
                          string &lower_bound, string &upper_bound);
-    vector<string> decompress_keys(Node *node, int pos = -1);
     int update_page_prefix(Node *node, char *page, uint16_t *idx, uint8_t *lens,
                            int prefixlen, int low, int high);
 

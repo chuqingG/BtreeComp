@@ -166,36 +166,6 @@ auto RunBenchmarkIteration(std::vector<char *> values,
                     cout << name << "\t:"
                          << "Errors happen during search" << endl;
                 break;
-#ifdef TOFIX
-            case BenchmarkTypes::RANGE:
-                t1 = std::chrono::system_clock::now();
-                if (structure->SearchRange(values_freq_map, minIndxs))
-                    cout << name << "\t:"
-                         << "No errors happen during search range" << endl;
-                else
-                    cout << name << "\t:"
-                         << "Errors happen during search range" << endl;
-                time_spent = static_cast<double>(
-                                 std::chrono::duration_cast<std::chrono::nanoseconds>(
-                                     std::chrono::system_clock::now() - t1)
-                                     .count())
-                             / 1e9;
-                break;
-            case BenchmarkTypes::BACKWARDSCAN:
-                t1 = std::chrono::system_clock::now();
-                if (structure->BackwardScan(values_freq_map, minIndxs))
-                    cout << name << "\t:"
-                         << "No errors happen during backward scan" << endl;
-                else
-                    cout << name << "\t:"
-                         << "Errors happen during backward scan" << endl;
-                time_spent = static_cast<double>(
-                                 std::chrono::duration_cast<std::chrono::nanoseconds>(
-                                     std::chrono::system_clock::now() - t1)
-                                     .count())
-                             / 1e9;
-                break;
-#endif
             }
             structure_times[i].insert({benchmark, time_spent});
 #ifdef TIME_DEBUG

@@ -355,10 +355,10 @@ void TreeStatisticBenchmarkResults(
 
     std::ofstream myfile;
     if (write_to_file) {
-        string file_name = output_path + "/" + "statistics.txt";
-        myfile.open(file_name, fstream::out);
+        string file_name = output_path + ".txt";
+        myfile.open(file_name, fstream::out | ios::app);
         myfile
-            << "name,height,keysize,prefixsize,branchdegree,nodes,nonleafnodes\n";
+            << "\nname,height,keysize,prefixsize,branchdegree,nodes,nonleafnodes\n";
     }
 
     for (uint32_t i = 0; i < kIndexStructures.size(); ++i) {

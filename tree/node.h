@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string.h>
 #include <memory>
+#include <cstring>
 #include "../include/config.h"
 
 using namespace std;
@@ -16,12 +17,12 @@ int MAX_NODE_SIZE = 4;
 // str representation of rids for easy comparison and prefix compression
 // if other approaches are used
 
-class Data {
+class Data
+{
 public:
     // const char *ptr;
     uint8_t size; // Be careful;
-    Data() :
-        addr_(""), size(0){};
+    Data() : addr_(""), size(0){};
     Data(const char *str);
     Data(const char *p, int len);
     Data(const std::string &s);
@@ -35,7 +36,8 @@ private:
     char *addr_;
 };
 
-class Key {
+class Key
+{
 public:
     vector<string> ridList;
     string value;
@@ -44,7 +46,8 @@ public:
     int getSize();
 };
 
-class Key_c {
+class Key_c
+{
 public:
     vector<int> ridList;
     char *value;
@@ -56,7 +59,8 @@ public:
 
 // BP-std node
 #ifdef DUPKEY
-class Node {
+class Node
+{
 public:
     bool IS_LEAF;
     vector<Key_c> keys;
@@ -71,13 +75,18 @@ public:
 #else
 const char MAXHIGHKEY[] = "infinity";
 
-class Node {
+class Node
+{
 public:
     bool IS_LEAF;
     int size;
-    vector<uint16_t> keys_offset;
-    vector<uint8_t> keys_size;
+    // vector<uint16_t> keys_offset;
+    // vector<uint8_t> keys_size;
     vector<Node *> ptrs;
+    uint16_t *keys_offset;
+    uint8_t *keys_size;
+    // Node **ptrs;
+    uint8_t ptr_cnt;
     Data *lowkey;
     Data *highkey;
     Data *prefix;
@@ -85,12 +94,13 @@ public:
     Node *next; // Next node pointer
     uint16_t memusage;
     char *base;
-    Node();
+    Node(bool tail);
     ~Node();
 };
 #endif
 
-class PrefixMetaData {
+class PrefixMetaData
+{
 public:
     int low;
     int high;
@@ -99,7 +109,8 @@ public:
     PrefixMetaData(string p, int l, int h);
 };
 
-class DB2Node {
+class DB2Node
+{
 public:
     bool IS_LEAF;
     vector<Key_c> keys;
@@ -114,7 +125,8 @@ public:
 
 // Key with prefix and suffix encoding
 // Duplicates represented as <key, {rid list}>
-class KeyMyISAM {
+class KeyMyISAM
+{
 public:
     string value;
     vector<string> ridList;
@@ -129,7 +141,8 @@ public:
     int getSize();
 };
 
-class NodeMyISAM {
+class NodeMyISAM
+{
 public:
     bool IS_LEAF;
     vector<KeyMyISAM> keys;
@@ -142,7 +155,8 @@ public:
 };
 
 // Duplicates represented as <key, {rid list}>
-class KeyWT {
+class KeyWT
+{
 public:
     string value;
     vector<string> ridList;
@@ -155,7 +169,8 @@ public:
     int getSize();
 };
 
-class NodeWT {
+class NodeWT
+{
 public:
     bool IS_LEAF;
     vector<KeyWT> keys;
@@ -172,7 +187,8 @@ public:
 const int PKB_LEN = 2;
 
 // Duplicates represented as <key, {rid list}>
-class KeyPkB {
+class KeyPkB
+{
 public:
     int16_t offset;
     char partialKey[PKB_LEN + 1];
@@ -186,7 +202,8 @@ public:
     void updateOffset(int offset);
 };
 
-class NodePkB {
+class NodePkB
+{
 public:
     bool IS_LEAF;
     vector<KeyPkB> keys;
@@ -198,49 +215,57 @@ public:
     ~NodePkB();
 };
 
-struct uncompressedKey { // for pkb
+struct uncompressedKey
+{ // for pkb
     string key;
     char *keyptr;
 };
 
-struct splitReturn {
+struct splitReturn
+{
     string promotekey;
     Node *left;
     Node *right;
 };
 
-struct splitReturn_new {
+struct splitReturn_new
+{
     Data *promotekey;
     Node *left;
     Node *right;
 };
 
-struct splitReturnDB2 {
+struct splitReturnDB2
+{
     string promotekey;
     DB2Node *left;
     DB2Node *right;
 };
 
-struct splitReturnMyISAM {
+struct splitReturnMyISAM
+{
     string promotekey;
     NodeMyISAM *left;
     NodeMyISAM *right;
 };
 
-struct splitReturnWT {
+struct splitReturnWT
+{
     string promotekey;
     NodeWT *left;
     NodeWT *right;
 };
 
-struct splitReturnPkB {
+struct splitReturnPkB
+{
     string promotekey;
     char *keyptr;
     NodePkB *left;
     NodePkB *right;
 };
 
-struct nodeBounds {
+struct nodeBounds
+{
     string lowerbound;
     string upperbound;
 };
@@ -251,18 +276,7 @@ void printKeys_myisam(NodeMyISAM *node, bool compressed);
 void printKeys_wt(NodeWT *node, bool compressed);
 void printKeys_pkb(NodePkB *node, bool compressed);
 
-#define GetKey(nptr, idx) (char *)(nptr->base + nptr->keys_offset[idx])
 
-#define PageTail(nptr) nptr->base + nptr->memusage
-
-#define InsertOffset(nptr, pos, offset) \
-    nptr->keys_offset.emplace(nptr->keys_offset.begin() + pos, offset)
-
-#define InsertSize(nptr, pos, len) \
-    nptr->keys_size.emplace(nptr->keys_size.begin() + pos, len)
-
-#define InsertNode(nptr, pos, newnode) \
-    nptr->ptrs.emplace(nptr->ptrs.begin() + pos, newnode)
 
 #define NewPage() (char *)malloc(MAX_SIZE_IN_BYTES * sizeof(char))
 
@@ -272,20 +286,76 @@ void printKeys_pkb(NodePkB *node, bool compressed);
         node->base = newbase;     \
     }
 
+#define UpdatePtrs(node, newptrs, num) \
+    {                             \
+        for(int i = 0; i < num; i++)\
+            node->ptrs[i] = newptrs[i];\
+        node->ptr_cnt = num;     \
+    }
+
+#define UpdatePtrs(node, newptrs, num) \ 
+{\
+    node->ptrs = newptrs; \
+    node->ptr_cnt = num; \
+}
+
+#define UpdateOffset(node, newoffset) \
+    {                             \
+        delete node->keys_offset;        \
+        node->keys_offset = newoffset;     \
+    }
+
+#define GetKey(nptr, idx) (char *)(nptr->base + nptr->keys_offset[idx])
+
+#define PageTail(nptr) nptr->base + nptr->memusage
+
+#define InsertOffset(nptr, pos, offset)                      \
+    {                                                        \
+        for (int i = nptr->size; i > pos; i--)               \
+            nptr->keys_offset[i] = nptr->keys_offset[i - 1]; \
+        nptr->keys_offset[pos] = (uint16_t)offset;                     \
+    }
+
+#define InsertSize(nptr, pos, len)                       \
+    {                                                    \
+        for (int i = nptr->size; i > pos; i--)           \
+            nptr->keys_size[i] = nptr->keys_size[i - 1]; \
+        nptr->keys_size[pos] = (uint8_t)len;                      \
+    }
+
+// #define InsertNode(nptr, pos, newnode)         \
+//     {                                          \
+//         for (int i = nptr->size; i > pos; i--) \
+//             nptr->ptrs[i] = nptr->ptrs[i - 1]; \
+//         nptr->ptrs[pos] = newnode;             \
+//         nptr->ptr_cnt += 1; \
+//     }
+// #define InsertSize(nptr, pos, len) \
+//     nptr->keys_size.emplace(nptr->keys_size.begin() + pos, len)
+
+#define InsertNode(nptr, pos, newnode) \
+{\
+    nptr->ptrs.emplace(nptr->ptrs.begin() + pos, newnode);\
+    nptr->ptr_cnt += 1; \
+}
+
 // Insert k into nptr[pos]
 #define InsertKey(nptr, pos, k, klen)            \
     {                                            \
         strcpy(PageTail(nptr), k);               \
         InsertOffset(nptr, pos, nptr->memusage); \
+        InsertSize(nptr, pos, klen);\
         nptr->memusage += klen + 1;              \
         nptr->size += 1;                         \
     }
 
 // Copy node->keys[low, high) to Page(base, mem, idx)
+
 #define CopyKeyToPage(node, low, high, base, mem, idx) \
-    for (int i = low; i < high; i++) {                 \
-        char *k = GetKey(node, i);                     \
+    for (int i = low; i < high; i++)                   \
+    {                                                  \
+        char *k = GetKey(node, i);                   \
         strcpy(base + mem, k);                         \
-        idx.push_back(mem);                            \
+        idx[i - (low)] = mem;                            \
         mem += strlen(k) + 1;                          \
     }

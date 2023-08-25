@@ -94,7 +94,7 @@ void Key_c::update_value(string str) {
 }
 
 // Constructor of Node
-Node::Node() {
+Node::Node(bool tail_comp) {
     size = 0;
     prefix = new Data("");
     base = NewPage();
@@ -103,14 +103,19 @@ Node::Node() {
     next = nullptr;
     lowkey = new Data("");
     highkey = new Data("infinity");
-    // strcpy(highkey, MAXHIGHKEY);
+    ptr_cnt = 0;
+    // ptrs = new Node*[kNumberBound + 1];
+    keys_size = new uint8_t[kNumberBound + tail_comp * TAIL_COMP_RELAX];
+    std::memset(keys_size, 0, 
+                (kNumberBound + tail_comp * TAIL_COMP_RELAX) * sizeof(uint8_t));
+    keys_offset = new uint16_t[kNumberBound + tail_comp * TAIL_COMP_RELAX];
 }
 
 // Destructor of Node
 Node::~Node() {
-    // for (Node *childptr : ptrs) {
-    //     delete childptr;
-    // }
+    // delete ptrs;
+    delete keys_offset;
+    delete keys_size;
     delete base;
 }
 

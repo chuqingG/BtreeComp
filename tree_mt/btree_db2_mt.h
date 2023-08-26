@@ -16,8 +16,6 @@ public:
 	BPTreeDB2MT();
 	~BPTreeDB2MT();
 	int search(string_view, bool print=false);
-	int searchRange(string, string);
-	int backwardScan(string, string);
 	void insert(string);
 	void getSize(DB2Node *, int &, int &, int &, int &, unsigned long &, int &);
 	int getHeight(DB2Node *);
@@ -41,5 +39,4 @@ private:
 	void bt_fetch_root(DB2Node *currRoot, vector<DB2Node *> &parents);
 	DB2Node* scan_node(DB2Node *node, string key, bool print=false);
 	DB2Node* move_right(DB2Node *node, string key);
-	vector<string> decompress_keys(DB2Node *node, int pos = -1);
 };

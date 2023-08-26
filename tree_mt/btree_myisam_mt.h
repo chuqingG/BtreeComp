@@ -15,8 +15,6 @@ public:
 	BPTreeMyISAMMT(bool non_leaf_comp=false);
 	~BPTreeMyISAMMT();
 	int search(string_view);
-	int searchRange(string, string);
-	int backwardScan(string, string);
 	void insert(string);
 	void getSize(NodeMyISAM *, int &, int &, int &, int &, unsigned long &, int &);
 	int getHeight(NodeMyISAM *);
@@ -42,5 +40,4 @@ private:
 	void bt_fetch_root(NodeMyISAM *currRoot, vector<NodeMyISAM *> &parents);
 	NodeMyISAM* scan_node(NodeMyISAM *node, string key);
 	NodeMyISAM* move_right(NodeMyISAM *node, string key);
-	vector<string> decompress_keys(NodeMyISAM *node, int pos = -1);
 };

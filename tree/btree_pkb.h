@@ -16,8 +16,6 @@ public:
 	~BPTreePkB();
 	unordered_map<string, char *> strPtrMap;
 	int search(string_view);
-	int searchRange(string, string);
-	int backwardScan(string, string);
 	void insert(string);
 	void getSize(NodePkB *, int &, int &, int &, int &, unsigned long &, int &);
 	int getHeight(NodePkB *);
@@ -36,5 +34,4 @@ private:
 	uncompressedKey get_uncompressed_key_before_insert(NodePkB *node, int ind, int insertpos, string newkey, char *newkeyptr, bool equal);
 	splitReturnPkB split_nonleaf(NodePkB *node, vector<NodePkB *> parents, int pos, splitReturnPkB childsplit, int offset);
 	splitReturnPkB split_leaf(NodePkB *node, vector<NodePkB *> &parents, string newkey, char *newkeyptr, int offset);
-	vector<string> decompress_keys(NodePkB *node, int pos = -1);
 };

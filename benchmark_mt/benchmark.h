@@ -39,10 +39,6 @@ public:
     virtual void DeleteStructure() = 0;
     virtual void Insert(const std::vector<char *> &numbers) = 0;
     virtual bool Search(const std::vector<char *> &numbers) = 0;
-#ifndef CHARALL
-    virtual bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) = 0;
-    virtual bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) = 0;
-#endif
     virtual TreeStatistics CalcStatistics() = 0;
 
     int threadPoolSize = 16;
@@ -137,54 +133,6 @@ public:
 #endif
     }
 
-#ifndef CHARALL
-    // Values must be sorted
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_range_searches(0);
-        boost::atomic<double> atomicTotalTime;
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->searchRange(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_range_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_range_searches == 0;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_backward_scans(0);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->backwardScan(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_backward_scans += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_backward_scans == 0;
-    }
-#endif
-
     TreeStatistics CalcStatistics() override {
         TreeStatistics statistics;
         statistics.height = tree_->getHeight(tree_->getRoot());
@@ -274,54 +222,6 @@ public:
         return non_successful_searches == 0;
     }
 
-#ifndef CHARALL
-    // Values must be sorted
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_range_searches(0);
-        boost::atomic<double> atomicTotalTime;
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->searchRange(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_range_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_range_searches == 0;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_backward_scans(0);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->backwardScan(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_backward_scans += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_backward_scans == 0;
-    }
-#endif
-
     TreeStatistics CalcStatistics() override {
         TreeStatistics statistics;
         statistics.height = tree_->getHeight(tree_->getRoot());
@@ -389,54 +289,6 @@ public:
         return non_successful_searches == 0;
     }
 
-#ifndef CHARALL
-    // Values must be sorted
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_range_searches(0);
-        boost::atomic<double> atomicTotalTime;
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->searchRange(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_range_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_range_searches == 0;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_backward_scans(0);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->backwardScan(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_backward_scans += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_backward_scans == 0;
-    }
-
-#endif
 
     TreeStatistics CalcStatistics() override {
         TreeStatistics statistics;
@@ -509,56 +361,6 @@ public:
         return non_successful_searches == 0;
     }
 
-#ifndef CHARALL
-
-    // Values must be sorted
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_range_searches(0);
-        boost::atomic<double> atomicTotalTime;
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->searchRange(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_range_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_range_searches == 0;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_backward_scans(0);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->backwardScan(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_backward_scans += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_backward_scans == 0;
-    }
-
-#endif
-
     TreeStatistics CalcStatistics() override {
         TreeStatistics statistics;
         statistics.height = tree_->getHeight(tree_->getRoot());
@@ -625,52 +427,6 @@ public:
         return non_successful_searches == 0;
     }
 
-    // Values must be sorted
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_range_searches(0);
-        boost::atomic<double> atomicTotalTime;
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->searchRange(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_range_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_range_searches == 0;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_backward_scans(0);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->backwardScan(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_backward_scans += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_backward_scans == 0;
-    }
-
     TreeStatistics CalcStatistics() override {
         TreeStatistics statistics;
         statistics.height = tree_->getHeight(tree_->getRoot());
@@ -735,52 +491,6 @@ public:
         return non_successful_searches == 0;
     }
 
-    // Values must be sorted
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_range_searches(0);
-        boost::atomic<double> atomicTotalTime;
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->searchRange(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_range_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_range_searches == 0;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_backward_scans(0);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->backwardScan(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_backward_scans += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_backward_scans == 0;
-    }
-
     TreeStatistics CalcStatistics() override {
         TreeStatistics statistics;
         statistics.height = tree_->getHeight(tree_->getRoot());
@@ -843,51 +553,6 @@ public:
         }
         pool.wait();
         return non_successful_searches == 0;
-    }
-
-    // Values must be sorted
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_range_searches(0);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->searchRange(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_range_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_range_searches == 0;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_backward_scans(0);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->backwardScan(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_backward_scans += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_backward_scans == 0;
     }
 
     TreeStatistics CalcStatistics() override {
@@ -955,52 +620,6 @@ public:
         }
         pool.wait();
         return non_successful_searches == 0;
-    }
-
-    // Values must be sorted
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_range_searches(0);
-        boost::atomic<double> atomicTotalTime;
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->searchRange(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_range_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_range_searches == 0;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_backward_scans(0);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                string min = keys.at(minIdxs[i]);
-                string max = keys.at(minIdxs[i] + range_size);
-                int entries = tree_->backwardScan(min, max);
-                int expected = get_map_values_in_range(valuesFreq, min, max);
-                if (entries != expected) {
-                    cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                    non_successful_backward_scans += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_backward_scans == 0;
     }
 
     TreeStatistics CalcStatistics() override {

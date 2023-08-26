@@ -30,8 +30,6 @@ public:
     virtual void DeleteStructure() = 0;
     virtual void Insert(const std::vector<string> &numbers) = 0;
     virtual bool Search(const std::vector<string> &numbers) = 0;
-    virtual bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) = 0;
-    virtual bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) = 0;
     virtual TreeStatistics CalcStatistics() = 0;
 };
 
@@ -199,38 +197,6 @@ public:
         return true;
     }
 
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            string min = keys.at(minIdxs[i]);
-            string max = keys.at(minIdxs[i] + range_size);
-            int entries = _tree->searchRange(min, max);
-            int expected = get_map_values_in_range(valuesFreq, min, max);
-            if (entries != expected) {
-                cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            string min = keys.at(minIdxs[i]);
-            string max = keys.at(minIdxs[i] + range_size);
-            int entries = _tree->backwardScan(min, max);
-            int expected = get_map_values_in_range(valuesFreq, min, max);
-            if (entries != expected) {
-                cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                return false;
-            }
-        }
-        return true;
-    }
-
     TreeStatistics CalcStatistics() override {
         TreeStatistics statistics;
         statistics.height = _tree->getHeight(_tree->getRoot());
@@ -273,38 +239,6 @@ public:
         for (uint32_t i = 0; i < values.size(); ++i)
             if (_tree->search(values.at(i)) == -1)
                 return false;
-        return true;
-    }
-
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            string min = keys.at(minIdxs[i]);
-            string max = keys.at(minIdxs[i] + range_size);
-            int entries = _tree->searchRange(min, max);
-            int expected = get_map_values_in_range(valuesFreq, min, max);
-            if (entries != expected) {
-                cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            string min = keys.at(minIdxs[i]);
-            string max = keys.at(minIdxs[i] + range_size);
-            int entries = _tree->backwardScan(min, max);
-            int expected = get_map_values_in_range(valuesFreq, min, max);
-            if (entries != expected) {
-                cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                return false;
-            }
-        }
         return true;
     }
 
@@ -355,38 +289,6 @@ public:
         for (uint32_t i = 0; i < values.size(); ++i)
             if (_tree->search(values.at(i)) == -1)
                 return false;
-        return true;
-    }
-
-    bool SearchRange(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            string min = keys.at(minIdxs[i]);
-            string max = keys.at(minIdxs[i] + range_size);
-            int entries = _tree->searchRange(min, max);
-            int expected = get_map_values_in_range(valuesFreq, min, max);
-            if (entries != expected) {
-                cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    bool BackwardScan(const std::map<string, int> valuesFreq, const std::vector<int> minIdxs) override {
-        int range_size = valuesFreq.size() / 3;
-        vector<string> keys = get_map_keys(valuesFreq);
-        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-            string min = keys.at(minIdxs[i]);
-            string max = keys.at(minIdxs[i] + range_size);
-            int entries = _tree->backwardScan(min, max);
-            int expected = get_map_values_in_range(valuesFreq, min, max);
-            if (entries != expected) {
-                cout << "Failure number of entries " << entries << " , expected " << expected << endl;
-                return false;
-            }
-        }
         return true;
     }
 

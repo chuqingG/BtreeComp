@@ -15,8 +15,6 @@ public:
 	BPTreeMyISAM(bool non_leaf_comp=false);
 	~BPTreeMyISAM();
 	int search(string_view);
-	int searchRange(string, string);
-	int backwardScan(string, string);
 	void insert(string);
 	void getSize(NodeMyISAM *, int &, int &, int &, int &, unsigned long &, int &);
 	int getHeight(NodeMyISAM *);
@@ -37,5 +35,4 @@ private:
 	int split_point(vector<KeyMyISAM> allkeys);
 	splitReturnMyISAM split_nonleaf(NodeMyISAM *node, vector<NodeMyISAM *> parents, int pos, splitReturnMyISAM childsplit);
 	splitReturnMyISAM split_leaf(NodeMyISAM *node, vector<NodeMyISAM *> &parents, string newkey);
-	vector<string> decompress_keys(NodeMyISAM *node, int pos = -1);
 };

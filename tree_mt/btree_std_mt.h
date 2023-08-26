@@ -14,10 +14,6 @@ public:
 	BPTreeMT(bool head_compression=false, bool tail_compression=false);
 	~BPTreeMT();
 	int search(const char*, bool print=false);
-#ifndef CHARALL
-	int searchRange(string, string);
-	int backwardScan(string, string);
-#endif
 	void insert(char*);
 #ifdef TIMEDEBUG
 	void insert_time(char*, double*, double*);
@@ -52,7 +48,4 @@ private:
 	
 	Node* scan_node(Node *node, shared_ptr<char[]> key,bool print=false);
 	Node* move_right(Node *node, shared_ptr<char[]> key);
-#ifndef CHARALL
-	vector<char*> decompress_keys(Node *node, int pos = -1);
-#endif
 };

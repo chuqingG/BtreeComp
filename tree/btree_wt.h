@@ -14,8 +14,6 @@ public:
 	BPTreeWT(bool non_leaf_compression, bool suffix_compression=true);
 	~BPTreeWT();
 	int search(string_view);
-	int searchRange(string, string);
-	int backwardScan(string, string);
 	void insert(string);
 	void getSize(NodeWT *, int &, int &, int &, int &, unsigned long &, int &);
 	int getHeight(NodeWT *);
@@ -35,5 +33,4 @@ private:
 	int split_point(vector<KeyWT> allkeys);
 	splitReturnWT split_nonleaf(NodeWT *node, vector<NodeWT *> parents, int pos, splitReturnWT childsplit);
 	splitReturnWT split_leaf(NodeWT *node, vector<NodeWT *> &parents, string newkey);
-	vector<string> decompress_keys(NodeWT *node, int pos = -1);
 };

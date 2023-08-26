@@ -15,8 +15,6 @@ public:
 	BPTreeWTMT(bool non_leaf_compression, bool suffix_compression=true);
 	~BPTreeWTMT();
 	int search(string_view);
-	int searchRange(string, string);
-	int backwardScan(string, string);
 	void insert(string);
 	void getSize(NodeWT *, int &, int &, int &, int &, unsigned long &, int &);
 	int getHeight(NodeWT *);
@@ -41,5 +39,4 @@ private:
 	void bt_fetch_root(NodeWT *currRoot, vector<NodeWT *> &parents);
 	NodeWT* scan_node(NodeWT *node, string key, size_t &skiplow);
 	NodeWT* move_right(NodeWT *node, string key);
-	vector<string> decompress_keys(NodeWT *node, int pos = -1);
 };

@@ -17,8 +17,6 @@ public:
 	~BPTreePkBMT();
 	unordered_map<string, char *> strPtrMap;
 	int search(string_view);
-	int searchRange(string, string);
-	int backwardScan(string, string);
 	void insert(string);
 	void getSize(NodePkB *, int &, int &, int &, int &, unsigned long &, int &);
 	int getHeight(NodePkB *);
@@ -42,5 +40,4 @@ private:
 	void bt_fetch_root(NodePkB *currRoot, vector<NodePkB *> &parents);
 	NodePkB* scan_node(NodePkB *node, string key,int &offset);
 	NodePkB* move_right(NodePkB *node, string key,int &offset);
-	vector<string> decompress_keys(NodePkB *node, int pos = -1);
 };

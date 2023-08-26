@@ -27,10 +27,6 @@ enum class DatasetTypes {
 struct BenchmarkResult {
     std::vector<std::map<BenchmarkTypes, double>> structure_times;
     std::vector<TreeStatistics> structure_statistics;
-#ifdef TIME_DEBUG
-    std::vector<std::map<BenchmarkTypes, double>> pfx_calc_times;
-    std::vector<std::map<BenchmarkTypes, double>> pfx_update_times;
-#endif
 };
 
 // Define multiple benchmarks in single run
@@ -58,14 +54,14 @@ const std::map<std::string, BenchmarkTypes> strBenchmarksMap{
     {"backward", BenchmarkTypes::BACKWARDSCAN}};
 
 const std::vector<std::tuple<std::string, Benchmark_c *>> kIndexStructures{
-    {"BPTree-std", new BPTreeStdBenchmark()},
-    {"BPTree-head", new BPTreeHeadCompBenchmark()},
-    {"BPTree-tail", new BPTreeTailCompBenchmark()},
-    {"BPTree-headtail", new BPTreeHeadTailCompBenchmark()},
-    // {"BPTree-DB2", new BPTreeDB2Benchmark()},
-    // {"BPTree-WT", new BPTreeWTBenchmark()},
-    // {"BPTree-MyISAM", new BPTreeMyISAMBenchmark()},
-    // {"BPTree-PkB", new BPTreePkBBenchmark()},
+    {"Btree-Std", new BPTreeStdBenchmark()},
+    {"Btree-Head", new BPTreeHeadCompBenchmark()},
+    {"Btree-Tail", new BPTreeTailCompBenchmark()},
+    {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
+    // {"Btree-DB2", new BPTreeDB2Benchmark()},
+    // {"Btree-WT", new BPTreeWTBenchmark()},
+    // {"Btree-MyISAM", new BPTreeMyISAMBenchmark()},
+    // {"Btree-PkB", new BPTreePkBBenchmark()},
 };
 
 auto RunBenchmarkIteration(std::vector<char *> values,
@@ -74,12 +70,7 @@ auto RunBenchmarkIteration(std::vector<char *> values,
     std::vector<std::map<BenchmarkTypes, double>> structure_times(
         kIndexStructures.size());
     std::vector<TreeStatistics> structure_statistics(kIndexStructures.size());
-#ifdef TIME_DEBUG
-    std::vector<std::map<BenchmarkTypes, double>> pfx_calc_times(
-        kIndexStructures.size());
-    std::vector<std::map<BenchmarkTypes, double>> pfx_update_times(
-        kIndexStructures.size());
-#endif
+
     map<string, int> values_freq_map;
     std::vector<int> minIndxs(100);
 
@@ -106,12 +97,6 @@ auto RunBenchmarkIteration(std::vector<char *> values,
         const auto &[name, structure] = kIndexStructures[i];
         structure->InitializeStructure();
         double time_spent;
-#ifdef TIME_DEBUG
-        double time_cal_pfx;
-        double time_update_pfx;
-        double t_s = 0;
-        double t_i = 0;
-#endif
         std::chrono::system_clock::time_point t1;
 
 #ifdef SINGLE_DEBUG
@@ -134,11 +119,7 @@ auto RunBenchmarkIteration(std::vector<char *> values,
             switch (benchmark) {
             case BenchmarkTypes::INSERT:
                 t1 = std::chrono::system_clock::now();
-#ifdef TIME_DEBUG
-                structure->InsertTime(values, time_cal_pfx, time_update_pfx, t_s, t_i);
-#else
                 structure->Insert(values);
-#endif
                 time_spent = static_cast<double>(
                                  std::chrono::duration_cast<std::chrono::nanoseconds>(
                                      std::chrono::system_clock::now() - t1)
@@ -168,38 +149,41 @@ auto RunBenchmarkIteration(std::vector<char *> values,
                 break;
             }
             structure_times[i].insert({benchmark, time_spent});
-#ifdef TIME_DEBUG
-            pfx_calc_times[i].insert({benchmark, time_cal_pfx});
-            pfx_update_times[i].insert({benchmark, time_update_pfx});
-            cout << name << " (" << benchmarkStrMap.at(benchmark) << ")\n"
-                 << "total:\t" << time_spent << endl
-                 << "calc:\t" << time_cal_pfx << endl
-                 << "update:\t" << time_update_pfx << endl
-                 << "search:\t" << t_s << endl
-                 << "insert:\t" << t_i << endl;
-#endif
-#ifdef SINGLE_DEBUG
-            std::ofstream myfile;
+#ifdef VERBOSE_PRINT
             if (write_to_file) {
+                std::ofstream myfile;
                 const double ops = key_numbers / time_spent / 1e6;
                 string file_name = output_path + ".txt";
                 myfile.open(file_name, fstream::out | ios::app);
                 myfile << name << " (" << benchmarkStrMap.at(benchmark) << ")\t"
                        << FormatTime(time_spent, true) << FormatTime(ops, false)
                        << endl;
+                myfile.close();
             }
 #endif
         }
         structure_statistics[i] = structure->CalcStatistics();
+#ifdef VERBOSE_PRINT
+        if (write_to_file) {
+                std::ofstream myfile;
+                auto ss = structure_statistics[i];
+                string file_name = output_path + ".txt";
+                myfile.open(file_name, fstream::out | ios::app);
+                myfile << "name\theight\tkeysize\tprefix\tfanout\tnodes\tnonleaf\t\n";
+                myfile << name << "\t" << ss.height << "   \t" 
+                        << ss.totalKeySize / (double)ss.numKeys << "\t"
+                        << ss.totalPrefixSize / (double)ss.numKeys << "\t" 
+                        << ss.totalBranching / (double)ss.nonLeafNodes << "\t"
+                       << ss.numNodes << "\t" << ss.nonLeafNodes << std::endl;
+                myfile << "--------------------------------------------------" << endl;
+                myfile.close();
+        }
+#endif
         structure->DeleteStructure();
     }
     BenchmarkResult results = {
         structure_times,
         structure_statistics,
-#ifdef TIME_DEBUG
-        pfx_calc_times,
-        pfx_update_times,
-#endif
     };
     return results;
 }
@@ -239,6 +223,12 @@ auto ArgToBenchmark(std::string benchmark_str) {
 void PerformanceBenchmarkResults(
     std::vector<map<BenchmarkTypes, vector<double>>>
         structure_benchmark_times) {
+    std::ofstream myfile;
+    if(write_to_file){
+        string file_name = output_path + ".txt";
+        myfile.open(file_name, fstream::out | ios::app);
+        myfile << "===========================START SUMMARY========================" << endl;
+    }
     for (auto benchmark : benchmarks) {
         std::cout << "============================================================="
                      "===================================================="
@@ -256,12 +246,7 @@ void PerformanceBenchmarkResults(
                   << std::endl;
 
         // New file for every benchmark result
-        std::ofstream myfile;
         if (write_to_file) {
-            // string file_name = output_path + "/" + "performance_" +
-            // benchmarkStrMap.at(benchmark) + ".txt";
-            string file_name = output_path + ".txt";
-            myfile.open(file_name, fstream::out | ios::app);
             myfile << "\n"
                    << benchmarkStrMap.at(benchmark) << " performance\n"
                    << "name\tmin\tmax\tavg\tmed\tmops_avg\tmops_med\n";
@@ -297,12 +282,11 @@ void PerformanceBenchmarkResults(
                            << med << "\t" << avg_ops << "\t" << med_ops << std::endl;
                 myfile << output_row.str();
             }
-
             structure->DeleteStructure();
         }
-        if (write_to_file) {
-            myfile.close();
-        }
+    }
+    if (write_to_file) {
+        myfile.close();
     }
 }
 
@@ -316,8 +300,8 @@ void TreeStatisticBenchmarkResults(
                  "=================================================="
               << std::endl;
     std::cout << "Index Structure\t|      Height\t| Avg Key Size\t|"
-                 "Avg Prefix Size\t| Avg Fanout\t| Nodes\t| "
-                 "Non-leaf Nodes\t|"
+                 "  Prefix Size\t|  Avg Fanout\t| Total Nodes\t| "
+                 "Non-leaf #\t|"
               << std::endl;
     std::cout << "---------------------------------------------------------------"
                  "--------------------------------------------------"
@@ -374,11 +358,13 @@ void TreeStatisticBenchmarkResults(
                        << avg_prefix_size << "," << avg_branch_degree << ","
                        << avg_nodes << "," << avg_non_leaf_nodes << std::endl;
             myfile << output_row.str();
+
         }
 
         structure->DeleteStructure();
     }
     if (write_to_file) {
+        myfile << "=========================END OF SUMMARY=====================" << endl;
         myfile.close();
     }
 }

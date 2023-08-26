@@ -19,9 +19,6 @@ public:
     BPTree(bool head_compression = false, bool tail_compression = false);
     ~BPTree();
     void insert(char *);
-#ifdef TIME_DEBUG
-    void insert_time(char *, double &, double &, double &, double &);
-#endif
     int search(const char *);
     void getSize(Node *, int &, int &, int &, int &, unsigned long &, int &);
     int getHeight(Node *);
@@ -59,12 +56,5 @@ private:
                          string &lower_bound, string &upper_bound);
     int update_page_prefix(Node *node, char *page, uint16_t *idx, uint8_t *lens,
                            int prefixlen, int low, int high);
-
-#ifdef TIME_DEBUG
-    void insert_leaf_time(Node *leaf, vector<Node *> &parents, char *key,
-                          double &prefix_calc, double &prefix_update);
-    splitReturn split_leaf_time(Node *node, vector<Node *> &parents, char *newkey,
-                                double &prefix_calc, double &prefix_update);
-#endif
 };
 #endif

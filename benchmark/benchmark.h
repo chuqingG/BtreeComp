@@ -40,11 +40,6 @@ public:
     virtual void InitializeStructure() = 0;
     virtual void DeleteStructure() = 0;
     virtual void Insert(const std::vector<char *> &numbers) = 0;
-#ifdef TIME_DEBUG
-    virtual void InsertTime(const std::vector<char *> &numbers,
-                            double &prefix_calc, double &prefix_update,
-                            double &search, double &insert) = 0;
-#endif
     virtual bool Search(const std::vector<char *> &numbers) = 0;
     virtual TreeStatistics CalcStatistics() = 0;
 };
@@ -73,12 +68,7 @@ public:
         // vector<bool> flag(values.size());
         // _tree->printTree(_tree->getRoot(), flag, true);
     }
-#ifdef TIME_DEBUG
-    void InsertTime(const vector<char *> &values, double &prefix_calc, double &prefix_update, double &search, double &insert) override {
-        for (uint32_t i = 0; i < values.size(); ++i)
-            _tree->insert_time(values.at(i), prefix_calc, prefix_update, search, insert);
-    }
-#endif
+
     bool Search(const std::vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); i++)
             if (_tree->search(values.at(i)) == -1)
@@ -90,13 +80,6 @@ public:
         TreeStatistics statistics;
         statistics.height = _tree->getHeight(_tree->getRoot());
         _tree->getSize(_tree->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
-        cout << "Height of tree " << statistics.height << endl;
-        cout << "Num nodes " << statistics.numNodes << endl;
-        cout << "Num non-leaf nodes " << statistics.nonLeafNodes << endl;
-        cout << "Num keys " << statistics.numKeys << endl;
-        cout << "Avg key size based on keys " << statistics.totalKeySize / (double)statistics.numKeys << endl;
-        cout << "Avg prefix size " << statistics.totalPrefixSize / (double)statistics.numKeys << endl;
-        cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
         return statistics;
     }
 
@@ -156,13 +139,6 @@ public:
         TreeStatistics statistics;
         statistics.height = _tree->getHeight(_tree->getRoot());
         _tree->getSize(_tree->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
-        cout << "Height of tree " << statistics.height << endl;
-        cout << "Num nodes " << statistics.numNodes << endl;
-        cout << "Num non-leaf nodes " << statistics.nonLeafNodes << endl;
-        cout << "Num keys " << statistics.numKeys << endl;
-        cout << "Avg key size based on keys " << statistics.totalKeySize / (double)statistics.numKeys << endl;
-        cout << "Avg prefix size " << statistics.totalPrefixSize / (double)statistics.numKeys << endl;
-        cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
         return statistics;
     }
 
@@ -201,13 +177,6 @@ public:
         TreeStatistics statistics;
         statistics.height = _tree->getHeight(_tree->getRoot());
         _tree->getSize(_tree->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
-        cout << "Height of tree " << statistics.height << endl;
-        cout << "Num nodes " << statistics.numNodes << endl;
-        cout << "Num non-leaf nodes " << statistics.nonLeafNodes << endl;
-        cout << "Num keys " << statistics.numKeys << endl;
-        cout << "Avg key size based on keys " << statistics.totalKeySize / (double)statistics.numKeys << endl;
-        cout << "Avg prefix size " << statistics.totalPrefixSize / (double)statistics.numKeys << endl;
-        cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
         return statistics;
     }
 
@@ -246,13 +215,6 @@ public:
         TreeStatistics statistics;
         statistics.height = _tree->getHeight(_tree->getRoot());
         _tree->getSize(_tree->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
-        cout << "Height of tree " << statistics.height << endl;
-        cout << "Num nodes " << statistics.numNodes << endl;
-        cout << "Num non-leaf nodes " << statistics.nonLeafNodes << endl;
-        cout << "Num keys " << statistics.numKeys << endl;
-        cout << "Avg key size based on keys " << statistics.totalKeySize / (double)statistics.numKeys << endl;
-        cout << "Avg prefix size " << statistics.totalPrefixSize / (double)statistics.numKeys << endl;
-        cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
         return statistics;
     }
 
@@ -296,13 +258,6 @@ public:
         TreeStatistics statistics;
         statistics.height = _tree->getHeight(_tree->getRoot());
         _tree->getSize(_tree->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
-        cout << "Height of tree " << statistics.height << endl;
-        cout << "Num nodes " << statistics.numNodes << endl;
-        cout << "Num non-leaf nodes " << statistics.nonLeafNodes << endl;
-        cout << "Num keys " << statistics.numKeys << endl;
-        cout << "Avg key size based on keys " << statistics.totalKeySize / (double)statistics.numKeys << endl;
-        cout << "Avg prefix size " << statistics.totalPrefixSize / (double)statistics.numKeys << endl;
-        cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
         return statistics;
     }
 

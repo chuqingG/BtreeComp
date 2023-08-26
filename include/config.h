@@ -8,7 +8,7 @@
 #define MEMDEBUG
 #define CHARALL
 #define SINGLE_DEBUG
-// #define TIME_DEBUG
+#define VERBOSE_PRINT // enable to write some intermediate results to output file (if set -o)
 // #define DUPKEY
 // #define TOFIX  // enable to fix some skipped problem
 

@@ -1,26 +1,17 @@
 #pragma once
 #include "node.h"
 
-Data::Data(const char *s) {
-    // addr_ = s;
-
-    size = strlen(s);
-    addr_ = new char[size + 1];
-    strcpy(addr_, s);
-}
+// Data::Data(const char *s) {
+//     size = strlen(s);
+//     addr_ = new char[size + 1];
+//     strcpy(addr_, s);
+// }
 
 Data::Data(const char *s, int len) {
     addr_ = new char[len + 1];
     strncpy(addr_, s, len);
     addr_[len] = '\0';
     size = len;
-}
-
-Data::Data(const std::string &s) {
-    // addr_ = s.data();
-    size = s.size();
-    addr_ = new char[size + 1];
-    strcpy(addr_, s.data());
 }
 
 const char *Data::addr() {
@@ -30,25 +21,6 @@ const char *Data::addr() {
 Data::~Data() {
     delete addr_;
 }
-
-// void Data::set(const char *p, int s) {
-//     addr_ = p;
-//     size = s;
-// }
-
-// Data::~Data()
-// {
-//     if (size)
-//         delete ptr;
-// }
-
-// void Data::from_string(string s)
-// {
-//     size = s.size();
-//     ptr = new char[size + 1];
-//     strcpy(ptr, s.data());
-//     return;
-// }
 
 // Constructor of key
 Key::Key(string val, int rid) {
@@ -97,15 +69,15 @@ void Key_c::update_value(string str) {
 // Constructor of Node
 Node::Node(bool tail_comp) {
     size = 0;
-    prefix = new Data("");
+    prefix = new Data("", 0);
     base = NewPage();
     memusage = 0;
     prev = nullptr;
     next = nullptr;
-    lowkey = new Data("");
-    highkey = new Data("infinity");
+    lowkey = new Data("", 0);
+    highkey = new Data("infinity", 8);
     ptr_cnt = 0;
-    // ptrs = new Node*[kNumberBound + 1];
+
     keys_size = new uint8_t[kNumberBound + tail_comp * TAIL_COMP_RELAX * kNumberBound];
     std::memset(keys_size, 0, 
                 (kNumberBound + tail_comp * TAIL_COMP_RELAX * kNumberBound) * sizeof(uint8_t));

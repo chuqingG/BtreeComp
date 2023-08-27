@@ -23,11 +23,9 @@ public:
     // const char *ptr;
     uint8_t size; // Be careful;
     Data() : addr_(""), size(0){};
-    Data(const char *str);
+    // Data(const char *str);
     Data(const char *p, int len);
-    Data(const std::string &s);
     ~Data();
-    Data(const Data &) = default;
     Data &operator=(const Data &) = default;
     const char *addr();
     // void set(const char *p, int s);

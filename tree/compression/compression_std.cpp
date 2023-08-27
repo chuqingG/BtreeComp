@@ -47,23 +47,6 @@ string head_compression_find_prefix_old(string lowerbound, string upperbound) {
     return prefix;
 }
 
-// char *head_compression_find_prefix(const char *lowerbound, const char *upperbound, int lowerlen, int upperlen) {
-//     // string prefix = get_common_prefix(lowerbound, upperbound);
-//     // Can return a pair of (char*, len)
-//     // int lowerlen = strlen(lowerbound);
-//     // int upperlen = strlen(upperbound);
-//     int prefixlen = get_common_prefix_len(lowerbound, upperbound, lowerlen, upperlen);
-//     if (upperlen == prefixlen + 1 && lowerlen >= prefixlen + 1 && (upperbound[prefixlen] - lowerbound[prefixlen] == 1)) {
-//         prefixlen++;
-//     }
-
-//     char *prefix = new char[prefixlen + 1];
-//     strncpy(prefix, lowerbound, prefixlen);
-//     prefix[prefixlen] = '\0';
-
-//     return prefix;
-// }
-
 char *head_compression_find_prefix(Data *low, Data *high) {
     // string prefix = get_common_prefix(lowerbound, upperbound);
     // Can return a pair of (char*, len)
@@ -79,6 +62,14 @@ char *head_compression_find_prefix(Data *low, Data *high) {
     prefix[prefixlen] = '\0';
 
     return prefix;
+}
+
+int head_compression_find_prefix_length(Data *low, Data *high) {
+    int prefixlen = get_common_prefix_len(low->addr(), high->addr(), low->size, high->size);
+    if (high->size == prefixlen + 1 && low->size >= prefixlen + 1 && ((high->addr())[prefixlen] - (low->addr())[prefixlen] == 1)) {
+        prefixlen++;
+    }
+    return prefixlen;
 }
 
 #ifdef DUPKEY

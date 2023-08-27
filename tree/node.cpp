@@ -11,7 +11,8 @@ Data::Data(const char *s) {
 
 Data::Data(const char *s, int len) {
     addr_ = new char[len + 1];
-    strcpy(addr_, s);
+    strncpy(addr_, s, len);
+    addr_[len] = '\0';
     size = len;
 }
 

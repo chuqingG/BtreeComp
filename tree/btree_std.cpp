@@ -356,33 +356,28 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new child
     if (this->head_comp && pos >= 0) {
         // when pos < 0, it means we are spliting the root
 
-        // string lower_bound("");
-        // string upper_bound("");
-        // get_node_bounds(parents, pos, node, lower_bound, upper_bound);
-        Data prevprefix = *(node->prefix);
-
-        string leftprefix =
-            head_compression_find_prefix(node->lowkey, newsplit.promotekey);
-        string rightprefix =
-            head_compression_find_prefix(newsplit.promotekey, node->highkey);
+        int leftprefix_len =
+            head_compression_find_prefix_length(node->lowkey, newsplit.promotekey);
+        int rightprefix_len =
+            head_compression_find_prefix_length(newsplit.promotekey, node->highkey);
 
         left_mem = update_page_prefix(node, left_base, left_idx, left_size,
-                                      leftprefix.length(), 0, split);
+                                      leftprefix_len, 0, split);
 
-        // Stop here
         if (strcmp(node->highkey->addr(), MAXHIGHKEY) != 0) {
             right_mem = update_page_prefix(node, right_base, right_idx, right_size,
-                                           rightprefix.length(), split + 1, node->size);
+                                           rightprefix_len, split + 1, node->size);
 
-            right->prefix = new Data(rightprefix);
+            right->prefix = new Data(newsplit.promotekey->addr(), rightprefix_len);
         }
         else {
-            right->prefix = new Data(prevprefix.addr(), prevprefix.size);
+            // Assign the previous prefix to the new right node
+            right->prefix = new Data(node->prefix->addr(), node->prefix->size);
             right_mem = update_page_prefix(node, right_base, right_idx, right_size,
-                                           prevprefix.size, split + 1, node->size);
+                                           node->prefix->size, split + 1, node->size);
         }
-        // change early may change right_node udpate
-        node->prefix = new Data(leftprefix);
+        // Update left node, change early may change right_node udpate
+        node->prefix = new Data(node->lowkey->addr(),leftprefix_len);
     }
     else {
         // split + 1: the two parent are like: |p-k-p|  |p-k-p-k-p|, no need to
@@ -563,22 +558,19 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     right_base = right->base;
     //TODO: fix keys_size for head comp
     if (this->head_comp) {
-        // string lower_bound = "";
-        // string upper_bound = "";
-        // get_node_bounds(parents, parents.size() - 1, node, lower_bound,
-        //                 upper_bound);
-        string leftprefix =
-            head_compression_find_prefix(node->lowkey, newsplit.promotekey);
-        string rightprefix =
-            head_compression_find_prefix(newsplit.promotekey, node->highkey);
+        
+        int leftprefix_len =
+            head_compression_find_prefix_length(node->lowkey, newsplit.promotekey);
+        int rightprefix_len =
+            head_compression_find_prefix_length(newsplit.promotekey, node->highkey);
 
         left_mem = update_page_prefix(node, left_base, left_idx, left_size,
-                                      leftprefix.length(), 0, split);
+                                      leftprefix_len, 0, split);
         right_mem = update_page_prefix(node, right_base, right_idx, right_size,
-                                       rightprefix.length(), split, node->size);
+                                       rightprefix_len, split, node->size);
 
-        node->prefix = new Data(leftprefix);
-        right->prefix = new Data(rightprefix);
+        node->prefix = new Data(node->lowkey->addr(), leftprefix_len);
+        right->prefix = new Data(newsplit.promotekey->addr(), rightprefix_len);
     }
     else {
         CopyKeyToPage(node, 0, split, left_base, left_mem, left_idx, left_size);
@@ -586,7 +578,6 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     }
 
     // rewrite left page to origin node, set the new right node
-    //TODO: fix keys_size
 
     right->size = node->size - split;
     right->memusage = right_mem;

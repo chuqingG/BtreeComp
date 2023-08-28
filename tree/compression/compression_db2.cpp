@@ -360,7 +360,7 @@ int expand_prefixes_in_boundary(DB2Node *node, prefixOptimization &result, int i
         }
         for(; i < i <= p_i.high; i++){
             // update the new prefix
-            
+            // the memory can shift directly 
         }
 
         for (int i = p_i_1.low; i <= p_i_plus_1.high; i++) {

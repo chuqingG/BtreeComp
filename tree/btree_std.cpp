@@ -59,7 +59,7 @@ void BPTree::insert(char *x) {
 
 void BPTree::insert_nonleaf(Node *node, Node **path,
                             int parentlevel, splitReturn_new childsplit) {
-    if (check_split_condition(node, childsplit.promotekey->addr())) {
+    if (check_split_condition(node, childsplit.promotekey->size)) {
         Node *parent = nullptr;
         if (parentlevel >= 0) {
             parent = path[parentlevel];
@@ -137,7 +137,7 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
 
 void BPTree::insert_leaf(Node *leaf, Node** path, int path_level, char *key, int keylen) {
     // TODO: modify check split to make sure the new key can always been inserted
-    if (check_split_condition(leaf, key)) {
+    if (check_split_condition(leaf, keylen)) {
         splitReturn_new split = split_leaf(leaf, key, keylen);
         if (leaf == _root) {
             Node *newRoot = new Node(this->head_comp, this->tail_comp);

@@ -92,11 +92,12 @@ public:
     Node *next; // Next node pointer
     uint16_t memusage;
     char *base;
-    Node(bool tail);
+    Node(bool head, bool tail);
     ~Node();
 };
 #endif
 
+#ifdef DUPKEY
 class PrefixMetaData
 {
 public:
@@ -120,7 +121,35 @@ public:
     DB2Node();
     ~DB2Node();
 };
+#else
+class PrefixMetaData
+{
+public:
+    int low;
+    int high;
+    Data *prefix;
+    PrefixMetaData();
+    PrefixMetaData(const char* str, int len, int l, int h);
+};
 
+class DB2Node
+{
+public:
+    bool IS_LEAF;
+    // vector<Key_c> keys;
+    char* base;
+    int size;
+    uint16_t *keys_offset;
+    uint8_t *keys_size;
+    int memusage;
+    vector<DB2Node *> ptrs;
+    DB2Node *prev; // Prev node pointer
+    DB2Node *next; // Next node pointer
+    vector<PrefixMetaData> prefixMetadata;
+    DB2Node();
+    ~DB2Node();
+};
+#endif
 // Key with prefix and suffix encoding
 // Duplicates represented as <key, {rid list}>
 class KeyMyISAM
@@ -235,7 +264,7 @@ struct splitReturn_new
 
 struct splitReturnDB2
 {
-    string promotekey;
+    Data *promotekey;
     DB2Node *left;
     DB2Node *right;
 };
@@ -359,3 +388,13 @@ void printKeys_pkb(NodePkB *node, bool compressed);
         size[i - (low)] = klen;\
         mem += klen + 1;                          \
     }
+
+#define WriteKeyDB2Page(base, memusage, pos, size, idx, kptr, klen, prefixlen) \
+{\
+    strcpy(base + memusage, kptr + prefixlen); \
+    size[pos] = klen - prefixlen; \
+    idx[pos] = memusage; \
+    memusage += size[pos] + 1; \
+}
+
+#define GetKeyDB2(result, i) (char*)(result.base + result.newoffset[i])

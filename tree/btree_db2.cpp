@@ -1,20 +1,9 @@
 #include "btree_db2.h"
 
-PrefixMetaData::PrefixMetaData() {
-    prefix = "";
-    low = 0;
-    high = 0;
-}
-
-PrefixMetaData::PrefixMetaData(string p, int l, int h) {
-    prefix = p;
-    low = l;
-    high = h;
-}
-
 // Initialise the BPTreeDB2 DB2Node
 BPTreeDB2::BPTreeDB2() {
     _root = NULL;
+    max_level = 1;
 }
 
 // Destructor of BPTreeDB2 tree
@@ -30,36 +19,39 @@ DB2Node *BPTreeDB2::getRoot() {
 // Function to find any element
 // in B+ Tree
 int BPTreeDB2::search(const char *key) {
-    vector<DB2Node *> parents;
-    DB2Node *leaf = search_leaf_node(_root, key, parents);
+    int keylen = strlen(key);
+    DB2Node *leaf = search_leaf_node(_root, key, keylen);
     if (leaf == nullptr)
         return -1;
     int metadatapos = search_prefix_metadata(leaf, key);
     if (metadatapos == -1)
         return -1;
-    PrefixMetaData currentMetadata = leaf->prefixMetadata.at(metadatapos);
-    string prefix = currentMetadata.prefix;
+    PrefixMetaData currentMetadata = leaf->prefixMetadata[metadatapos];
+    int prefixlen = currentMetadata.prefix->size;
     // string_view compressed_key = key.substr(prefix.length());
-    return search_binary(leaf, key + prefix.length(), currentMetadata.low, currentMetadata.high);
+    return search_in_leaf(leaf, key + prefixlen, keylen - prefixlen,currentMetadata.low, currentMetadata.high);
 }
 
 void BPTreeDB2::insert(char *x) {
+    int keylen = strlen(x);
     if (_root == nullptr) {
         _root = new DB2Node;
-        //#ifdef DUPKEY
+#ifdef DUPKEY
         int rid = rand();
         _root->keys.push_back(Key_c(x, rid));
         _root->size = 1;
-        //#else
-        //#endif
+#else
+        InsertKey(_root, 0, x, keylen);  
+#endif
         _root->IS_LEAF = true;
-        PrefixMetaData metadata = PrefixMetaData("", 0, 0);
+        PrefixMetaData metadata = PrefixMetaData("", 0, 0, 0);
         _root->prefixMetadata.push_back(metadata);
         return;
     }
-    vector<DB2Node *> parents;
-    DB2Node *leaf = search_leaf_node(_root, x, parents);
-    insert_leaf(leaf, parents, x);
+    DB2Node* search_path[max_level];
+    int path_level = 0;
+    DB2Node *leaf = search_leaf_node_for_insert(_root, x, keylen, search_path, path_level);
+    insert_leaf(leaf, search_path, path_level, x, keylen);
 }
 
 void BPTreeDB2::insert_nonleaf(DB2Node *node, vector<DB2Node *> &parents, int parentlevel, splitReturnDB2 childsplit) {
@@ -118,11 +110,11 @@ void BPTreeDB2::insert_nonleaf(DB2Node *node, vector<DB2Node *> &parents, int pa
     }
 }
 
-void BPTreeDB2::insert_leaf(DB2Node *leaf, vector<DB2Node *> &parents, char *key) {
-    if (check_split_condition(leaf)) {
+void BPTreeDB2::insert_leaf(DB2Node *leaf, DB2Node **path, int path_level, char *key, int keylen) {
+    if (check_split_condition(leaf, keylen)) {
         apply_prefix_optimization(leaf);
     }
-    if (check_split_condition(leaf)) {
+    if (check_split_condition(leaf, keylen)) {
         splitReturnDB2 split = split_leaf(leaf, parents, key);
         if (leaf == _root) {
             DB2Node *newRoot = new DB2Node;
@@ -303,25 +295,31 @@ splitReturnDB2 BPTreeDB2::split_leaf(DB2Node *node, vector<DB2Node *> &parents, 
     return newsplit;
 }
 
-bool BPTreeDB2::check_split_condition(DB2Node *node) {
+bool BPTreeDB2::check_split_condition(DB2Node *node, int keylen) {
     int currspace = 0;
 #ifdef SPLIT_STRATEGY_SPACE
-    for (uint32_t i = 0; i < node->prefixMetadata.size(); i++) {
-        currspace += node->prefixMetadata.at(i).prefix.length();
-    }
-    for (uint32_t i = 0; i < node->keys.size(); i++) {
-        currspace += node->keys.at(i).getSize();
-    }
-    return node->size > 1 && currspace >= MAX_SIZE_IN_BYTES;
+    // for (uint32_t i = 0; i < node->prefixMetadata.size(); i++) {
+    //     currspace += node->prefixMetadata.at(i).prefix.length();
+    // }
+    // for (uint32_t i = 0; i < node->keys.size(); i++) {
+    //     currspace += node->keys.at(i).getSize();
+    // }
+    // return node->size > 1 && currspace >= MAX_SIZE_IN_BYTES;
+
+    //Just simplify, may need to consider the prefix size
+    if(node->memusage + 2 * keylen >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
+        return true;
+    return false;
 #else
     return node->size == MAX_NODE_SIZE;
 #endif
 }
 
-int BPTreeDB2::insert_binary(DB2Node *cursor, const char *key, int low, int high, bool &equal) {
+int BPTreeDB2::search_insert_pos(DB2Node *cursor, const char *key, int keylen, 
+                                    int low, int high, bool &equal) {
     while (low <= high) {
         int mid = low + (high - low) / 2;
-        int cmp = char_cmp_old(key, cursor->keys.at(mid).value);
+        int cmp = char_cmp(key, GetKey(cursor, mid), keylen);
         if (cmp == 0) {
             equal = true;
             return mid + 1;
@@ -370,10 +368,50 @@ DB2Node *BPTreeDB2::search_leaf_node(DB2Node *searchroot, const char *key, vecto
     return cursor;
 }
 
-int BPTreeDB2::search_binary(DB2Node *cursor, const char *key, int low, int high) {
+DB2Node *BPTreeDB2::search_leaf_node_for_insert(DB2Node *searchroot, const char *key, int keylen, DB2Node **path, int &path_level) {
+    // Tree is empty
+    if (searchroot == NULL) {
+        cout << "Tree is empty" << endl;
+        return nullptr;
+    }
+
+    DB2Node *cursor = searchroot;
+    bool equal = false;
+    // Till we reach leaf node
+    while (!cursor->IS_LEAF) {
+        // string_view searchkey = key;
+        path[path_level++] = cursor;
+        int pos = -1;
+        int metadatapos = insert_prefix_metadata(cursor, key);
+        if (metadatapos == cursor->prefixMetadata.size()) {
+            pos = cursor->size;
+        }
+        else {
+            PrefixMetaData currentMetadata = cursor->prefixMetadata[metadatapos];
+            Data *prefix = currentMetadata.prefix;
+            // int prefixcmp = key.compare(0, prefix.length(), prefix);
+            int prefixcmp = strncmp(key, prefix->addr(), prefix->size);
+            if (prefixcmp != 0) {
+                pos = prefixcmp > 0 ? currentMetadata.high + 1 : currentMetadata.low;
+            }
+            else {
+                // searchkey = key.substr(prefix.length());
+                pos = search_insert_pos(cursor, key + prefix->size, currentMetadata.low, currentMetadata.high, equal);
+            }
+        }
+        cursor = cursor->ptrs[pos];
+    }
+    return cursor;
+}
+
+int BPTreeDB2::search_in_leaf(DB2Node *cursor, const char *key, int keylen, int low, int high) {
     while (low <= high) {
         int mid = low + (high - low) / 2;
+#ifdef DUPKEY
         int cmp = char_cmp_old(key, cursor->keys.at(mid).value);
+#else
+        int cmp = char_cmp(key, GetKey(cursor, mid), keylen);
+#endif
         if (cmp == 0)
             return mid;
         else if (cmp > 0)
@@ -381,11 +419,6 @@ int BPTreeDB2::search_binary(DB2Node *cursor, const char *key, int low, int high
         else
             high = mid - 1;
     }
-    // cout << "key:" << key << endl;
-    // cout << "node: ";
-    // for (auto key : cursor->keys)
-    //     cout << key.value << ",";
-    // cout << endl;
     return -1;
 }
 

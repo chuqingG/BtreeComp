@@ -67,7 +67,7 @@ void Key_c::update_value(string str) {
 }
 
 // Constructor of Node
-Node::Node(bool tail_comp) {
+Node::Node(bool head_comp, bool tail_comp) {
     size = 0;
     prefix = new Data("", 0);
     base = NewPage();
@@ -78,10 +78,12 @@ Node::Node(bool tail_comp) {
     highkey = new Data("infinity", 8);
     ptr_cnt = 0;
 
-    keys_size = new uint8_t[kNumberBound + tail_comp * TAIL_COMP_RELAX * kNumberBound];
-    std::memset(keys_size, 0, 
-                (kNumberBound + tail_comp * TAIL_COMP_RELAX * kNumberBound) * sizeof(uint8_t));
-    keys_offset = new uint16_t[kNumberBound + tail_comp * TAIL_COMP_RELAX * kNumberBound];
+    keys_size = new uint8_t[kNumberBound * 
+                    (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
+    std::memset(keys_size, 0, sizeof(uint8_t) *
+                kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX));
+    keys_offset = new uint16_t[kNumberBound * 
+                    (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
 }
 
 // Destructor of Node
@@ -92,17 +94,38 @@ Node::~Node() {
     delete base;
 }
 
+//===============Below for DB2===========
+
+PrefixMetaData::PrefixMetaData() {
+    prefix = new Data("", 0);
+    low = 0;
+    high = 0;
+}
+
+PrefixMetaData::PrefixMetaData(const char* str, int len, int l, int h) {
+    prefix = new Data(str, len);
+    low = l;
+    high = h;
+}
+
 DB2Node::DB2Node() {
     size = 0;
     prev = nullptr;
     next = nullptr;
+    base = NewPage();
+    memusage = 0;
+
+    keys_size = new uint8_t[kNumberBound];
+    std::memset(keys_size, 0, (kNumberBound) * sizeof(uint8_t));
+    keys_offset = new uint16_t[kNumberBound];
 }
+
 
 // Destructor of DB2Node
 DB2Node::~DB2Node() {
-    for (DB2Node *childptr : ptrs) {
-        delete childptr;
-    }
+    delete keys_offset;
+    delete keys_size;
+    delete base;
 }
 
 KeyMyISAM::KeyMyISAM(string v, int p, int rid) {
@@ -309,6 +332,7 @@ void printKeys(Node *node, bool compressed) {
 }
 #endif
 
+#ifdef DUPKEY
 void printKeys_db2(DB2Node *node, bool compressed) {
     for (uint32_t i = 0; i < node->prefixMetadata.size(); i++) {
         if (compressed) {
@@ -329,6 +353,24 @@ void printKeys_db2(DB2Node *node, bool compressed) {
         }
     }
 }
+#else
+void printKeys_db2(DB2Node *node, bool compressed) {
+    for (uint32_t i = 0; i < node->prefixMetadata.size(); i++) {
+        if (compressed) {
+            cout << "Prefix " << node->prefixMetadata.at(i).prefix << ": ";
+        }
+        for (int l = node->prefixMetadata.at(i).low;
+             l <= node->prefixMetadata.at(i).high; l++) {
+            // Loop through rid list to print duplicates
+            if(compressed){
+                cout << GetKey(node, l) << ",";
+            }else{
+                cout << node->prefixMetadata[i].prefix << GetKey(node, l) << ",";
+            }
+        }
+    }
+}
+#endif
 
 void printKeys_myisam(NodeMyISAM *node, bool compressed) {
     string prev_key = "";

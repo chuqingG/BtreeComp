@@ -27,7 +27,11 @@ struct db2split {
 };
 
 struct prefixOptimization {
-    vector<Key_c> keys;
+    // vector<Key_c> keys;
+    int memusage = 0;
+    char* base = NewPage();
+    uint8_t *newsize = new uint8_t[kNumberBound];
+    uint16_t *newoffset = new uint16_t[kNumberBound];
     vector<PrefixMetaData> prefixMetadatas;
 };
 
@@ -51,11 +55,11 @@ prefixMergeSegment find_best_segment_in_closed_range(vector<Key_c> keys, closedR
 void merge_prefixes_in_segment(vector<Key_c> &keys, vector<PrefixMetaData> &prefixmetadatas,
                                prefixMergeSegment bestsegment, string newprefix);
 
-prefixOptimization prefix_merge(vector<Key_c> keys, vector<PrefixMetaData> prefixmetadatas);
+prefixOptimization prefix_merge(DB2Node *node);
 
-int expand_prefixes_in_boundary(vector<Key_c> &keys, vector<PrefixMetaData> &prefixmetadatas, int index);
+int expand_prefixes_in_boundary(DB2Node *node, prefixOptimization &result, int index);
 
-prefixOptimization prefix_expand(vector<Key_c> keys, vector<PrefixMetaData> prefixmetadatas);
+prefixOptimization prefix_expand(DB2Node *node);
 
 int insert_prefix_metadata(DB2Node *cursor, string_view key);
 

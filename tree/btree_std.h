@@ -45,7 +45,7 @@ private:
     bool check_split_condition(Node *node);
     int split_point(vector<Key_c> allkeys);
 #else
-    bool check_split_condition(Node *node, const char *key);
+    bool check_split_condition(Node *node, int keylen);
     int split_point(Node *node);
 #endif
     splitReturn_new split_nonleaf(Node *node, int pos,

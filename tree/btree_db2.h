@@ -28,16 +28,19 @@ public:
 
 private:
     DB2Node *_root;
-    void insert_leaf(DB2Node *leaf, vector<DB2Node *> &parents, char *key);
-    void insert_nonleaf(DB2Node *node, vector<DB2Node *> &parents, int pos, splitReturnDB2 childsplit);
-    static int insert_binary(DB2Node *cursor, const char *key, int low, int high, bool &equal);
-    int search_binary(DB2Node *cursor, const char *key, int low, int high);
-    DB2Node *search_leaf_node(DB2Node *root, const char *key, vector<DB2Node *> &parents);
+    int max_level;
+    void insert_leaf(DB2Node *leaf, DB2Node ** path, int path_level, char *key, int keylen);
+    void insert_nonleaf(DB2Node *node, DB2Node ** path, int pos, splitReturnDB2 childsplit);
+    static int search_insert_pos(DB2Node *cursor, const char *key, int keylen, int low, int high, bool &equal);
+    int search_in_leaf(DB2Node *cursor, const char *key, int keylen, int low, int high);
+    DB2Node *search_leaf_node(DB2Node *root, const char *key, int keylen);
+    DB2Node *search_leaf_node_for_insert(DB2Node *root, const char *key, int keylen, 
+                                            DB2Node **path, int &path_level);
 
-    bool check_split_condition(DB2Node *node);
-    int split_point(vector<Key_c> allkeys); //
+    bool check_split_condition(DB2Node *node, int keylen);
+    int split_point(DB2Node *node); //
 
-    splitReturnDB2 split_nonleaf(DB2Node *node, vector<DB2Node *> parents, int pos, splitReturnDB2 childsplit);
-    splitReturnDB2 split_leaf(DB2Node *node, vector<DB2Node *> &parents, char *newkey);
+    splitReturnDB2 split_nonleaf(DB2Node *node, int pos, splitReturnDB2 childsplit);
+    splitReturnDB2 split_leaf(DB2Node *node, char *newkey, int newkey_len);
 };
 #endif

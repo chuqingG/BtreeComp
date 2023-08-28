@@ -342,18 +342,28 @@ int expand_prefixes_in_boundary(DB2Node *node, prefixOptimization &result, int i
     int firstlow = -1;
     int lasthigh = -1;
     if (prefixlen > 0 && prefixlen >= max(p_i.prefix->size, p_i_1.prefix->size)) {
-        for (int i = p_i.low; i <= p_i.high; i++) {
-            char* key_cut = GetKey(node, )
-            string decompressed = p_i.prefix + keys.at(i).value;
-            if (decompressed.compare(0, prefixlen, common_prefix) == 0) {
-                // First low has not been set
-                if (firstlow == -1)
-                    firstlow = i;
-                keys.at(i).value = string_to_char(decompressed.substr(prefixlen));
+        int cutoff = prefixlen - p_i.prefix->size;
+        int i;
+        for (i = p_i.low; i <= p_i.high; i++) {
+            if(strncmp(GetKeyDB2(result, i), GetKeyDB2(result, p_i.high), prefixlen - p_i.high) == 0){
+                // then key i can be move to the next prefix
+                firstlow = i;
+                break;
             }
+            // string decompressed = p_i.prefix + keys.at(i).value;
+            // if (decompressed.compare(0, prefixlen, common_prefix) == 0) {
+            //     // First low has not been set
+            //     if (firstlow == -1)
+            //         firstlow = i;
+            //     keys.at(i).value = string_to_char(decompressed.substr(prefixlen));
+            // }
+        }
+        for(; i < i <= p_i.high; i++){
+            // update the new prefix
+            
         }
 
-        for (int i = p_i_plus_1.low; i <= p_i_plus_1.high; i++) {
+        for (int i = p_i_1.low; i <= p_i_plus_1.high; i++) {
             string decompressed = p_i_plus_1.prefix + keys.at(i).value;
             if (decompressed.compare(0, prefixlen, common_prefix) == 0) {
                 keys.at(i).value = string_to_char(decompressed.substr(prefixlen));

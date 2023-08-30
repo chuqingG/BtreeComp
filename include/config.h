@@ -16,8 +16,8 @@
 
 //Setup
 #define SPLIT_STRATEGY_SPACE
-#define MAX_SIZE_IN_BYTES 512 // 2048
-#define SPLIT_LIMIT 32
+#define MAX_SIZE_IN_BYTES 2048 // 2048
+#define SPLIT_LIMIT 0   // can set to 0 when test fixed-length data
 #define DEFAULT_DATASET_SIZE 100000
 #define APPROX_KEY_SIZE 32
 #define MAX_TAIL_COMP_RATIO 16

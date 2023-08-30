@@ -10,14 +10,16 @@ enum optimizationType {
 
 struct prefixMergeSegment {
     vector<PrefixMetaData> segment;
-    string prefix;
-    int cost;
-    int firstindex;
+    Data *prefix;
+    int cost = INT32_MAX;
+    int firstindex = 0;
 };
 
 struct closedRange {
     vector<PrefixMetaData> prefixMetadatas;
-    vector<int> positions;
+    // vector<int> positions;
+    int pos_low = 0;
+    int pos_high = -1;  // To make sure the uninitialized struct high - low < 0
 };
 
 struct db2split {
@@ -26,38 +28,40 @@ struct db2split {
     string splitprefix;
 };
 
+// The offset in prefix_merge is length to add before head,
+//            in prefix_expand is the actual key_offset
 struct prefixOptimization {
     // vector<Key_c> keys;
     int memusage = 0;
     char* base = NewPage();
     uint8_t *newsize = new uint8_t[kNumberBound];
     uint16_t *newoffset = new uint16_t[kNumberBound];
-    vector<PrefixMetaData> prefixMetadatas;
+    vector<PrefixMetaData> prefixes;
 };
 
-closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas, string n_p_i, int p_i_pos);
+closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas, const char* newprefix, int prefixlen, int p_i_pos);
 
 // Cost function is defined based on space requirements for prefix + suffixes
 // Cost must be minimized
-int calculate_prefix_merge_cost(vector<string> keys, vector<PrefixMetaData> segment, string prefix);
+int calculate_prefix_merge_cost(prefixOptimization *result, vector<PrefixMetaData> segment, Data *prefix);
 
 // Cost of optimization is calculated as size of prefixes + size of suffixes
-int calculate_cost_of_optimization(prefixOptimization result);
+// int calculate_cost_of_optimization(prefixOptimization result);
 
-// Find optimization with minimum cost to apply
-optimizationType find_prefix_optimization_to_apply(prefixOptimization prefixExpandResult,
-                                                   prefixOptimization prefixMergeResult);
+// // Find optimization with minimum cost to apply
+// optimizationType find_prefix_optimization_to_apply(prefixOptimization prefixExpandResult,
+//                                                    prefixOptimization prefixMergeResult);
 
-prefixMergeSegment find_best_segment_of_size_k(vector<Key_c> keys, closedRange closedRange, int k);
+prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, closedRange closedRange, int k);
 
-prefixMergeSegment find_best_segment_in_closed_range(vector<Key_c> keys, closedRange closedRange);
+prefixMergeSegment find_best_segment_in_closed_range(prefixOptimization *result, closedRange closedRange);
 
-void merge_prefixes_in_segment(vector<Key_c> &keys, vector<PrefixMetaData> &prefixmetadatas,
-                               prefixMergeSegment bestsegment, string newprefix);
+void merge_prefixes_in_segment(prefixOptimization *result,
+                               prefixMergeSegment bestsegment);
 
 prefixOptimization prefix_merge(DB2Node *node);
 
-int expand_prefixes_in_boundary(DB2Node *node, prefixOptimization &result, int index);
+int expand_prefixes_in_boundary(prefixOptimization *result, int index);
 
 prefixOptimization prefix_expand(DB2Node *node);
 

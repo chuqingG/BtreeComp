@@ -397,4 +397,5 @@ void printKeys_pkb(NodePkB *node, bool compressed);
     memusage += size[pos] + 1; \
 }
 
+#define GetKeyDB2ByPtr(resultptr, i) (char*)(resultptr->base + resultptr->newoffset[i])
 #define GetKeyDB2(result, i) (char*)(result.base + result.newoffset[i])

@@ -28,39 +28,39 @@ closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas,
     return closedRange;
 }
 
-int search_prefix_metadata(DB2Node *cursor, string_view key) {
-    // binary search
-    vector<PrefixMetaData> prefixMetadatas = cursor->prefixMetadata;
-    int low = 0;
-    int high = prefixMetadatas.size() - 1;
-    int prefixcmp = -1;
-    while (low <= high) {
-        int mid = low + (high - low) / 2;
-        PrefixMetaData midMetadata = prefixMetadatas.at(mid);
-        string prefix = midMetadata.prefix;
-        int prefixlen = prefix.length();
-        prefixcmp = key.compare(0, prefixlen, prefix);
-        int cmp = prefixcmp;
-        if (prefixcmp == 0) {
-            int prefixlow = midMetadata.low;
-            int prefixhigh = midMetadata.high;
-            int len = key.length() - prefixlen;
-            int lowcmp = key.compare(prefixlen, len, cursor->keys.at(prefixlow).value);
-            int highcmp = key.compare(prefixlen, len, cursor->keys.at(prefixhigh).value);
-            cmp = (lowcmp >= 0) ^ (highcmp <= 0) ? lowcmp : 0;
-        }
-        if (cmp == 0)
-            return mid;
-        else if (cmp > 0)
-            low = mid + 1;
-        else
-            high = mid - 1;
-    }
+// int search_prefix_metadata(DB2Node *cursor, string_view key) {
+//     // binary search
+//     vector<PrefixMetaData> prefixMetadatas = cursor->prefixMetadata;
+//     int low = 0;
+//     int high = prefixMetadatas.size() - 1;
+//     int prefixcmp = -1;
+//     while (low <= high) {
+//         int mid = low + (high - low) / 2;
+//         PrefixMetaData midMetadata = prefixMetadatas.at(mid);
+//         string prefix = midMetadata.prefix;
+//         int prefixlen = prefix.length();
+//         prefixcmp = key.compare(0, prefixlen, prefix);
+//         int cmp = prefixcmp;
+//         if (prefixcmp == 0) {
+//             int prefixlow = midMetadata.low;
+//             int prefixhigh = midMetadata.high;
+//             int len = key.length() - prefixlen;
+//             int lowcmp = key.compare(prefixlen, len, cursor->keys.at(prefixlow).value);
+//             int highcmp = key.compare(prefixlen, len, cursor->keys.at(prefixhigh).value);
+//             cmp = (lowcmp >= 0) ^ (highcmp <= 0) ? lowcmp : 0;
+//         }
+//         if (cmp == 0)
+//             return mid;
+//         else if (cmp > 0)
+//             low = mid + 1;
+//         else
+//             high = mid - 1;
+//     }
+// 
+//     return -1;
+// }
 
-    return -1;
-}
-
-int find_prefix_pos(DB2Node *cursor, const char* key, int keylen) {
+int find_prefix_pos(DB2Node *cursor, const char* key, int keylen, bool for_insert_or_nonleaf) {
     vector<PrefixMetaData> prefixes = cursor->prefixMetadata;
     int low = 0;
     int high = prefixes.size() - 1;
@@ -91,6 +91,8 @@ int find_prefix_pos(DB2Node *cursor, const char* key, int keylen) {
         else
             high = cur - 1;
     }
+    if(!for_insert_or_nonleaf)
+        return -1;
     // Not found ? 
     int prevcmp = -1;
     if (high >= 0 && high < prefixes.size()) {

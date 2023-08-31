@@ -7,7 +7,7 @@
 #include <cmath>
 #include "../include/util.h"
 #include "../tree/btree_std.cpp"
-// #include "../tree/btree_db2.cpp"
+#include "../tree/btree_db2.cpp"
 #include "../tree/btree_myisam.cpp"
 #include "../tree/btree_wt.cpp"
 #include "../tree/btree_pkb.cpp"
@@ -109,7 +109,6 @@ public:
 };
 
 
-#ifdef FINISHDEBUG
 class BPTreeDB2Benchmark : public Benchmark_c {
 public:
     ~BPTreeDB2Benchmark() override {
@@ -147,7 +146,7 @@ public:
 private:
     BPTreeDB2 *_tree;
 };
-#endif
+
 
 class BPTreeMyISAMBenchmark : public Benchmark {
 public:

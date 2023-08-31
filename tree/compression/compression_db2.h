@@ -65,8 +65,10 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index);
 
 prefixOptimization prefix_expand(DB2Node *node);
 
-int search_prefix_metadata(DB2Node *cursor, string_view key);
+// int search_prefix_metadata(DB2Node *cursor, string_view key);
 
-int find_insert_pos(DB2Node *node, const char* key, int keylen, int (*insertfunc)(DB2Node *, string_view, int, int, bool &), bool &equal);
+int find_prefix_pos(DB2Node *cursor, const char* key, int keylen, bool forinsert);
+
+// int find_insert_pos(DB2Node *node, const char* key, int keylen, int (*insertfunc)(DB2Node *, string_view, int, int, bool &), bool &equal);
 
 void apply_prefix_optimization(DB2Node *node);

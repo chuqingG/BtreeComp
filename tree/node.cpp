@@ -114,10 +114,11 @@ DB2Node::DB2Node() {
     next = nullptr;
     base = NewPage();
     memusage = 0;
-
+    ptr_cnt = 0;
     keys_size = new uint8_t[kNumberBound];
     std::memset(keys_size, 0, (kNumberBound) * sizeof(uint8_t));
     keys_offset = new uint16_t[kNumberBound];
+    prefixMetadata.push_back(PrefixMetaData("", 0, 0, 0));
 }
 
 

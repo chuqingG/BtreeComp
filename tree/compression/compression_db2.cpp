@@ -60,13 +60,13 @@ int search_prefix_metadata(DB2Node *cursor, string_view key) {
     return -1;
 }
 
-int insert_prefix_metadata(DB2Node *cursor, const char* key, int keylen) {
-    vector<PrefixMetaData> prefixMetadatas = cursor->prefixMetadata;
+int find_prefix_pos(DB2Node *cursor, const char* key, int keylen) {
+    vector<PrefixMetaData> prefixes = cursor->prefixMetadata;
     int low = 0;
-    int high = prefixMetadatas.size() - 1;
+    int high = prefixes.size() - 1;
     while (low <= high) {
         int cur = low + (high - low) / 2;
-        PrefixMetaData curMetadata = prefixMetadatas[cur];
+        PrefixMetaData curMetadata = prefixes[cur];
         Data *prefix = curMetadata.prefix;
         // int prefixlen = prefix.length();
         // int prefixcmp = key.compare(0, prefixlen, prefix);
@@ -77,8 +77,9 @@ int insert_prefix_metadata(DB2Node *cursor, const char* key, int keylen) {
             // int prefixhigh = midMetadata.high;
             // int len = keylen - prefix->size;
             keylen -= prefix->size;
-            int lowcmp = strncmp(key, GetKey(cursor, curMetadata.low), keylen);
-            int highcmp = strncmp(key, GetKey(cursor, curMetadata.high), keylen);
+            const char* key_cutoff = key + prefix->size;
+            int lowcmp = strncmp(key_cutoff, GetKey(cursor, curMetadata.low), keylen);
+            int highcmp = strncmp(key_cutoff, GetKey(cursor, curMetadata.high), keylen);
             // int lowcmp = key.compare(prefixlen, len, cursor->keys.at(prefixlow).value);
             // int highcmp = key.compare(prefixlen, len, cursor->keys.at(prefixhigh).value);
             cmp = (lowcmp >= 0) ^ (highcmp <= 0) ? lowcmp : 0;
@@ -92,88 +93,55 @@ int insert_prefix_metadata(DB2Node *cursor, const char* key, int keylen) {
     }
     // Not found ? 
     int prevcmp = -1;
-    if (high >= 0 && high < prefixMetadatas.size()) {
-        Data* prevprefix = prefixMetadatas[high].prefix;
+    if (high >= 0 && high < prefixes.size()) {
+        Data* prevprefix = prefixes[high].prefix;
         prevcmp = strncmp(key, prevprefix->addr(), prevprefix->size);
         // prevcmp = key.compare(0, prevprefix.length(), prevprefix);
     }
     return prevcmp == 0 ? high : high + 1;
 }
 
-int find_insert_pos(DB2Node *node, const char *key, int (*insertfunc)(DB2Node *, const char *, int, int, bool &), bool &equal) {
-    int metadatapos = insert_prefix_metadata(node, key);
-    int insertpos;
-    if (metadatapos == node->prefixMetadata.size()) {
-        insertpos = node->size;
-        PrefixMetaData newmetadata = PrefixMetaData("", insertpos, insertpos);
-        node->prefixMetadata.insert(node->prefixMetadata.begin() + metadatapos, newmetadata);
-    }
-    else {
-        PrefixMetaData metadata = node->prefixMetadata.at(metadatapos);
-        string prefix = metadata.prefix;
-        if (strncmp(key, prefix.data(), prefix.length())) {
-            // key = key.substr(prefix.length());
-            insertpos = insertfunc(node, key + prefix.length(), metadata.low, metadata.high, equal);
-            if (!equal)
-                node->prefixMetadata.at(metadatapos).high += 1;
-        }
-        else {
-            insertpos = node->prefixMetadata.at(metadatapos).low;
-            PrefixMetaData newmetadata = PrefixMetaData("", insertpos, insertpos);
-            node->prefixMetadata.insert(node->prefixMetadata.begin() + metadatapos, newmetadata);
-        }
-        if (!equal) {
-            for (uint32_t i = metadatapos + 1; i < node->prefixMetadata.size(); i++) {
-                node->prefixMetadata.at(i).low += 1;
-                node->prefixMetadata.at(i).high += 1;
-            }
-        }
-    }
-
-    return insertpos;
-}
-
-db2split perform_split(DB2Node *node, int split, bool isleaf) {
-    vector<PrefixMetaData> metadatas = node->prefixMetadata;
-    vector<PrefixMetaData> leftmetadatas;
-    vector<PrefixMetaData> rightmetadatas;
-    PrefixMetaData leftmetadata, rightmetadata;
-    int rightindex = 0;
-    string splitprefix;
-    db2split result;
-    for (uint32_t i = 0; i < metadatas.size(); i++) {
-        if (split >= metadatas.at(i).low && split <= metadatas.at(i).high) {
-            splitprefix = metadatas.at(i).prefix;
-
-            if (split != metadatas.at(i).low) {
-                leftmetadata = PrefixMetaData(metadatas.at(i).prefix, metadatas.at(i).low, split - 1);
-                leftmetadatas.push_back(leftmetadata);
-            }
-
-            int rsize = isleaf ? metadatas.at(i).high - split : metadatas.at(i).high - (split + 1);
-            if (rsize >= 0) {
-                rightmetadata = PrefixMetaData(metadatas.at(i).prefix, rightindex, rightindex + rsize);
-                rightindex = rightindex + rsize + 1;
-                rightmetadatas.push_back(rightmetadata);
-            }
-        }
-        else if (split <= metadatas.at(i).low) {
-            int size = metadatas.at(i).high - metadatas.at(i).low;
-            rightmetadata = PrefixMetaData(metadatas.at(i).prefix,
-                                           rightindex, rightindex + size);
-            rightindex = rightindex + size + 1;
-            rightmetadatas.push_back(rightmetadata);
-        }
-        else {
-            leftmetadata = metadatas.at(i);
-            leftmetadatas.push_back(leftmetadata);
-        }
-    }
-    result.leftmetadatas = leftmetadatas;
-    result.rightmetadatas = rightmetadatas;
-    result.splitprefix = splitprefix;
-    return result;
-}
+// db2split perform_split(DB2Node *node, int split, bool isleaf) {
+//     vector<PrefixMetaData> metadatas = node->prefixMetadata;
+//     vector<PrefixMetaData> leftmetadatas;
+//     vector<PrefixMetaData> rightmetadatas;
+//     PrefixMetaData leftmetadata, rightmetadata;
+//     int rightindex = 0;
+//     string splitprefix;
+//     db2split result;
+//     for (uint32_t i = 0; i < metadatas.size(); i++) {
+//         if (split >= metadatas.at(i).low && split <= metadatas.at(i).high) {
+//             splitprefix = metadatas.at(i).prefix;
+// 
+//             if (split != metadatas.at(i).low) {
+//                 leftmetadata = PrefixMetaData(metadatas.at(i).prefix, metadatas.at(i).low, split - 1);
+//                 leftmetadatas.push_back(leftmetadata);
+//             }
+// 
+//             int rsize = isleaf ? metadatas.at(i).high - split : metadatas.at(i).high - (split + 1);
+//             if (rsize >= 0) {
+//                 rightmetadata = PrefixMetaData(metadatas.at(i).prefix, rightindex, rightindex + rsize);
+//                 rightindex = rightindex + rsize + 1;
+//                 rightmetadatas.push_back(rightmetadata);
+//             }
+//         }
+//         else if (split <= metadatas.at(i).low) {
+//             int size = metadatas.at(i).high - metadatas.at(i).low;
+//             rightmetadata = PrefixMetaData(metadatas.at(i).prefix,
+//                                            rightindex, rightindex + size);
+//             rightindex = rightindex + size + 1;
+//             rightmetadatas.push_back(rightmetadata);
+//         }
+//         else {
+//             leftmetadata = metadatas.at(i);
+//             leftmetadatas.push_back(leftmetadata);
+//         }
+//     }
+//     result.leftmetadatas = leftmetadatas;
+//     result.rightmetadatas = rightmetadatas;
+//     result.splitprefix = splitprefix;
+//     return result;
+// }
 
 // Cost of optimization is calculated as size of prefixes + size of suffixes
 // int calculate_cost_of_optimization(prefixOptimization result) {

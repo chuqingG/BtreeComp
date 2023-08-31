@@ -25,7 +25,7 @@ struct closedRange {
 struct db2split {
     vector<PrefixMetaData> leftmetadatas;
     vector<PrefixMetaData> rightmetadatas;
-    string splitprefix;
+    Data* splitprefix;
 };
 
 // The offset in prefix_merge is length to add before head,
@@ -65,10 +65,8 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index);
 
 prefixOptimization prefix_expand(DB2Node *node);
 
-int insert_prefix_metadata(DB2Node *cursor, string_view key);
-
 int search_prefix_metadata(DB2Node *cursor, string_view key);
 
-int find_insert_pos(DB2Node *node, string &key, int (*insertfunc)(DB2Node *, string_view, int, int, bool &), bool &equal);
+int find_insert_pos(DB2Node *node, const char* key, int keylen, int (*insertfunc)(DB2Node *, string_view, int, int, bool &), bool &equal);
 
 void apply_prefix_optimization(DB2Node *node);

@@ -143,6 +143,7 @@ public:
     uint8_t *keys_size;
     int memusage;
     vector<DB2Node *> ptrs;
+    uint8_t ptr_cnt;
     DB2Node *prev; // Prev node pointer
     DB2Node *next; // Next node pointer
     vector<PrefixMetaData> prefixMetadata;

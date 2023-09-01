@@ -333,6 +333,16 @@ void printKeys_pkb(NodePkB *node, bool compressed);
         node->keys_offset = newoffset;     \
     }
 
+#define CopySize(node, newsize) \ 
+{\
+    memcpy(node->keys_size, newsize, sizeof(uint8_t) * kNumberBound); \
+}
+
+#define CopyOffset(node, newoffset) \
+{                             \
+    memcpy(node->keys_offset, newoffset, sizeof(uint16_t) * kNumberBound); \
+}
+
 #define GetKey(nptr, idx) (char *)(nptr->base + nptr->keys_offset[idx])
 
 #define PageTail(nptr) nptr->base + nptr->memusage

@@ -284,6 +284,7 @@ void BPTreeDB2::do_split_node(DB2Node* node, DB2Node *right, int splitpos, bool 
     right->IS_LEAF = isleaf;
 
     node->size = splitpos;
+    node->memusage = l_usage;
     node->prefixMetadata = leftmetadatas;
     UpdateBase(node, l_base);
     UpdateOffset(node, l_idx);
@@ -556,6 +557,8 @@ DB2Node *BPTreeDB2::search_leaf_node_for_insert(DB2Node *searchroot, const char 
                                         currentMetadata.low, currentMetadata.high, equal);
             }
         }
+        if(pos >= cursor->ptrs.size() || pos < 0)
+            cout << "wrong pos" << endl;
         cursor = cursor->ptrs[pos];
     }
     return cursor;

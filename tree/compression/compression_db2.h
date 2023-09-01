@@ -30,14 +30,32 @@ struct db2split {
 
 // The offset in prefix_merge is length to add before head,
 //            in prefix_expand is the actual key_offset
-struct prefixOptimization {
-    // vector<Key_c> keys;
-    int memusage = 0;
-    char* base = NewPage();
-    uint8_t *newsize = new uint8_t[kNumberBound];
-    uint16_t *newoffset = new uint16_t[kNumberBound];
+class prefixOptimization {
+public:
+    int memusage;
+    char *base;
+    uint8_t *newsize;
+    uint16_t *newoffset;
     vector<PrefixMetaData> prefixes;
+
+    prefixOptimization();
+    ~prefixOptimization();
+
 };
+// struct prefixOptimization {
+//     // change to a class
+//     int memusage = 0;
+//     char* base = NewPage();
+//     uint8_t *newsize = new uint8_t[kNumberBound];
+//     uint16_t *newoffset = new uint16_t[kNumberBound];
+//     vector<PrefixMetaData> prefixes;
+
+//     ~prefixOptimization(){
+//         delete base;
+//         delete newsize;
+//         delete newoffset;
+//     }
+// };
 
 closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas, const char* newprefix, int prefixlen, int p_i_pos);
 
@@ -59,11 +77,11 @@ prefixMergeSegment find_best_segment_in_closed_range(prefixOptimization *result,
 void merge_prefixes_in_segment(prefixOptimization *result,
                                prefixMergeSegment bestsegment);
 
-prefixOptimization prefix_merge(DB2Node *node);
+prefixOptimization* prefix_merge(DB2Node *node);
 
 int expand_prefixes_in_boundary(prefixOptimization *result, int index);
 
-prefixOptimization prefix_expand(DB2Node *node);
+prefixOptimization* prefix_expand(DB2Node *node);
 
 // int search_prefix_metadata(DB2Node *cursor, string_view key);
 

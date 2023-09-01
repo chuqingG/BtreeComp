@@ -358,7 +358,7 @@ void printKeys_db2(DB2Node *node, bool compressed) {
 void printKeys_db2(DB2Node *node, bool compressed) {
     for (uint32_t i = 0; i < node->prefixMetadata.size(); i++) {
         if (compressed) {
-            cout << "Prefix " << node->prefixMetadata.at(i).prefix << ": ";
+            cout << "Prefix " << node->prefixMetadata[i].prefix->addr() << ": ";
         }
         for (int l = node->prefixMetadata.at(i).low;
              l <= node->prefixMetadata.at(i).high; l++) {
@@ -366,7 +366,7 @@ void printKeys_db2(DB2Node *node, bool compressed) {
             if(compressed){
                 cout << GetKey(node, l) << ",";
             }else{
-                cout << node->prefixMetadata[i].prefix << GetKey(node, l) << ",";
+                cout << node->prefixMetadata[i].prefix->addr() << GetKey(node, l) << ",";
             }
         }
     }

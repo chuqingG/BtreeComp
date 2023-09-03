@@ -108,7 +108,6 @@ public:
     }
 };
 
-
 class BPTreeDB2Benchmark : public Benchmark_c {
 public:
     ~BPTreeDB2Benchmark() override {
@@ -125,11 +124,13 @@ public:
     }
 
     void Insert(const std::vector<char *> &values) override {
-        for (uint32_t i = 0; i < values.size(); ++i){
+        for (uint32_t i = 0; i < values.size(); ++i) {
             _tree->insert(values.at(i));
-            vector<bool> flag(i + 1);
-            _tree->printTree(_tree->getRoot(), flag, true);
+            // vector<bool> flag(i + 1);
+            // _tree->printTree(_tree->getRoot(), flag, true);
         }
+        vector<bool> flag(values.size());
+        _tree->printTree(_tree->getRoot(), flag, true);
     }
 
     bool Search(const std::vector<char *> &values) override {
@@ -149,7 +150,6 @@ public:
 private:
     BPTreeDB2 *_tree;
 };
-
 
 class BPTreeMyISAMBenchmark : public Benchmark {
 public:

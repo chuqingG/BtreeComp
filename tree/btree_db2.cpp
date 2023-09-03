@@ -29,7 +29,7 @@ int BPTreeDB2::search(const char *key) {
     PrefixMetaData pfx = leaf->prefixMetadata[metadatapos];
     int prefixlen = pfx.prefix->size;
     // string_view compressed_key = key.substr(prefix.length());
-    return search_in_leaf(leaf, key + prefixlen, keylen - prefixlen,pfx.low, pfx.high);
+    return search_in_leaf(leaf, key + prefixlen, keylen - prefixlen, pfx.low, pfx.high);
 }
 
 void BPTreeDB2::insert(char *x) {
@@ -41,21 +41,21 @@ void BPTreeDB2::insert(char *x) {
         _root->keys.push_back(Key_c(x, rid));
         _root->size = 1;
 #else
-        InsertKey(_root, 0, x, keylen);  
+        InsertKey(_root, 0, x, keylen);
 #endif
         _root->IS_LEAF = true;
         // PrefixMetaData metadata = PrefixMetaData("", 0, 0, 0);
         // _root->prefixMetadata.push_back(metadata);
         return;
     }
-    DB2Node* search_path[max_level];
+    DB2Node *search_path[max_level];
     int path_level = 0;
     DB2Node *leaf = search_leaf_node_for_insert(_root, x, keylen, search_path, path_level);
     insert_leaf(leaf, search_path, path_level, x, keylen);
 }
 
-void BPTreeDB2::insert_nonleaf(DB2Node *node, DB2Node **path, 
-                                int parentlevel, splitReturnDB2 childsplit) {
+void BPTreeDB2::insert_nonleaf(DB2Node *node, DB2Node **path,
+                               int parentlevel, splitReturnDB2 childsplit) {
     if (check_split_condition(node, childsplit.promotekey->size)) {
         apply_prefix_optimization(node);
     }
@@ -67,7 +67,7 @@ void BPTreeDB2::insert_nonleaf(DB2Node *node, DB2Node **path,
         splitReturnDB2 currsplit = split_nonleaf(node, parentlevel, childsplit);
         if (node == _root) {
             DB2Node *newRoot = new DB2Node;
-            
+
             InsertNode(newRoot, 0, currsplit.left);
             InsertKey(newRoot, 0, currsplit.promotekey->addr(), currsplit.promotekey->size);
             InsertNode(newRoot, 1, currsplit.right);
@@ -88,10 +88,10 @@ void BPTreeDB2::insert_nonleaf(DB2Node *node, DB2Node **path,
     else {
         // string promotekey = childsplit.promotekey;
         bool equal = false;
-        int insertpos = insert_prefix_and_key(node, 
-                                childsplit.promotekey->addr(), 
-                                childsplit.promotekey->size, equal);
-        
+        int insertpos = insert_prefix_and_key(node,
+                                              childsplit.promotekey->addr(),
+                                              childsplit.promotekey->size, equal);
+
         // int rid = rand();
         // vector<Key_c> allkeys;
         // for (int i = 0; i < insertpos; i++) {
@@ -139,7 +139,6 @@ void BPTreeDB2::insert_leaf(DB2Node *leaf, DB2Node **path, int path_level, char 
             newRoot->IS_LEAF = false;
             _root = newRoot;
             max_level++;
-            
         }
         else {
             DB2Node *parent = path[path_level - 1];
@@ -149,7 +148,7 @@ void BPTreeDB2::insert_leaf(DB2Node *leaf, DB2Node **path, int path_level, char 
     else {
         int insertpos;
         bool equal = false;
-        // The key was concated inside it 
+        // The key was concated inside it
         insertpos = insert_prefix_and_key(leaf, key, keylen, equal);
 #ifndef DUPKEY
         // Nothing needed
@@ -191,8 +190,8 @@ int BPTreeDB2::insert_prefix_and_key(DB2Node *node, const char *key, int keylen,
         PrefixMetaData metadata = node->prefixMetadata[pfx_pos];
         auto prefix = metadata.prefix;
         if (strncmp(key, prefix->addr(), prefix->size) == 0) {
-            insertpos = search_insert_pos(node, key + prefix->size, keylen - prefix->size, 
-                                            metadata.low, metadata.high, equal);
+            insertpos = search_insert_pos(node, key + prefix->size, keylen - prefix->size,
+                                          metadata.low, metadata.high, equal);
             if (!equal)
                 node->prefixMetadata[pfx_pos].high += 1;
         }
@@ -208,20 +207,19 @@ int BPTreeDB2::insert_prefix_and_key(DB2Node *node, const char *key, int keylen,
             }
         }
     }
-    if(!equal){
+    if (!equal) {
         int pfx_len = node->prefixMetadata[pfx_pos].prefix->size;
         InsertKey(node, insertpos, key + pfx_len, keylen - pfx_len);
     }
     return insertpos;
 }
 
-
 int BPTreeDB2::split_point(DB2Node *node) {
     int bestsplit = node->size / 2;
     return bestsplit;
 }
 
-void BPTreeDB2::do_split_node(DB2Node* node, DB2Node *right, int splitpos, bool isleaf){
+void BPTreeDB2::do_split_node(DB2Node *node, DB2Node *right, int splitpos, bool isleaf) {
     // split node in splitpos, write to node-right
     // node: [0, split), right: [split, node->size)
     vector<PrefixMetaData> metadatas = node->prefixMetadata;
@@ -230,7 +228,7 @@ void BPTreeDB2::do_split_node(DB2Node* node, DB2Node *right, int splitpos, bool 
     PrefixMetaData leftmetadata, rightmetadata;
     int rightindex = 0;
     Data *splitprefix;
-    
+
     // split the metadata
     for (auto pfx : metadatas) {
         // split occurs within this pfx
@@ -238,13 +236,13 @@ void BPTreeDB2::do_split_node(DB2Node* node, DB2Node *right, int splitpos, bool 
             splitprefix = pfx.prefix;
 
             if (splitpos != pfx.low) {
-                leftmetadata = PrefixMetaData(pfx.prefix->addr(),pfx.prefix->size, pfx.low, splitpos - 1);
+                leftmetadata = PrefixMetaData(pfx.prefix->addr(), pfx.prefix->size, pfx.low, splitpos - 1);
                 leftmetadatas.push_back(leftmetadata);
             }
 
             int rsize = isleaf ? pfx.high - splitpos : pfx.high - (splitpos + 1);
             if (rsize >= 0) {
-                rightmetadata = PrefixMetaData(pfx.prefix->addr(),pfx.prefix->size, rightindex, rightindex + rsize);
+                rightmetadata = PrefixMetaData(pfx.prefix->addr(), pfx.prefix->size, rightindex, rightindex + rsize);
                 rightindex = rightindex + rsize + 1;
                 rightmetadatas.push_back(rightmetadata);
             }
@@ -262,24 +260,26 @@ void BPTreeDB2::do_split_node(DB2Node* node, DB2Node *right, int splitpos, bool 
             leftmetadatas.push_back(pfx);
         }
     }
-    
+
     // Split the keys to the new page
 
     char *l_base = NewPage();
-    
+
     int l_usage = 0, r_usage = 0;
-    uint16_t* l_idx = new uint16_t[kNumberBound];
-    uint8_t* l_size = new uint8_t[kNumberBound];
+    uint16_t *l_idx = new uint16_t[kNumberBound];
+    uint8_t *l_size = new uint8_t[kNumberBound];
     // l_size copy can be omitted, add for simplier codes
     CopyKeyToPage(node, 0, splitpos, l_base, l_usage, l_idx, l_size);
-    if(isleaf){
-        CopyKeyToPage(node, splitpos, node->size, 
-                right->base, right->memusage, right->keys_offset, right->keys_size);
-    } else{
-        CopyKeyToPage(node, splitpos + 1, node->size, 
-                right->base, right->memusage, right->keys_offset, right->keys_size);
+    if (isleaf) {
+        CopyKeyToPage(node, splitpos, node->size,
+                      right->base, right->memusage, right->keys_offset, right->keys_size);
+        right->size = node->size - splitpos;
     }
-    right->size = node->size - splitpos;
+    else {
+        CopyKeyToPage(node, splitpos + 1, node->size,
+                      right->base, right->memusage, right->keys_offset, right->keys_size);
+        right->size = node->size - splitpos - 1;
+    }
     right->prefixMetadata = rightmetadatas;
     right->IS_LEAF = isleaf;
 
@@ -297,7 +297,7 @@ void BPTreeDB2::do_split_node(DB2Node* node, DB2Node *right, int splitpos, bool 
     right->next = next;
     if (next)
         next->prev = right;
-    
+
     return;
 }
 
@@ -307,9 +307,9 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(DB2Node *node, int pos, splitReturnDB2 c
     // string promotekey = childsplit.promotekey;
 
     bool equal = false;
-    int insertpos = insert_prefix_and_key(node, 
-                            childsplit.promotekey->addr(), 
-                            childsplit.promotekey->size, equal);
+    int insertpos = insert_prefix_and_key(node,
+                                          childsplit.promotekey->addr(),
+                                          childsplit.promotekey->size, equal);
     InsertNode(node, insertpos + 1, childsplit.right);
     // vector<Key_c> allkeys;
     // vector<DB2Node *> allptrs;
@@ -353,6 +353,8 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(DB2Node *node, int pos, splitReturnDB2 c
 
     // node->size = leftkeys.size();
     // node->keys = leftkeys;
+    right->ptr_cnt = node->ptr_cnt - (split + 1);
+    node->ptr_cnt = split + 1;
     node->ptrs = leftptrs;
 
     // right->size = rightkeys.size();
@@ -462,8 +464,8 @@ bool BPTreeDB2::check_split_condition(DB2Node *node, int keylen) {
     // }
     // return node->size > 1 && currspace >= MAX_SIZE_IN_BYTES;
 
-    //Just simplify, may need to consider the prefix size
-    if(node->memusage + 2 * keylen >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
+    // Just simplify, may need to consider the prefix size
+    if (node->memusage + 2 * keylen >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
     return false;
 #else
@@ -471,8 +473,8 @@ bool BPTreeDB2::check_split_condition(DB2Node *node, int keylen) {
 #endif
 }
 
-int BPTreeDB2::search_insert_pos(DB2Node *cursor, const char *key, int keylen, 
-                                    int low, int high, bool &equal) {
+int BPTreeDB2::search_insert_pos(DB2Node *cursor, const char *key, int keylen,
+                                 int low, int high, bool &equal) {
     // Search pos in node when insert, or search non-leaf node when search
     while (low <= high) {
         int mid = low + (high - low) / 2;
@@ -508,7 +510,7 @@ DB2Node *BPTreeDB2::search_leaf_node(DB2Node *searchroot, const char *key, int k
         }
         else {
             PrefixMetaData currentMetadata = cursor->prefixMetadata[metadatapos];
-            Data* prefix = currentMetadata.prefix;
+            Data *prefix = currentMetadata.prefix;
             // int prefixcmp = key.compare(0, prefix.length(), prefix);
             int prefixcmp = strncmp(key, prefix->addr(), prefix->size);
             if (prefixcmp != 0) {
@@ -516,8 +518,8 @@ DB2Node *BPTreeDB2::search_leaf_node(DB2Node *searchroot, const char *key, int k
             }
             else {
                 // searchkey = key.substr(prefix.length());
-                pos = search_insert_pos(cursor, key + prefix->size, keylen - prefix->size, 
-                                currentMetadata.low, currentMetadata.high, equal);
+                pos = search_insert_pos(cursor, key + prefix->size, keylen - prefix->size,
+                                        currentMetadata.low, currentMetadata.high, equal);
             }
         }
         cursor = cursor->ptrs.at(pos);
@@ -553,11 +555,11 @@ DB2Node *BPTreeDB2::search_leaf_node_for_insert(DB2Node *searchroot, const char 
             }
             else {
                 // searchkey = key.substr(prefix.length());
-                pos = search_insert_pos(cursor, key + prefix->size, keylen - prefix->size, 
+                pos = search_insert_pos(cursor, key + prefix->size, keylen - prefix->size,
                                         currentMetadata.low, currentMetadata.high, equal);
             }
         }
-        if(pos >= cursor->ptrs.size() || pos < 0)
+        if (pos >= cursor->ptrs.size() || pos < 0)
             cout << "wrong pos" << endl;
         cursor = cursor->ptrs[pos];
     }

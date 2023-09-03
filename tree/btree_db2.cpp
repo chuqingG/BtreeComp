@@ -219,9 +219,10 @@ int BPTreeDB2::split_point(DB2Node *node) {
     return bestsplit;
 }
 
-void BPTreeDB2::do_split_node(DB2Node *node, DB2Node *right, int splitpos, bool isleaf) {
+Data *BPTreeDB2::do_split_node(DB2Node *node, DB2Node *right, int splitpos, bool isleaf) {
     // split node in splitpos, write to node-right
     // node: [0, split), right: [split, node->size)
+    // return the prefix at splitpoint
     vector<PrefixMetaData> metadatas = node->prefixMetadata;
     vector<PrefixMetaData> leftmetadatas;
     vector<PrefixMetaData> rightmetadatas;
@@ -298,7 +299,7 @@ void BPTreeDB2::do_split_node(DB2Node *node, DB2Node *right, int splitpos, bool 
     if (next)
         next->prev = right;
 
-    return;
+    return splitprefix;
 }
 
 splitReturnDB2 BPTreeDB2::split_nonleaf(DB2Node *node, int pos, splitReturnDB2 childsplit) {
@@ -333,9 +334,10 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(DB2Node *node, int pos, splitReturnDB2 c
 
     int split = split_point(node);
     Data splitkey = Data(GetKey(node, split), node->keys_size[split]);
+
     // cout << "Best Split point " << split << " size " << allkeys.size() << endl;
 
-    do_split_node(node, right, split, false);
+    Data *split_prefix = do_split_node(node, right, split, false);
 
     // vector<Key_c> leftkeys;
     // vector<Key_c> rightkeys;
@@ -369,11 +371,11 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(DB2Node *node, int pos, splitReturnDB2 c
     // if (next)
     //     next->prev = right;
     // node->next = right;
-    PrefixMetaData rf_pfx = right->prefixMetadata[0];
-    int split_len = rf_pfx.prefix->size + splitkey.size;
+
+    int split_len = split_prefix->size + splitkey.size;
     char *split_decomp = new char[split_len + 1];
-    strncpy(split_decomp, rf_pfx.prefix->addr(), rf_pfx.prefix->size);
-    strcpy(split_decomp + rf_pfx.prefix->size, splitkey.addr());
+    strncpy(split_decomp, split_prefix->addr(), split_prefix->size);
+    strcpy(split_decomp + split_prefix->size, splitkey.addr());
 
     newsplit.promotekey = new Data(split_decomp, split_len);
     newsplit.left = node;

@@ -381,14 +381,14 @@ prefixOptimization *prefix_merge(DB2Node *node) {
     }
     // result.keys = keysCopy;
     // result.prefixMetadatas = metadataCopy;
-    int prefix_count = 0;
+    // int prefix_count = 0;
     for (auto pfx : result->prefixes) {
         result->memusage += pfx.prefix->size;
-        prefix_count += pfx.prefix->size;
+        // prefix_count += pfx.prefix->size;
         for (int i = pfx.low; i <= pfx.high; i++)
             result->memusage += result->newsize[i];
     }
-    cout << "merge: pfx: " << prefix_count << ", total:" << result->memusage << endl;
+    // cout << "merge: pfx: " << prefix_count << ", total:" << result->memusage << endl;
     return result;
 }
 
@@ -512,7 +512,7 @@ prefixOptimization *prefix_expand(DB2Node *node) {
         for (int i = pfx.low; i <= pfx.high; i++)
             result->memusage += result->newsize[i];
     }
-    cout << "expand: pfx: " << prefix_count << ", total:" << result->memusage << endl;
+    // cout << "expand: pfx: " << prefix_count << ", total:" << result->memusage << endl;
     return result;
 }
 
@@ -582,6 +582,7 @@ void apply_prefix_optimization(DB2Node *node) {
 
                 delete key_i;
             }
+            // TODO: After search is right, can change this to >=
             else if (curprefix_len == prevprefix_len) {
                 // Add to the current prefix
                 // Key_c key = node->keys.at(i);

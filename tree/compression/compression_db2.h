@@ -69,9 +69,9 @@ int calculate_prefix_merge_cost(prefixOptimization *result, vector<PrefixMetaDat
 // optimizationType find_prefix_optimization_to_apply(prefixOptimization prefixExpandResult,
 //                                                    prefixOptimization prefixMergeResult);
 
-prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, closedRange closedRange, int k);
+prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, closedRange *closedRange, int k);
 
-prefixMergeSegment find_best_segment_in_closed_range(prefixOptimization *result, closedRange closedRange);
+prefixMergeSegment find_best_segment_in_closed_range(prefixOptimization *result, closedRange *closedRange);
 
 void merge_prefixes_in_segment(prefixOptimization *result,
                                prefixMergeSegment *bestsegment);

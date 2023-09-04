@@ -125,12 +125,12 @@ PrefixMetaData::PrefixMetaData(const char *str, int len, int l, int h) {
 //     high = old.high;
 //     prefix = new Data(old.prefix->addr(), old.prefix->size);
 // }
-// PrefixMetaData &PrefixMetaData::operator=(const PrefixMetaData &old) {
-//     cout << "calling pfx copy" << endl;
-//     low = old.low;
-//     high = old.high;
-//     prefix = new Data(old.prefix->addr(), old.prefix->size);
-// }
+PrefixMetaData &PrefixMetaData::operator=(const PrefixMetaData &old) {
+    // cout << "calling pfx copy" << endl;
+    low = old.low;
+    high = old.high;
+    prefix = new Data(old.prefix->addr(), old.prefix->size);
+}
 // PrefixMetaData::~PrefixMetaData() {
 //     delete prefix;
 // }

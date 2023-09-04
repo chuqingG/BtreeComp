@@ -125,7 +125,7 @@ public:
     PrefixMetaData();
     PrefixMetaData(const char *str, int len, int l, int h);
     // PrefixMetaData(const PrefixMetaData &p);
-    // PrefixMetaData &operator=(const PrefixMetaData &);
+    PrefixMetaData &operator=(const PrefixMetaData &);
     // ~PrefixMetaData();
 };
 

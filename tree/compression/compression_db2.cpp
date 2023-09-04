@@ -74,13 +74,13 @@ closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas,
 // }
 
 int find_prefix_pos(DB2Node *cursor, const char *key, int keylen, bool for_insert_or_nonleaf) {
-    vector<PrefixMetaData> prefixes = cursor->prefixMetadata;
+    // vector<PrefixMetaData> prefixes = cursor->prefixMetadata;
     int low = 0;
-    int high = prefixes.size() - 1;
+    int high = cursor->prefixMetadata.size() - 1;
     while (low <= high) {
         int cur = low + (high - low) / 2;
-        PrefixMetaData curMetadata = prefixes[cur];
-        Data *prefix = curMetadata.prefix;
+        // PrefixMetaData curMetadata = cursor->prefixMetadata[cur];
+        Data *prefix = cursor->prefixMetadata[cur].prefix;
         // int prefixlen = prefix.length();
         // int prefixcmp = key.compare(0, prefixlen, prefix);
         int prefixcmp = strncmp(key, prefix->addr(), prefix->size);
@@ -91,8 +91,8 @@ int find_prefix_pos(DB2Node *cursor, const char *key, int keylen, bool for_inser
             // int len = keylen - prefix->size;
             keylen -= prefix->size;
             const char *key_cutoff = key + prefix->size;
-            int lowcmp = strncmp(key_cutoff, GetKey(cursor, curMetadata.low), keylen);
-            int highcmp = strncmp(key_cutoff, GetKey(cursor, curMetadata.high), keylen);
+            int lowcmp = strncmp(key_cutoff, GetKey(cursor, cursor->prefixMetadata[cur].low), keylen);
+            int highcmp = strncmp(key_cutoff, GetKey(cursor, cursor->prefixMetadata[cur].high), keylen);
             // int lowcmp = key.compare(prefixlen, len, cursor->keys.at(prefixlow).value);
             // int highcmp = key.compare(prefixlen, len, cursor->keys.at(prefixhigh).value);
             cmp = (lowcmp >= 0) ^ (highcmp <= 0) ? lowcmp : 0;
@@ -108,8 +108,8 @@ int find_prefix_pos(DB2Node *cursor, const char *key, int keylen, bool for_inser
         return -1;
     // Not found ?
     int prevcmp = -1;
-    if (high >= 0 && high < prefixes.size()) {
-        Data *prevprefix = prefixes[high].prefix;
+    if (high >= 0 && high < cursor->prefixMetadata.size()) {
+        Data *prevprefix = cursor->prefixMetadata[high].prefix;
         prevcmp = strncmp(key, prevprefix->addr(), prevprefix->size);
         // prevcmp = key.compare(0, prevprefix.length(), prevprefix);
     }
@@ -193,7 +193,7 @@ int calculate_prefix_merge_cost(prefixOptimization *result, vector<PrefixMetaDat
     return cost;
 }
 
-prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, closedRange closedRange, int k) {
+prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, closedRange *closedRange, int k) {
     prefixMergeSegment result_seg;
     // vector<PrefixMetaData> bestsegment;
     vector<PrefixMetaData> currsegment;
@@ -204,8 +204,8 @@ prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, close
     int currcost = 0;
     int firstindex = 0;
     // int bestindex = 0;
-    for (int i = closedRange.pos_low; i <= closedRange.pos_high; i++) {
-        int idx = i - closedRange.pos_low;
+    for (int i = closedRange->pos_low; i <= closedRange->pos_high; i++) {
+        int idx = i - closedRange->pos_low;
         if (idx % k == 0) {
             currcost = calculate_prefix_merge_cost(result, currsegment, &currprefix);
             firstindex = i;
@@ -215,18 +215,18 @@ prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, close
                 result_seg.cost = currcost;
                 result_seg.firstindex = firstindex;
             }
-            currprefix = Data(closedRange.prefixMetadatas[idx].prefix->addr(),
-                              closedRange.prefixMetadatas[idx].prefix->size);
+            currprefix = Data(closedRange->prefixMetadatas[idx].prefix->addr(),
+                              closedRange->prefixMetadatas[idx].prefix->size);
             currsegment.clear();
         }
         else {
             // Only need to update the length?
             // currprefix->size = get_common_prefix_len(currprefix->addr(), closedRange.prefixMetadatas[idx].prefix->addr(),
             //                                          currprefix->size, closedRange.prefixMetadatas[idx].prefix->size);
-            currprefix.size = get_common_prefix_len(currprefix.addr(), closedRange.prefixMetadatas[idx].prefix->addr(),
-                                                    currprefix.size, closedRange.prefixMetadatas[idx].prefix->size);
+            currprefix.size = get_common_prefix_len(currprefix.addr(), closedRange->prefixMetadatas[idx].prefix->addr(),
+                                                    currprefix.size, closedRange->prefixMetadatas[idx].prefix->size);
         }
-        currsegment.push_back(closedRange.prefixMetadatas[idx]);
+        currsegment.push_back(closedRange->prefixMetadatas[idx]);
     }
     // for (int i = 0; i < closedRange.prefixMetadatas.size(); i++) {
     //     if (i % k == 0) {
@@ -263,11 +263,11 @@ prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, close
     return result_seg;
 }
 
-prefixMergeSegment find_best_segment_in_closed_range(prefixOptimization *result, closedRange closedRange) {
+prefixMergeSegment find_best_segment_in_closed_range(prefixOptimization *result, closedRange *closedRange) {
     prefixMergeSegment bestsegment;
     int bestcost = INT32_MAX;
     // Start searching for segments of size 2
-    for (int i = 2; i <= closedRange.prefixMetadatas.size(); i++) {
+    for (int i = 2; i <= closedRange->prefixMetadatas.size(); i++) {
         prefixMergeSegment segment = find_best_segment_of_size_k(result, closedRange, i);
         if (segment.cost < bestcost) {
             bestcost = segment.cost;
@@ -297,7 +297,7 @@ void merge_prefixes_in_segment(prefixOptimization *result,
             // Or we only keep the keysize, don't modify the base anymore
             int extra_len = s.prefix->size - bestsegment->prefix.size;
             result->newsize[i] += extra_len;
-            result->newoffset[i] = extra_len;
+            result->newoffset[i] += extra_len;
         }
     }
     // for (uint32_t i = 0; i < bestsegment.segment.size(); i++) {
@@ -378,7 +378,7 @@ prefixOptimization *prefix_merge(DB2Node *node) {
             //     numremoved = bestSegment.segment.size();
             // }
             if (prefixlen < p_prev.prefix->size) {
-                prefixMergeSegment bestSegment = find_best_segment_in_closed_range(result, closedRange);
+                prefixMergeSegment bestSegment = find_best_segment_in_closed_range(result, &closedRange);
                 merge_prefixes_in_segment(result, &bestSegment);
                 numremoved = bestSegment.segment.size();
             }
@@ -524,17 +524,6 @@ prefixOptimization *prefix_expand(DB2Node *node) {
     return result;
 }
 
-// // Find optimization with minimum cost to apply
-// optimizationType find_prefix_optimization_to_apply(prefixOptimization prefixExpandResult,
-//                                                    prefixOptimization prefixMergeResult) {
-//     int prefixExpandCost = calculate_cost_of_optimization(prefixExpandResult);
-//     int prefixMergeCost = calculate_cost_of_optimization(prefixMergeResult);
-//     if (prefixMergeCost < prefixExpandCost) {
-//         return prefixmerge;
-//     }
-//     return prefixexpand;
-// }
-
 void apply_prefix_optimization(DB2Node *node) {
     if (node->prefixMetadata.size() == 1) {
         // Only one common prefix, so prefix is the only prefix
@@ -546,32 +535,15 @@ void apply_prefix_optimization(DB2Node *node) {
         uint16_t *newoffset = new uint16_t[kNumberBound];
         int memusage = 0;
 
-        // string prevkey = nodeprefix + node->keys.at(0).value;
-        // char *prevkey = new char[prefix->size + node->keys_size[0] + 1];
-        // strcpy(prevkey, prefix->addr());
-        // strcpy(prevkey + prefix->size, GetKey(node, 0));
-
         int prevprefix_len = 0;
         PrefixMetaData prefixmetadata = PrefixMetaData("", 0, 0, 0);
         bool uninitialized = true;
-        // prevkey = nodeprefix + getkey
-        // currkey = nodeprefix + getkey
 
         for (uint32_t i = 1; i < node->size; i++) {
-            // string currkey = nodeprefix + node->keys.at(i).value;
-            // string currprefix = get_common_prefix(currkey, prevkey);
-
             // the curprefix doesn't include the original prefix
-            // int curkey_len = node->keys_size[i];
             int curprefix_len = get_common_prefix_len(GetKey(node, i), GetKey(node, i - 1),
                                                       node->keys_size[i], node->keys_size[i - 1]);
             if (uninitialized) {
-                // Key_c key = node->keys.at(i - 1);
-                // key.value = string_to_char(prevkey.substr(currprefix.length()));
-                // newkeys.push_back(key);
-                // key = node->keys.at(i);
-                // key.value = string_to_char(currkey.substr(currprefix.length()));
-                // newkeys.push_back(key);
                 // Insert the suffix of i, i-1 to the new page
 
                 WriteKeyDB2Page(newbase, memusage, i - 1, newsize, newoffset,
@@ -591,11 +563,9 @@ void apply_prefix_optimization(DB2Node *node) {
                 delete key_i;
             }
             // TODO: After search is right, can change this to >=
+            // This cannot be simply change to >= and cut prevprefix_len , may optimize later
             else if (curprefix_len == prevprefix_len) {
                 // Add to the current prefix
-                // Key_c key = node->keys.at(i);
-                // key.value = string_to_char(currkey.substr(prevprefix.length()));
-                // newkeys.push_back(key);
 
                 WriteKeyDB2Page(newbase, memusage, i, newsize, newoffset,
                                 GetKey(node, i), node->keys_size[i], curprefix_len);
@@ -611,10 +581,7 @@ void apply_prefix_optimization(DB2Node *node) {
         }
         if (uninitialized) {
             // The last key hasn't been added, and it doesn't have prefix
-            // Key_c key = node->keys.at(node->keys.size() - 1);
-            // key.value = string_to_char(prevkey);
-            // newkeys.push_back(key);
-            // newkeys.push_back(prevkey);
+
             WriteKeyDB2Page(newbase, memusage, node->size - 1, newsize, newoffset,
                             GetKey(node, node->size - 1), node->keys_size[node->size - 1], 0);
         }
@@ -627,16 +594,8 @@ void apply_prefix_optimization(DB2Node *node) {
         UpdateSize(node, newsize);
     }
     else {
-        // int ori = 0;
-        // for (int i = 0; i < node->size; i++)
-        //     ori += node->keys_size[i];
-        // cout << "original: key-" << ori;
-        // for (auto pfx : node->prefixMetadata)
-        //     ori += pfx.prefix->size;
-        // cout << "total-" << ori << endl;
         prefixOptimization *expand = prefix_expand(node);
         prefixOptimization *merge = prefix_merge(node);
-        // optimizationType type = find_prefix_optimization_to_apply(prefixExpandResult, prefixMergeResult);
         // cout << "expand: " << expand->memusage << ", merge: " << merge->memusage << endl;
         if (expand->memusage <= merge->memusage) {
             // Do prefix_expand
@@ -670,7 +629,7 @@ void apply_prefix_optimization(DB2Node *node) {
             }
             for (int i = 0; i < node->size; i++) {
                 // Copy the shortened prefix to key
-                auto oldpfx = node->prefixMetadata[oldpfx_idx[i]].prefix;
+                Data *oldpfx = node->prefixMetadata[oldpfx_idx[i]].prefix;
                 auto extra_len = merge->newoffset[i];
                 merge->newoffset[i] = newusage;
                 strncpy(buf + newusage, oldpfx->addr() + oldpfx->size - extra_len, extra_len);

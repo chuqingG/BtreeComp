@@ -45,8 +45,8 @@ public:
 //     // change to a class
 //     int memusage = 0;
 //     char* base = NewPage();
-//     uint8_t *newsize = new uint8_t[kNumberBound];
-//     uint16_t *newoffset = new uint16_t[kNumberBound];
+//     uint8_t *newsize = new uint8_t[kNumberBound * DB2_COMP_RATIO];
+//     uint16_t *newoffset = new uint16_t[kNumberBound * DB2_COMP_RATIO];
 //     vector<PrefixMetaData> prefixes;
 
 //     ~prefixOptimization(){
@@ -56,7 +56,7 @@ public:
 //     }
 // };
 
-closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas, const char *newprefix, int prefixlen, int p_i_pos);
+closedRange find_closed_range(vector<PrefixMetaData> &prefixmetadatas, const char *newprefix, int prefixlen, int p_i_pos);
 
 // Cost function is defined based on space requirements for prefix + suffixes
 // Cost must be minimized

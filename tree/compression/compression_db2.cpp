@@ -4,8 +4,8 @@
 prefixOptimization::prefixOptimization() {
     memusage = 0;
     base = NewPage();
-    newsize = new uint8_t[kNumberBound];
-    newoffset = new uint16_t[kNumberBound];
+    newsize = new uint8_t[kNumberBound * DB2_COMP_RATIO];
+    newoffset = new uint16_t[kNumberBound * DB2_COMP_RATIO];
 }
 
 prefixOptimization::~prefixOptimization() {
@@ -14,7 +14,7 @@ prefixOptimization::~prefixOptimization() {
     delete newoffset;
 }
 
-closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas,
+closedRange find_closed_range(vector<PrefixMetaData> &prefixmetadatas,
                               const char *newprefix, int prefixlen, int p_i_pos) {
     closedRange closedRange;
     if (prefixlen == 0) {
@@ -32,46 +32,11 @@ closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas,
         closedRange.prefixMetadatas.push_back(prefixmetadatas[i]);
         // positions.push_back(i);
     }
-    // // Reverse for ease of use
-    // reverse(closedRangePrefixes.begin(), closedRangePrefixes.end());
-    // reverse(positions.begin(), positions.end());
 
     // closedRange.prefixMetadatas = closedRangePrefixes;
     closedRange.pos_high = p_i_pos - 1;
     return closedRange;
 }
-
-// int search_prefix_metadata(DB2Node *cursor, string_view key) {
-//     // binary search
-//     vector<PrefixMetaData> prefixMetadatas = cursor->prefixMetadata;
-//     int low = 0;
-//     int high = prefixMetadatas.size() - 1;
-//     int prefixcmp = -1;
-//     while (low <= high) {
-//         int mid = low + (high - low) / 2;
-//         PrefixMetaData midMetadata = prefixMetadatas.at(mid);
-//         string prefix = midMetadata.prefix;
-//         int prefixlen = prefix.length();
-//         prefixcmp = key.compare(0, prefixlen, prefix);
-//         int cmp = prefixcmp;
-//         if (prefixcmp == 0) {
-//             int prefixlow = midMetadata.low;
-//             int prefixhigh = midMetadata.high;
-//             int len = key.length() - prefixlen;
-//             int lowcmp = key.compare(prefixlen, len, cursor->keys.at(prefixlow).value);
-//             int highcmp = key.compare(prefixlen, len, cursor->keys.at(prefixhigh).value);
-//             cmp = (lowcmp >= 0) ^ (highcmp <= 0) ? lowcmp : 0;
-//         }
-//         if (cmp == 0)
-//             return mid;
-//         else if (cmp > 0)
-//             low = mid + 1;
-//         else
-//             high = mid - 1;
-//     }
-//
-//     return -1;
-// }
 
 int find_prefix_pos(DB2Node *cursor, const char *key, int keylen, bool for_insert_or_nonleaf) {
     // vector<PrefixMetaData> prefixes = cursor->prefixMetadata;
@@ -116,62 +81,6 @@ int find_prefix_pos(DB2Node *cursor, const char *key, int keylen, bool for_inser
     return prevcmp == 0 ? high : high + 1;
 }
 
-// db2split perform_split(DB2Node *node, int split, bool isleaf) {
-//     vector<PrefixMetaData> metadatas = node->prefixMetadata;
-//     vector<PrefixMetaData> leftmetadatas;
-//     vector<PrefixMetaData> rightmetadatas;
-//     PrefixMetaData leftmetadata, rightmetadata;
-//     int rightindex = 0;
-//     string splitprefix;
-//     db2split result;
-//     for (uint32_t i = 0; i < metadatas.size(); i++) {
-//         if (split >= metadatas.at(i).low && split <= metadatas.at(i).high) {
-//             splitprefix = metadatas.at(i).prefix;
-//
-//             if (split != metadatas.at(i).low) {
-//                 leftmetadata = PrefixMetaData(metadatas.at(i).prefix, metadatas.at(i).low, split - 1);
-//                 leftmetadatas.push_back(leftmetadata);
-//             }
-//
-//             int rsize = isleaf ? metadatas.at(i).high - split : metadatas.at(i).high - (split + 1);
-//             if (rsize >= 0) {
-//                 rightmetadata = PrefixMetaData(metadatas.at(i).prefix, rightindex, rightindex + rsize);
-//                 rightindex = rightindex + rsize + 1;
-//                 rightmetadatas.push_back(rightmetadata);
-//             }
-//         }
-//         else if (split <= metadatas.at(i).low) {
-//             int size = metadatas.at(i).high - metadatas.at(i).low;
-//             rightmetadata = PrefixMetaData(metadatas.at(i).prefix,
-//                                            rightindex, rightindex + size);
-//             rightindex = rightindex + size + 1;
-//             rightmetadatas.push_back(rightmetadata);
-//         }
-//         else {
-//             leftmetadata = metadatas.at(i);
-//             leftmetadatas.push_back(leftmetadata);
-//         }
-//     }
-//     result.leftmetadatas = leftmetadatas;
-//     result.rightmetadatas = rightmetadatas;
-//     result.splitprefix = splitprefix;
-//     return result;
-// }
-
-// Cost of optimization is calculated as size of prefixes + size of suffixes
-// int calculate_cost_of_optimization(prefixOptimization result) {
-//     int cost = 0;
-//     for (int i = 0; i < result.prefixMetadatas.size(); i++) {
-//         int low = result.prefixMetadatas.at(i).low;
-//         int high = result.prefixMetadatas.at(i).high;
-//         cost += result.prefixMetadatas.at(i).prefix.length();
-//         for (int j = low; j <= high; j++) {
-//             cost += result.keys.at(j).getSize();
-//         }
-//     }
-//     return cost;
-// }
-
 // Cost function is defined based on space requirements for prefix + suffixes
 // Cost must be minimized
 int calculate_prefix_merge_cost(prefixOptimization *result, vector<PrefixMetaData> segment, Data *prefix) {
@@ -181,15 +90,6 @@ int calculate_prefix_merge_cost(prefixOptimization *result, vector<PrefixMetaDat
             cost += s.prefix->size + result->newsize[i] - prefix->size;
         }
     }
-    // for (uint32_t i = 0; i < segment.size(); i++) {
-    //     int low = segment[i].low;
-    //     int high = segment[i].high;
-    //     for (int j = low; j <= high; j++) {
-    //         string decompressed = segment.at(i).prefix + keys.at(j).value;
-    //         string compressedkey = decompressed.substr(prefix.length());
-    //         cost += compressedkey.length();
-    //     }
-    // }
     return cost;
 }
 
@@ -228,24 +128,6 @@ prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, close
         }
         currsegment.push_back(closedRange->prefixMetadatas[idx]);
     }
-    // for (int i = 0; i < closedRange.prefixMetadatas.size(); i++) {
-    //     if (i % k == 0) {
-    //         currcost = calculate_prefix_merge_cost(keys, currsegment, currprefix);
-    //         firstindex = closedRange.positions.at(i);
-    //         if (i != 0 && currcost < bestcost) {
-    //             bestprefix = currprefix;
-    //             bestsegment = currsegment;
-    //             bestcost = currcost;
-    //             bestindex = firstindex;
-    //         }
-    //         currprefix = closedRange.prefixMetadatas.at(i).prefix;
-    //         currsegment.clear();
-    //     }
-    //     else {
-    //         currprefix = get_common_prefix(currprefix, closedRange.prefixMetadatas.at(i).prefix);
-    //     }
-    //     currsegment.push_back(closedRange.prefixMetadatas.at(i));
-    // }
 
     if (currcost < result_seg.cost) {
         result_seg.prefix = currprefix;
@@ -253,13 +135,7 @@ prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, close
         result_seg.cost = currcost;
         result_seg.firstindex = firstindex;
     }
-    // if (result_seg.segment.size() == 0) {
-    //     cout << "wrong here" << endl;
-    // }
-    // result_seg.segment = bestsegment;
-    // result_seg.prefix = bestprefix;
-    // result_seg.cost = bestcost;
-    // result_seg.firstindex = bestindex;
+
     return result_seg;
 }
 
@@ -281,10 +157,6 @@ void merge_prefixes_in_segment(prefixOptimization *result,
                                prefixMergeSegment *bestsegment) {
     // the result.prefix should be shorten in this section
 
-    // cout << "Best segment prefix " << bestsegment.prefix << endl;
-    // cout << "Best segment first index " << bestsegment.firstindex << endl;
-    // vector<PrefixMetaData> segment = bestsegment.segment;
-    // vector<PrefixMetaData> prefixes = bestsegment->segment;
     // Data *newprefix = bestsegment.prefix;
     int firstpos = bestsegment->firstindex;
     int firstlow = bestsegment->segment[0].low;
@@ -300,22 +172,6 @@ void merge_prefixes_in_segment(prefixOptimization *result,
             result->newoffset[i] += extra_len;
         }
     }
-    // for (uint32_t i = 0; i < bestsegment.segment.size(); i++) {
-    //     Data *prevprefix = bestsegment.segment[i].prefix;
-    //     int low = segment.at(i).low;
-    //     int high = segment.at(i).high;
-    //     lasthigh = high;
-    //     for (int j = low; j <= high; j++) {
-    //         string decompressed = prevprefix + keys.at(j).value;
-    //         // Representing null prefix
-    //         if (newprefix.compare("") == 0) {
-    //             keys.at(j).value = string_to_char(decompressed);
-    //         }
-    //         else {
-    //             keys.at(j).value = string_to_char(decompressed.substr(newprefix.length()));
-    //         }
-    //     }
-    // }
 
     result->prefixes.erase(next(result->prefixes.begin(), firstpos),
                            next(result->prefixes.begin(), firstpos + bestsegment->segment.size()));
@@ -327,8 +183,8 @@ prefixOptimization *prefix_merge(DB2Node *node) {
     prefixOptimization *result = new prefixOptimization();
     result->memusage = 0;
     memcpy(result->base, node->base, sizeof(char) * MAX_SIZE_IN_BYTES);
-    memset(result->newoffset, 0, sizeof(uint16_t) * kNumberBound);
-    memcpy(result->newsize, node->keys_size, sizeof(uint8_t) * kNumberBound);
+    memset(result->newoffset, 0, sizeof(uint16_t) * kNumberBound * DB2_COMP_RATIO);
+    memcpy(result->newsize, node->keys_size, sizeof(uint8_t) * kNumberBound * DB2_COMP_RATIO);
     result->prefixes = node->prefixMetadata;
 
     // vector<Key_c> keysCopy(keys);
@@ -337,12 +193,6 @@ prefixOptimization *prefix_merge(DB2Node *node) {
     int nextindex = 1;
     int numremoved;
     while (nextindex < result->prefixes.size()) {
-        // string p_i = metadataCopy.at(nextindex).prefix;
-        // string p_i_minus_1 = metadataCopy.at(nextindex - 1).prefix;
-        // string p_i_first_key = p_i + keysCopy.at(metadataCopy.at(nextindex).low).value;
-        // string p_i_prev_last_key = p_i_minus_1 + keysCopy.at(metadataCopy.at(nextindex - 1).high).value;
-        // string n_p_i = get_common_prefix(p_i_first_key, p_i_prev_last_key);
-
         PrefixMetaData p_i = result->prefixes[nextindex];
         PrefixMetaData p_prev = result->prefixes[nextindex - 1];
 
@@ -372,11 +222,6 @@ prefixOptimization *prefix_merge(DB2Node *node) {
         if (closedRange.pos_high - closedRange.pos_low > 0) {
             // sizeof closedrange > 1
 
-            // if (n_p_i.length() == 0) {
-            //     prefixMergeSegment bestSegment = find_best_segment_in_closed_range(keysCopy, closedRange);
-            //     merge_prefixes_in_segment(keysCopy, metadataCopy, bestSegment, "");
-            //     numremoved = bestSegment.segment.size();
-            // }
             if (prefixlen < p_prev.prefix->size) {
                 prefixMergeSegment bestSegment = find_best_segment_in_closed_range(result, &closedRange);
                 merge_prefixes_in_segment(result, &bestSegment);
@@ -502,8 +347,8 @@ prefixOptimization *prefix_expand(DB2Node *node) {
     // result->memusage = node->memusage;
     result->memusage = 0;
     memcpy(result->base, node->base, sizeof(char) * MAX_SIZE_IN_BYTES);
-    memcpy(result->newoffset, node->keys_offset, sizeof(uint16_t) * kNumberBound);
-    memcpy(result->newsize, node->keys_size, sizeof(uint8_t) * kNumberBound);
+    memcpy(result->newoffset, node->keys_offset, sizeof(uint16_t) * kNumberBound * DB2_COMP_RATIO);
+    memcpy(result->newsize, node->keys_size, sizeof(uint8_t) * kNumberBound * DB2_COMP_RATIO);
     result->prefixes = node->prefixMetadata;
 
     // we only move the offset in expang_prefix, don't change the content of base
@@ -531,8 +376,8 @@ void apply_prefix_optimization(DB2Node *node) {
         vector<PrefixMetaData> newprefixmetadatas;
         vector<Key_c> newkeys;
         char *newbase = NewPage();
-        uint8_t *newsize = new uint8_t[kNumberBound];
-        uint16_t *newoffset = new uint16_t[kNumberBound];
+        uint8_t *newsize = new uint8_t[kNumberBound * DB2_COMP_RATIO];
+        uint16_t *newoffset = new uint16_t[kNumberBound * DB2_COMP_RATIO];
         int memusage = 0;
 
         int prevprefix_len = 0;
@@ -602,7 +447,7 @@ void apply_prefix_optimization(DB2Node *node) {
             // cout << "expand" << endl;
             int newusage = 0;
             char *buf = NewPage();
-            uint16_t *idx = new uint16_t[kNumberBound];
+            uint16_t *idx = new uint16_t[kNumberBound * DB2_COMP_RATIO];
             for (int i = 0; i < node->size; i++) {
                 strcpy(buf + newusage, expand->base + expand->newoffset[i]);
                 idx[i] = newusage;

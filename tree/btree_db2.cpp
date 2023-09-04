@@ -44,8 +44,6 @@ void BPTreeDB2::insert(char *x) {
         InsertKey(_root, 0, x, keylen);
 #endif
         _root->IS_LEAF = true;
-        // PrefixMetaData metadata = PrefixMetaData("", 0, 0, 0);
-        // _root->prefixMetadata.push_back(metadata);
         return;
     }
     DB2Node *search_path[max_level];
@@ -73,9 +71,6 @@ void BPTreeDB2::insert_nonleaf(DB2Node *node, DB2Node **path,
             InsertNode(newRoot, 1, currsplit.right);
 
             newRoot->IS_LEAF = false;
-            // newRoot->size = 1;
-            // PrefixMetaData metadata = PrefixMetaData("", 0, 0);
-            // newRoot->prefixMetadata.push_back(metadata);
             _root = newRoot;
             max_level++;
         }
@@ -92,29 +87,7 @@ void BPTreeDB2::insert_nonleaf(DB2Node *node, DB2Node **path,
                                               childsplit.promotekey->addr(),
                                               childsplit.promotekey->size, equal);
 
-        // int rid = rand();
-        // vector<Key_c> allkeys;
-        // for (int i = 0; i < insertpos; i++) {
-        //     allkeys.push_back(node->keys.at(i));
-        // }
-        // allkeys.push_back(Key_c(string_to_char(promotekey), rid));
-        // for (int i = insertpos; i < node->size; i++) {
-        //     allkeys.push_back(node->keys.at(i));
-
-        // vector<DB2Node *> allptrs;
-        // for (int i = 0; i < insertpos + 1; i++) {
-        //     allptrs.push_back(node->ptrs.at(i));
-        // }
-        // allptrs.push_back(childsplit.right);
-        // for (int i = insertpos + 1; i < node->size + 1; i++) {
-        //     allptrs.push_back(node->ptrs.at(i));
-        // }
-
         InsertNode(node, insertpos + 1, childsplit.right);
-
-        // node->keys = allkeys;
-        // node->ptrs = allptrs;
-        // node->size = node->size + 1;
     }
 }
 
@@ -129,12 +102,6 @@ void BPTreeDB2::insert_leaf(DB2Node *leaf, DB2Node **path, int path_level, char 
             InsertNode(newRoot, 0, split.left);
             InsertKey(newRoot, 0, split.promotekey->addr(), split.promotekey->size);
             InsertNode(newRoot, 1, split.right);
-
-            // newRoot->keys.push_back(Key_c(string_to_char(split.promotekey), rid));
-            // newRoot->ptrs.push_back(split.left);
-            // newRoot->ptrs.push_back(split.right);
-            // PrefixMetaData metadata = PrefixMetaData("", 0, 0, 0);
-            // newRoot->prefixMetadata.push_back(metadata);
 
             newRoot->IS_LEAF = false;
             _root = newRoot;
@@ -267,8 +234,8 @@ Data *BPTreeDB2::do_split_node(DB2Node *node, DB2Node *right, int splitpos, bool
     char *l_base = NewPage();
 
     int l_usage = 0, r_usage = 0;
-    uint16_t *l_idx = new uint16_t[kNumberBound];
-    uint8_t *l_size = new uint8_t[kNumberBound];
+    uint16_t *l_idx = new uint16_t[kNumberBound * DB2_COMP_RATIO];
+    uint8_t *l_size = new uint8_t[kNumberBound * DB2_COMP_RATIO];
     // l_size copy can be omitted, add for simplier codes
     CopyKeyToPage(node, 0, splitpos, l_base, l_usage, l_idx, l_size);
     if (isleaf) {
@@ -312,25 +279,6 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(DB2Node *node, int pos, splitReturnDB2 c
                                           childsplit.promotekey->addr(),
                                           childsplit.promotekey->size, equal);
     InsertNode(node, insertpos + 1, childsplit.right);
-    // vector<Key_c> allkeys;
-    // vector<DB2Node *> allptrs;
-
-    // for (int i = 0; i < insertpos; i++) {
-    //     allkeys.push_back(node->keys.at(i));
-    // }
-    // // Non-leaf nodes won't have duplicates
-    // allkeys.push_back(Key_c(string_to_char(promotekey), rid));
-    // for (int i = insertpos; i < node->size; i++) {
-    //     allkeys.push_back(node->keys.at(i));
-    // }
-
-    // for (int i = 0; i < insertpos + 1; i++) {
-    //     allptrs.push_back(node->ptrs.at(i));
-    // }
-    // allptrs.push_back(childsplit.right);
-    // for (int i = insertpos + 1; i < node->size + 1; i++) {
-    //     allptrs.push_back(node->ptrs.at(i));
-    // }
 
     int split = split_point(node);
     Data splitkey = Data(GetKey(node, split), node->keys_size[split]);
@@ -339,38 +287,15 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(DB2Node *node, int pos, splitReturnDB2 c
 
     Data *split_prefix = do_split_node(node, right, split, false);
 
-    // vector<Key_c> leftkeys;
-    // vector<Key_c> rightkeys;
     vector<DB2Node *> leftptrs;
     // vector<DB2Node *> rightptrs;
-    // copy(allkeys.begin(), allkeys.begin() + split, back_inserter(leftkeys));
-    // copy(allkeys.begin() + split + 1, allkeys.end(), back_inserter(rightkeys));
+
     copy(node->ptrs.begin(), node->ptrs.begin() + split + 1, back_inserter(leftptrs));
     copy(node->ptrs.begin() + split + 1, node->ptrs.end(), back_inserter(right->ptrs));
 
-    // db2split splitresult = perform_split(node, split, false);
-    // node->prefixMetadata = splitresult.leftmetadatas;
-    // right->prefixMetadata = splitresult.rightmetadatas;
-    // newsplit.promotekey = splitresult.splitprefix + allkeys.at(split).value;
-
-    // node->size = leftkeys.size();
-    // node->keys = leftkeys;
     right->ptr_cnt = node->ptr_cnt - (split + 1);
     node->ptr_cnt = split + 1;
     node->ptrs = leftptrs;
-
-    // right->size = rightkeys.size();
-    // right->IS_LEAF = false;
-    // right->keys = rightkeys;
-    // right->ptrs = rightptrs;
-
-    // Set prev and next pointers
-    // DB2Node *next = node->next;
-    // right->prev = node;
-    // right->next = next;
-    // if (next)
-    //     next->prev = right;
-    // node->next = right;
 
     int split_len = split_prefix->size + splitkey.size;
     char *split_decomp = new char[split_len + 1];
@@ -414,34 +339,8 @@ splitReturnDB2 BPTreeDB2::split_leaf(DB2Node *node, char *newkey, int keylen) {
 #endif
     int split = split_point(node);
 
-    // vector<Key_c> leftkeys;
-    // vector<Key_c> rightkeys;
-    // copy(allkeys.begin(), allkeys.begin() + split, back_inserter(leftkeys));
-    // copy(allkeys.begin() + split, allkeys.end(), back_inserter(rightkeys));
-
     do_split_node(node, right, split, true);
-    // db2split splitresult = perform_split(node, right, split, true);
-    // node->prefixMetadata = splitresult.leftmetadatas;
-    // right->prefixMetadata = splitresult.rightmetadatas;
 
-    // node->size = leftkeys.size();
-    // node->keys = leftkeys;
-
-    // right->size = rightkeys.size();
-    // right->IS_LEAF = true;
-    // right->keys = rightkeys;
-
-    // // Set prev and next pointers
-    // DB2Node *next = node->next;
-    // right->prev = node;
-    // right->next = next;
-    // if (next)
-    //     next->prev = right;
-    // node->next = right;
-
-    // string firstright = right->keys.at(0).value;
-    // PrefixMetaData firstrightmetadata = right->prefixMetadata.at(0);
-    // firstright = firstrightmetadata.prefix + firstright;
     PrefixMetaData rf_pfx = right->prefixMetadata[0];
     int rf_len = rf_pfx.prefix->size + right->keys_size[0];
     char *rightfirst = new char[rf_len + 1];

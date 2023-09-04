@@ -17,16 +17,17 @@ int MAX_NODE_SIZE = 4;
 // str representation of rids for easy comparison and prefix compression
 // if other approaches are used
 
-class Data
-{
+class Data {
 public:
     // const char *ptr;
     uint8_t size; // Be careful;
-    Data() : addr_(""), size(0){};
+    Data() :
+        addr_(""), size(0){};
     // Data(const char *str);
     Data(const char *p, int len);
     ~Data();
-    Data &operator=(const Data &) = default;
+    // Data(const Data &);
+    Data &operator=(const Data &);
     const char *addr();
     // void set(const char *p, int s);
     // void from_string(string s);
@@ -34,8 +35,7 @@ private:
     char *addr_;
 };
 
-class Key
-{
+class Key {
 public:
     vector<string> ridList;
     string value;
@@ -44,8 +44,7 @@ public:
     int getSize();
 };
 
-class Key_c
-{
+class Key_c {
 public:
     vector<int> ridList;
     char *value;
@@ -57,8 +56,7 @@ public:
 
 // BP-std node
 #ifdef DUPKEY
-class Node
-{
+class Node {
 public:
     bool IS_LEAF;
     vector<Key_c> keys;
@@ -73,8 +71,7 @@ public:
 #else
 const char MAXHIGHKEY[] = "infinity";
 
-class Node
-{
+class Node {
 public:
     bool IS_LEAF;
     int size;
@@ -98,8 +95,7 @@ public:
 #endif
 
 #ifdef DUPKEY
-class PrefixMetaData
-{
+class PrefixMetaData {
 public:
     int low;
     int high;
@@ -108,8 +104,7 @@ public:
     PrefixMetaData(string p, int l, int h);
 };
 
-class DB2Node
-{
+class DB2Node {
 public:
     bool IS_LEAF;
     vector<Key_c> keys;
@@ -122,22 +117,23 @@ public:
     ~DB2Node();
 };
 #else
-class PrefixMetaData
-{
+class PrefixMetaData {
 public:
     int low;
     int high;
     Data *prefix;
     PrefixMetaData();
-    PrefixMetaData(const char* str, int len, int l, int h);
+    PrefixMetaData(const char *str, int len, int l, int h);
+    // PrefixMetaData(const PrefixMetaData &p);
+    // PrefixMetaData &operator=(const PrefixMetaData &);
+    // ~PrefixMetaData();
 };
 
-class DB2Node
-{
+class DB2Node {
 public:
     bool IS_LEAF;
     // vector<Key_c> keys;
-    char* base;
+    char *base;
     int size;
     uint16_t *keys_offset;
     uint8_t *keys_size;
@@ -153,8 +149,7 @@ public:
 #endif
 // Key with prefix and suffix encoding
 // Duplicates represented as <key, {rid list}>
-class KeyMyISAM
-{
+class KeyMyISAM {
 public:
     string value;
     vector<string> ridList;
@@ -169,8 +164,7 @@ public:
     int getSize();
 };
 
-class NodeMyISAM
-{
+class NodeMyISAM {
 public:
     bool IS_LEAF;
     vector<KeyMyISAM> keys;
@@ -183,8 +177,7 @@ public:
 };
 
 // Duplicates represented as <key, {rid list}>
-class KeyWT
-{
+class KeyWT {
 public:
     string value;
     vector<string> ridList;
@@ -197,8 +190,7 @@ public:
     int getSize();
 };
 
-class NodeWT
-{
+class NodeWT {
 public:
     bool IS_LEAF;
     vector<KeyWT> keys;
@@ -215,8 +207,7 @@ public:
 const int PKB_LEN = 2;
 
 // Duplicates represented as <key, {rid list}>
-class KeyPkB
-{
+class KeyPkB {
 public:
     int16_t offset;
     char partialKey[PKB_LEN + 1];
@@ -230,8 +221,7 @@ public:
     void updateOffset(int offset);
 };
 
-class NodePkB
-{
+class NodePkB {
 public:
     bool IS_LEAF;
     vector<KeyPkB> keys;
@@ -243,57 +233,49 @@ public:
     ~NodePkB();
 };
 
-struct uncompressedKey
-{ // for pkb
+struct uncompressedKey { // for pkb
     string key;
     char *keyptr;
 };
 
-struct splitReturn
-{
+struct splitReturn {
     string promotekey;
     Node *left;
     Node *right;
 };
 
-struct splitReturn_new
-{
+struct splitReturn_new {
     Data *promotekey;
     Node *left;
     Node *right;
 };
 
-struct splitReturnDB2
-{
+struct splitReturnDB2 {
     Data *promotekey;
     DB2Node *left;
     DB2Node *right;
 };
 
-struct splitReturnMyISAM
-{
+struct splitReturnMyISAM {
     string promotekey;
     NodeMyISAM *left;
     NodeMyISAM *right;
 };
 
-struct splitReturnWT
-{
+struct splitReturnWT {
     string promotekey;
     NodeWT *left;
     NodeWT *right;
 };
 
-struct splitReturnPkB
-{
+struct splitReturnPkB {
     string promotekey;
     char *keyptr;
     NodePkB *left;
     NodePkB *right;
 };
 
-struct nodeBounds
-{
+struct nodeBounds {
     string lowerbound;
     string upperbound;
 };
@@ -304,8 +286,6 @@ void printKeys_myisam(NodeMyISAM *node, bool compressed);
 void printKeys_wt(NodeWT *node, bool compressed);
 void printKeys_pkb(NodePkB *node, bool compressed);
 
-
-
 #define NewPage() (char *)malloc(MAX_SIZE_IN_BYTES * sizeof(char))
 
 #define UpdateBase(node, newbase) \
@@ -314,34 +294,36 @@ void printKeys_pkb(NodePkB *node, bool compressed);
         node->base = newbase;     \
     }
 
-#define UpdatePtrs(node, newptrs, num) \
-    {                             \
-        for(int i = 0; i < num; i++)\
-            node->ptrs[i] = newptrs[i];\
-        node->ptr_cnt = num;     \
+#define UpdatePtrs(node, newptrs, num)  \
+    {                                   \
+        for (int i = 0; i < num; i++)   \
+            node->ptrs[i] = newptrs[i]; \
+        node->ptr_cnt = num;            \
     }
 
-#define UpdateSize(node, newsize) \ 
-{\
-    delete node->keys_size; \
-    node->keys_size = newsize; \
-}
-
-#define UpdateOffset(node, newoffset) \
-    {                             \
-        delete node->keys_offset;        \
-        node->keys_offset = newoffset;     \
-    }
-
-#define CopySize(node, newsize) \ 
-{\
-    memcpy(node->keys_size, newsize, sizeof(uint8_t) * kNumberBound); \
-}
-
-#define CopyOffset(node, newoffset) \
+#define UpdateSize(node, newsize)  \
+    \ 
 {                             \
-    memcpy(node->keys_offset, newoffset, sizeof(uint16_t) * kNumberBound); \
-}
+        delete node->keys_size;    \
+        node->keys_size = newsize; \
+    }
+
+#define UpdateOffset(node, newoffset)  \
+    {                                  \
+        delete node->keys_offset;      \
+        node->keys_offset = newoffset; \
+    }
+
+#define CopySize(node, newsize)                                           \
+    \ 
+{                                                                    \
+        memcpy(node->keys_size, newsize, sizeof(uint8_t) * kNumberBound); \
+    }
+
+#define CopyOffset(node, newoffset)                                            \
+    {                                                                          \
+        memcpy(node->keys_offset, newoffset, sizeof(uint16_t) * kNumberBound); \
+    }
 
 #define GetKey(nptr, idx) (char *)(nptr->base + nptr->keys_offset[idx])
 
@@ -351,14 +333,14 @@ void printKeys_pkb(NodePkB *node, bool compressed);
     {                                                        \
         for (int i = nptr->size; i > pos; i--)               \
             nptr->keys_offset[i] = nptr->keys_offset[i - 1]; \
-        nptr->keys_offset[pos] = (uint16_t)offset;                     \
+        nptr->keys_offset[pos] = (uint16_t)offset;           \
     }
 
 #define InsertSize(nptr, pos, len)                       \
     {                                                    \
         for (int i = nptr->size; i > pos; i--)           \
             nptr->keys_size[i] = nptr->keys_size[i - 1]; \
-        nptr->keys_size[pos] = (uint8_t)len;                      \
+        nptr->keys_size[pos] = (uint8_t)len;             \
     }
 
 // #define InsertNode(nptr, pos, newnode)         \
@@ -371,18 +353,18 @@ void printKeys_pkb(NodePkB *node, bool compressed);
 // #define InsertSize(nptr, pos, len) \
 //     nptr->keys_size.emplace(nptr->keys_size.begin() + pos, len)
 
-#define InsertNode(nptr, pos, newnode) \
-{\
-    nptr->ptrs.emplace(nptr->ptrs.begin() + pos, newnode);\
-    nptr->ptr_cnt += 1; \
-}
+#define InsertNode(nptr, pos, newnode)                         \
+    {                                                          \
+        nptr->ptrs.emplace(nptr->ptrs.begin() + pos, newnode); \
+        nptr->ptr_cnt += 1;                                    \
+    }
 
 // Insert k into nptr[pos]
 #define InsertKey(nptr, pos, k, klen)            \
     {                                            \
         strcpy(PageTail(nptr), k);               \
         InsertOffset(nptr, pos, nptr->memusage); \
-        InsertSize(nptr, pos, klen);\
+        InsertSize(nptr, pos, klen);             \
         nptr->memusage += klen + 1;              \
         nptr->size += 1;                         \
     }
@@ -390,23 +372,22 @@ void printKeys_pkb(NodePkB *node, bool compressed);
 // Copy node->keys[low, high) to Page(base, mem, idx)
 
 #define CopyKeyToPage(node, low, high, base, mem, idx, size) \
-    for (int i = low; i < high; i++)                   \
-    {                                                  \
-        char *k = GetKey(node, i);                   \
-        int klen = node->keys_size[i];              \
-        strcpy(base + mem, k);                         \
-        idx[i - (low)] = mem;                            \
-        size[i - (low)] = klen;\
-        mem += klen + 1;                          \
+    for (int i = low; i < high; i++) {                       \
+        char *k = GetKey(node, i);                           \
+        int klen = node->keys_size[i];                       \
+        strcpy(base + mem, k);                               \
+        idx[i - (low)] = mem;                                \
+        size[i - (low)] = klen;                              \
+        mem += klen + 1;                                     \
     }
 
 #define WriteKeyDB2Page(base, memusage, pos, size, idx, kptr, klen, prefixlen) \
-{\
-    strcpy(base + memusage, kptr + prefixlen); \
-    size[pos] = klen - prefixlen; \
-    idx[pos] = memusage; \
-    memusage += size[pos] + 1; \
-}
+    {                                                                          \
+        strcpy(base + memusage, kptr + prefixlen);                             \
+        size[pos] = klen - prefixlen;                                          \
+        idx[pos] = memusage;                                                   \
+        memusage += size[pos] + 1;                                             \
+    }
 
-#define GetKeyDB2ByPtr(resultptr, i) (char*)(resultptr->base + resultptr->newoffset[i])
-#define GetKeyDB2(result, i) (char*)(result.base + result.newoffset[i])
+#define GetKeyDB2ByPtr(resultptr, i) (char *)(resultptr->base + resultptr->newoffset[i])
+#define GetKeyDB2(result, i) (char *)(result.base + result.newoffset[i])

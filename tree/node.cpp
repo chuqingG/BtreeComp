@@ -14,6 +14,20 @@ Data::Data(const char *s, int len) {
     size = len;
 }
 
+// Data::Data(const Data &old) {
+//     cout << "call copy" << endl;
+//     addr_ = new char[old.size + 1];
+//     strcpy(addr_, old.addr_);
+//     size = old.size;
+// }
+
+Data &Data::operator=(const Data &old) {
+    // cout << "call data copy" << endl;
+    addr_ = new char[old.size + 1];
+    strcpy(addr_, old.addr_);
+    size = old.size;
+}
+
 const char *Data::addr() {
     return addr_;
 }
@@ -78,12 +92,9 @@ Node::Node(bool head_comp, bool tail_comp) {
     highkey = new Data("infinity", 8);
     ptr_cnt = 0;
 
-    keys_size = new uint8_t[kNumberBound * 
-                    (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
-    std::memset(keys_size, 0, sizeof(uint8_t) *
-                kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX));
-    keys_offset = new uint16_t[kNumberBound * 
-                    (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
+    keys_size = new uint8_t[kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
+    std::memset(keys_size, 0, sizeof(uint8_t) * kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX));
+    keys_offset = new uint16_t[kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
 }
 
 // Destructor of Node
@@ -102,11 +113,27 @@ PrefixMetaData::PrefixMetaData() {
     high = 0;
 }
 
-PrefixMetaData::PrefixMetaData(const char* str, int len, int l, int h) {
+PrefixMetaData::PrefixMetaData(const char *str, int len, int l, int h) {
     prefix = new Data(str, len);
     low = l;
     high = h;
 }
+
+// PrefixMetaData::PrefixMetaData(const PrefixMetaData &old) {
+//     // cout << "calling me" << endl;
+//     low = old.low;
+//     high = old.high;
+//     prefix = new Data(old.prefix->addr(), old.prefix->size);
+// }
+// PrefixMetaData &PrefixMetaData::operator=(const PrefixMetaData &old) {
+//     cout << "calling pfx copy" << endl;
+//     low = old.low;
+//     high = old.high;
+//     prefix = new Data(old.prefix->addr(), old.prefix->size);
+// }
+// PrefixMetaData::~PrefixMetaData() {
+//     delete prefix;
+// }
 
 DB2Node::DB2Node() {
     size = 0;
@@ -120,7 +147,6 @@ DB2Node::DB2Node() {
     keys_offset = new uint16_t[kNumberBound];
     prefixMetadata.push_back(PrefixMetaData("", 0, 0, 0));
 }
-
 
 // Destructor of DB2Node
 DB2Node::~DB2Node() {
@@ -363,9 +389,10 @@ void printKeys_db2(DB2Node *node, bool compressed) {
         for (int l = node->prefixMetadata.at(i).low;
              l <= node->prefixMetadata.at(i).high; l++) {
             // Loop through rid list to print duplicates
-            if(compressed){
+            if (compressed) {
                 cout << GetKey(node, l) << ",";
-            }else{
+            }
+            else {
                 cout << node->prefixMetadata[i].prefix->addr() << GetKey(node, l) << ",";
             }
         }

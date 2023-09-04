@@ -195,32 +195,36 @@ int calculate_prefix_merge_cost(prefixOptimization *result, vector<PrefixMetaDat
 
 prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, closedRange closedRange, int k) {
     prefixMergeSegment result_seg;
-    vector<PrefixMetaData> bestsegment;
+    // vector<PrefixMetaData> bestsegment;
     vector<PrefixMetaData> currsegment;
     // Data *bestprefix;
-    Data *currprefix = new Data("", 0);
+    Data currprefix;
     // int bestcost = INT32_MAX;
+    result_seg.cost = INT32_MAX;
     int currcost = 0;
     int firstindex = 0;
     // int bestindex = 0;
     for (int i = closedRange.pos_low; i <= closedRange.pos_high; i++) {
         int idx = i - closedRange.pos_low;
         if (idx % k == 0) {
-            currcost = calculate_prefix_merge_cost(result, currsegment, currprefix);
+            currcost = calculate_prefix_merge_cost(result, currsegment, &currprefix);
             firstindex = i;
-            if (i != 0 && currcost < result_seg.cost) {
+            if (idx != 0 && currcost < result_seg.cost) {
                 result_seg.prefix = currprefix;
                 result_seg.segment = currsegment;
                 result_seg.cost = currcost;
                 result_seg.firstindex = firstindex;
             }
-            currprefix = closedRange.prefixMetadatas[idx].prefix;
+            currprefix = Data(closedRange.prefixMetadatas[idx].prefix->addr(),
+                              closedRange.prefixMetadatas[idx].prefix->size);
             currsegment.clear();
         }
         else {
             // Only need to update the length?
-            currprefix->size = get_common_prefix_len(currprefix->addr(), closedRange.prefixMetadatas[idx].prefix->addr(),
-                                                     currprefix->size, closedRange.prefixMetadatas[idx].prefix->size);
+            // currprefix->size = get_common_prefix_len(currprefix->addr(), closedRange.prefixMetadatas[idx].prefix->addr(),
+            //                                          currprefix->size, closedRange.prefixMetadatas[idx].prefix->size);
+            currprefix.size = get_common_prefix_len(currprefix.addr(), closedRange.prefixMetadatas[idx].prefix->addr(),
+                                                    currprefix.size, closedRange.prefixMetadatas[idx].prefix->size);
         }
         currsegment.push_back(closedRange.prefixMetadatas[idx]);
     }
@@ -242,12 +246,16 @@ prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, close
     //     }
     //     currsegment.push_back(closedRange.prefixMetadatas.at(i));
     // }
+
     if (currcost < result_seg.cost) {
         result_seg.prefix = currprefix;
         result_seg.segment = currsegment;
         result_seg.cost = currcost;
         result_seg.firstindex = firstindex;
     }
+    // if (result_seg.segment.size() == 0) {
+    //     cout << "wrong here" << endl;
+    // }
     // result_seg.segment = bestsegment;
     // result_seg.prefix = bestprefix;
     // result_seg.cost = bestcost;
@@ -270,24 +278,24 @@ prefixMergeSegment find_best_segment_in_closed_range(prefixOptimization *result,
 }
 
 void merge_prefixes_in_segment(prefixOptimization *result,
-                               prefixMergeSegment bestsegment) {
+                               prefixMergeSegment *bestsegment) {
     // the result.prefix should be shorten in this section
 
     // cout << "Best segment prefix " << bestsegment.prefix << endl;
     // cout << "Best segment first index " << bestsegment.firstindex << endl;
     // vector<PrefixMetaData> segment = bestsegment.segment;
-    vector<PrefixMetaData> prefixes = bestsegment.segment;
-    Data *newprefix = bestsegment.prefix;
-    int firstpos = bestsegment.firstindex;
-    int firstlow = bestsegment.segment[0].low;
+    // vector<PrefixMetaData> prefixes = bestsegment->segment;
+    // Data *newprefix = bestsegment.prefix;
+    int firstpos = bestsegment->firstindex;
+    int firstlow = bestsegment->segment[0].low;
     int lasthigh = 0;
-    for (auto s : bestsegment.segment) {
+    for (auto s : bestsegment->segment) {
         Data *prevprefix = s.prefix;
         lasthigh = s.high;
         for (int i = s.low; i <= s.high; i++) {
             // Merge means all the prefixes may be shorten, have to decompress
             // Or we only keep the keysize, don't modify the base anymore
-            int extra_len = s.prefix->size - newprefix->size;
+            int extra_len = s.prefix->size - bestsegment->prefix.size;
             result->newsize[i] += extra_len;
             result->newoffset[i] = extra_len;
         }
@@ -310,8 +318,8 @@ void merge_prefixes_in_segment(prefixOptimization *result,
     // }
 
     result->prefixes.erase(next(result->prefixes.begin(), firstpos),
-                           next(result->prefixes.begin(), firstpos + bestsegment.segment.size()));
-    PrefixMetaData newmetadata = PrefixMetaData(newprefix->addr(), newprefix->size, firstlow, lasthigh);
+                           next(result->prefixes.begin(), firstpos + bestsegment->segment.size()));
+    PrefixMetaData newmetadata = PrefixMetaData(bestsegment->prefix.addr(), bestsegment->prefix.size, firstlow, lasthigh);
     result->prefixes.insert(result->prefixes.begin() + firstpos, newmetadata);
 }
 
@@ -371,7 +379,7 @@ prefixOptimization *prefix_merge(DB2Node *node) {
             // }
             if (prefixlen < p_prev.prefix->size) {
                 prefixMergeSegment bestSegment = find_best_segment_in_closed_range(result, closedRange);
-                merge_prefixes_in_segment(result, bestSegment);
+                merge_prefixes_in_segment(result, &bestSegment);
                 numremoved = bestSegment.segment.size();
             }
         }
@@ -619,20 +627,20 @@ void apply_prefix_optimization(DB2Node *node) {
         UpdateSize(node, newsize);
     }
     else {
-        int ori = 0;
-        for (int i = 0; i < node->size; i++)
-            ori += node->keys_size[i];
-        cout << "original: key-" << ori;
-        for (auto pfx : node->prefixMetadata)
-            ori += pfx.prefix->size;
-        cout << "total-" << ori << endl;
+        // int ori = 0;
+        // for (int i = 0; i < node->size; i++)
+        //     ori += node->keys_size[i];
+        // cout << "original: key-" << ori;
+        // for (auto pfx : node->prefixMetadata)
+        //     ori += pfx.prefix->size;
+        // cout << "total-" << ori << endl;
         prefixOptimization *expand = prefix_expand(node);
         prefixOptimization *merge = prefix_merge(node);
         // optimizationType type = find_prefix_optimization_to_apply(prefixExpandResult, prefixMergeResult);
-        cout << "expand: " << expand->memusage << ", merge: " << merge->memusage << endl;
+        // cout << "expand: " << expand->memusage << ", merge: " << merge->memusage << endl;
         if (expand->memusage <= merge->memusage) {
             // Do prefix_expand
-            cout << "expand" << endl;
+            // cout << "expand" << endl;
             int newusage = 0;
             char *buf = NewPage();
             uint16_t *idx = new uint16_t[kNumberBound];
@@ -650,7 +658,7 @@ void apply_prefix_optimization(DB2Node *node) {
         }
         else {
             // Do prefix_merge
-            cout << "merge" << endl;
+            // cout << "merge" << endl;
             int newusage = 0;
             char *buf = NewPage();
             uint8_t oldpfx_idx[node->size];

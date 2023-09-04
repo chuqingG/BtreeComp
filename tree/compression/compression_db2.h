@@ -10,7 +10,7 @@ enum optimizationType {
 
 struct prefixMergeSegment {
     vector<PrefixMetaData> segment;
-    Data *prefix;
+    Data prefix;
     int cost = INT32_MAX;
     int firstindex = 0;
 };
@@ -19,13 +19,13 @@ struct closedRange {
     vector<PrefixMetaData> prefixMetadatas;
     // vector<int> positions;
     int pos_low = 0;
-    int pos_high = -1;  // To make sure the uninitialized struct high - low < 0
+    int pos_high = -1; // To make sure the uninitialized struct high - low < 0
 };
 
 struct db2split {
     vector<PrefixMetaData> leftmetadatas;
     vector<PrefixMetaData> rightmetadatas;
-    Data* splitprefix;
+    Data *splitprefix;
 };
 
 // The offset in prefix_merge is length to add before head,
@@ -40,7 +40,6 @@ public:
 
     prefixOptimization();
     ~prefixOptimization();
-
 };
 // struct prefixOptimization {
 //     // change to a class
@@ -57,7 +56,7 @@ public:
 //     }
 // };
 
-closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas, const char* newprefix, int prefixlen, int p_i_pos);
+closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas, const char *newprefix, int prefixlen, int p_i_pos);
 
 // Cost function is defined based on space requirements for prefix + suffixes
 // Cost must be minimized
@@ -75,17 +74,17 @@ prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, close
 prefixMergeSegment find_best_segment_in_closed_range(prefixOptimization *result, closedRange closedRange);
 
 void merge_prefixes_in_segment(prefixOptimization *result,
-                               prefixMergeSegment bestsegment);
+                               prefixMergeSegment *bestsegment);
 
-prefixOptimization* prefix_merge(DB2Node *node);
+prefixOptimization *prefix_merge(DB2Node *node);
 
 int expand_prefixes_in_boundary(prefixOptimization *result, int index);
 
-prefixOptimization* prefix_expand(DB2Node *node);
+prefixOptimization *prefix_expand(DB2Node *node);
 
 // int search_prefix_metadata(DB2Node *cursor, string_view key);
 
-int find_prefix_pos(DB2Node *cursor, const char* key, int keylen, bool forinsert);
+int find_prefix_pos(DB2Node *cursor, const char *key, int keylen, bool forinsert);
 
 // int find_insert_pos(DB2Node *node, const char* key, int keylen, int (*insertfunc)(DB2Node *, string_view, int, int, bool &), bool &equal);
 

@@ -155,6 +155,62 @@ DB2Node::~DB2Node() {
     delete base;
 }
 
+/*
+==================For WiredTiger================
+*/
+
+#ifdef DUPKEY
+KeyWT::KeyWT(string val, uint8_t p, int rid) {
+    value = val;
+    prefix = p;
+    isinitialized = false;
+    initialized_value = "";
+    ridList.push_back(to_string(rid));
+}
+
+KeyWT::KeyWT(string val, uint8_t p, vector<string> list) {
+    value = val;
+    prefix = p;
+    isinitialized = false;
+    initialized_value = "";
+    ridList = list;
+}
+
+// Method to add new rid with same key value
+void KeyWT::addRecord(int rid) {
+    ridList.push_back(to_string(rid));
+}
+
+// Get size of key
+int KeyWT::getSize() {
+    int totalLen = sizeof(prefix) + value.length();
+    for (int i = 0; i < ridList.size(); i++) {
+        totalLen += ridList.at(i).length();
+    }
+    return totalLen;
+}
+#endif
+
+NodeWT::NodeWT() {
+    size = 0;
+    prev = nullptr;
+    next = nullptr;
+    prefixstart = 0;
+    prefixstop = 0;
+    buf = NewPage();
+    SetEmptyPage(buf);
+    space_top = 0;
+    space_bottom = MAX_SIZE_IN_BYTES;
+}
+
+// Destructor of NodeWT
+NodeWT::~NodeWT() {
+    // for (NodeWT *childptr : ptrs) {
+    //     delete childptr;
+    // }
+    delete buf;
+}
+
 KeyMyISAM::KeyMyISAM(string v, int p, int rid) {
     value = v;
     setPrefix(p);
@@ -209,51 +265,6 @@ NodeMyISAM::NodeMyISAM() {
 // Destructor of NodeMyISAM
 NodeMyISAM::~NodeMyISAM() {
     for (NodeMyISAM *childptr : ptrs) {
-        delete childptr;
-    }
-}
-
-KeyWT::KeyWT(string val, uint8_t p, int rid) {
-    value = val;
-    prefix = p;
-    isinitialized = false;
-    initialized_value = "";
-    ridList.push_back(to_string(rid));
-}
-
-KeyWT::KeyWT(string val, uint8_t p, vector<string> list) {
-    value = val;
-    prefix = p;
-    isinitialized = false;
-    initialized_value = "";
-    ridList = list;
-}
-
-// Method to add new rid with same key value
-void KeyWT::addRecord(int rid) {
-    ridList.push_back(to_string(rid));
-}
-
-// Get size of key
-int KeyWT::getSize() {
-    int totalLen = sizeof(prefix) + value.length();
-    for (int i = 0; i < ridList.size(); i++) {
-        totalLen += ridList.at(i).length();
-    }
-    return totalLen;
-}
-
-NodeWT::NodeWT() {
-    size = 0;
-    prev = nullptr;
-    next = nullptr;
-    prefixstart = 0;
-    prefixstop = 0;
-}
-
-// Destructor of NodeWT
-NodeWT::~NodeWT() {
-    for (NodeWT *childptr : ptrs) {
         delete childptr;
     }
 }

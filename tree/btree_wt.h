@@ -9,28 +9,35 @@
 using namespace std;
 
 // BP tree
-class BPTreeWT{
+class BPTreeWT {
 public:
-	BPTreeWT(bool non_leaf_compression, bool suffix_compression=true);
-	~BPTreeWT();
-	int search(string_view);
-	void insert(string);
-	void getSize(NodeWT *, int &, int &, int &, int &, unsigned long &, int &);
-	int getHeight(NodeWT *);
-	NodeWT *getRoot();
-	void printTree(NodeWT *x, vector<bool> flag, bool compressed = false,
-				   int depth = 0, bool isLast = false);
+    BPTreeWT(bool non_leaf_compression, bool suffix_compression = true);
+    ~BPTreeWT();
+    int search(const char *);
+    void insert(char *);
+    void getSize(NodeWT *, int &, int &, int &, int &, unsigned long &, int &);
+    int getHeight(NodeWT *);
+    NodeWT *getRoot();
+    void printTree(NodeWT *x, vector<bool> flag, bool compressed = false,
+                   int depth = 0, bool isLast = false);
+
 private:
-	NodeWT *root;
-	bool non_leaf_comp;
-	bool suffix_comp;
-	void insert_leaf(NodeWT *leaf, vector<NodeWT *> &parents, string key);
-	void insert_nonleaf(NodeWT *node, vector<NodeWT *> &parents, int pos, splitReturnWT childsplit);
-	int insert_binary(NodeWT *cursor, string_view key, int low, int high, size_t &skiplow, bool &equal);
-	int search_binary(NodeWT *cursor, string_view key, int low, int high, size_t &skiplow);
-	NodeWT* search_leaf_node(NodeWT *root, string_view key, vector<NodeWT *> &parents, size_t &skiplow);
-	bool check_split_condition(NodeWT *node);
-	int split_point(vector<KeyWT> allkeys);
-	splitReturnWT split_nonleaf(NodeWT *node, vector<NodeWT *> parents, int pos, splitReturnWT childsplit);
-	splitReturnWT split_leaf(NodeWT *node, vector<NodeWT *> &parents, string newkey);
+    NodeWT *_root;
+    bool non_leaf_comp;
+    bool suffix_comp;
+    int max_level;
+    void insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *key, int keylen);
+    void insert_nonleaf(NodeWT *node, NodeWT **path, int pos, splitReturnWT childsplit);
+    // insert_binary
+    int search_insert_pos(NodeWT *cursor, const char *key, int keylen,
+                          int low, int high, size_t &skiplow, bool &equal);
+    // search_binary
+    int search_binary(NodeWT *cursor, const char *key, int low, int high, size_t &skiplow);
+    NodeWT *search_leaf_node(NodeWT *root, const char *key, int keylen, size_t &skiplow);
+    NodeWT *search_leaf_node_for_insert(NodeWT *root, const char *key, int keylen,
+                                        NodeWT **path, int &path_level, size_t &skiplow);
+    bool check_split_condition(NodeWT *node, int keylen);
+    int split_point(NodeWT *node);
+    splitReturnWT split_nonleaf(NodeWT *node, int pos, splitReturnWT childsplit);
+    splitReturnWT split_leaf(NodeWT *node, char *newkey, int newkey_len);
 };

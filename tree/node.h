@@ -176,6 +176,7 @@ public:
     ~NodeMyISAM();
 };
 
+#ifdef DUPKEY
 // Duplicates represented as <key, {rid list}>
 class KeyWT {
 public:
@@ -189,7 +190,37 @@ public:
     void addRecord(int rid);
     int getSize();
 };
+#endif
 
+// with no duplicate key
+struct WThead {
+    uint16_t key_offset;
+    uint16_t initval_offset;
+    uint8_t key_len;
+    uint8_t init_len = 0;
+    uint8_t pfx_len;
+    bool initialized = false;
+} __attribute__((packed));
+
+#ifndef DUPKEY
+class NodeWT {
+public:
+    bool IS_LEAF;
+    int size; // Total key number
+    char *buf;
+    uint16_t space_top;
+    uint16_t space_bottom;
+
+    uint16_t prefixstart; /* Best page prefix starting slot */
+    uint16_t prefixstop;  /* Maximum slot to which the best page prefix applies */
+
+    vector<NodeWT *> ptrs;
+    NodeWT *prev; // Prev node pointer
+    NodeWT *next; // Next node pointer
+    NodeWT();
+    ~NodeWT();
+};
+#else
 class NodeWT {
 public:
     bool IS_LEAF;
@@ -203,6 +234,7 @@ public:
     NodeWT();
     ~NodeWT();
 };
+#endif
 
 const int PKB_LEN = 2;
 
@@ -287,6 +319,7 @@ void printKeys_wt(NodeWT *node, bool compressed);
 void printKeys_pkb(NodePkB *node, bool compressed);
 
 #define NewPage() (char *)malloc(MAX_SIZE_IN_BYTES * sizeof(char))
+#define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
 
 #define UpdateBase(node, newbase) \
     {                             \
@@ -391,3 +424,27 @@ void printKeys_pkb(NodePkB *node, bool compressed);
 
 #define GetKeyDB2ByPtr(resultptr, i) (char *)(resultptr->base + resultptr->newoffset[i])
 #define GetKeyDB2(result, i) (char *)(result.base + result.newoffset[i])
+
+#define BufTop(nptr) (nptr->buf + nptr->space_top)
+#define GetNewHeader(nptr) (WThead *)(nptr->buf + nptr->space_bottom - sizeof(WThead))
+
+// Get the ith header, i starts at 0
+#define GetHeader(nptr, i) (WThead *)(nptr->buf + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(WThead))
+
+// TODO: think whether need to maintain space_bottom
+inline void InsertKeyWT(NodeWT *nptr, int pos, const char *k, int klen, int plen) {
+    strcpy(BufTop(nptr), k);
+    // shift the headers
+    for (int i = nptr->size; i > pos; i--) {
+        memcpy(GetHeader(nptr, i), GetHeader(nptr, i - 1), sizeof(WThead));
+    }
+    // Set the new header
+    WThead *header = GetHeader(nptr, pos);
+    header->key_offset = nptr->space_top;
+    header->key_len = klen;
+    header->pfx_len = plen;
+    header->initialized = false;
+
+    nptr->space_top += klen + 1;
+    nptr->size += 1;
+}

@@ -1,39 +1,34 @@
 #include "btree_wt_mt.h"
 #include "./compression/compression_wt.cpp"
 
-
 // Initialise the BPTreeWTMT NodeWT
 BPTreeWTMT::BPTreeWTMT(bool non_leaf_compression,
-                bool suffix_compression){
+                       bool suffix_compression) {
     root = new NodeWT;
     non_leaf_comp = non_leaf_compression;
     suffix_comp = suffix_compression;
 }
 
 // Destructor of BPTreeWTMT
-BPTreeWTMT::~BPTreeWTMT(){
+BPTreeWTMT::~BPTreeWTMT() {
     delete root;
 }
 
 // Function to get the root NodeWT
-NodeWT *BPTreeWTMT::getRoot(){
+NodeWT *BPTreeWTMT::getRoot() {
     return root;
 }
 
-
 // Function to set the root of BPTreeDB2
-void BPTreeWTMT::setRoot(NodeWT *newRoot)
-{
+void BPTreeWTMT::setRoot(NodeWT *newRoot) {
     root = newRoot;
 }
 
-void BPTreeWTMT::lockRoot(accessMode mode)
-{
+void BPTreeWTMT::lockRoot(accessMode mode) {
     // If root changed in the middle, update to original root
     NodeWT *prevRoot = root;
     prevRoot->lock(mode);
-    while (prevRoot != root)
-    {
+    while (prevRoot != root) {
         prevRoot->unlock(mode);
         prevRoot = root;
         root->lock(mode);
@@ -42,18 +37,18 @@ void BPTreeWTMT::lockRoot(accessMode mode)
 
 // Function to find any element
 // in B+ Tree
-int BPTreeWTMT::search(string_view key){
+int BPTreeWTMT::search(string_view key) {
     vector<NodeWT *> parents;
-    size_t skiplow = 0;
-    NodeWT *leaf = search_leaf_node(root, key, parents, skiplow);   
-    int pos =  leaf != nullptr ?  search_binary(leaf, key, 0, leaf->size - 1, skiplow) : -1;
+    uint8_t skiplow = 0;
+    NodeWT *leaf = search_leaf_node(root, key, parents, skiplow);
+    int pos = leaf != nullptr ? search_binary(leaf, key, 0, leaf->size - 1, skiplow) : -1;
     leaf->unlock(READ);
     return pos;
 }
 
-void BPTreeWTMT::insert(string x){
+void BPTreeWTMT::insert(string x) {
     lockRoot(WRITE);
-    if (root->size == 0){
+    if (root->size == 0) {
         int rid = rand();
         root->keys.push_back(KeyWT(x, 0, rid));
         root->IS_LEAF = true;
@@ -62,12 +57,12 @@ void BPTreeWTMT::insert(string x){
         return;
     }
     vector<NodeWT *> parents;
-    size_t skiplow = 0;
+    uint8_t skiplow = 0;
     NodeWT *leaf = search_leaf_node(root, x, parents, skiplow);
     insert_leaf(leaf, parents, x);
 }
 
-void BPTreeWTMT::insert_nonleaf(NodeWT *node, vector<NodeWT *> &parents, int pos, splitReturnWT childsplit){
+void BPTreeWTMT::insert_nonleaf(NodeWT *node, vector<NodeWT *> &parents, int pos, splitReturnWT childsplit) {
     node->lock(WRITE);
     // Move right if any splits occurred
     node = move_right(node, childsplit.promotekey);
@@ -76,10 +71,10 @@ void BPTreeWTMT::insert_nonleaf(NodeWT *node, vector<NodeWT *> &parents, int pos
     childsplit.right->unlock(WRITE);
     // Unlock prev node
     childsplit.left->unlock(WRITE);
-    
-    if (check_split_condition(node)){
+
+    if (check_split_condition(node)) {
         splitReturnWT currsplit = split_nonleaf(node, parents, pos, childsplit);
-        if (node == root){
+        if (node == root) {
             NodeWT *newRoot = new NodeWT;
             int rid = rand();
             newRoot->keys.push_back(KeyWT(currsplit.promotekey, 0, rid));
@@ -91,16 +86,16 @@ void BPTreeWTMT::insert_nonleaf(NodeWT *node, vector<NodeWT *> &parents, int pos
             setRoot(newRoot);
             currsplit.right->unlock(WRITE);
             currsplit.left->unlock(WRITE);
-        }else{
+        }
+        else {
             NodeWT *parent = nullptr;
             if (pos >= 0) {
                 parent = parents.at(pos);
             }
             else {
-                //Fetch parents if new levels have been added
+                // Fetch parents if new levels have been added
                 bt_fetch_root(node, parents);
-                if (parents.size() > 0)
-                {
+                if (parents.size() > 0) {
                     pos = parents.size() - 1;
                     parent = parents.at(pos);
                 }
@@ -112,67 +107,70 @@ void BPTreeWTMT::insert_nonleaf(NodeWT *node, vector<NodeWT *> &parents, int pos
             }
             insert_nonleaf(parent, parents, pos - 1, currsplit);
         }
-    } else {
+    }
+    else {
         string promotekey = childsplit.promotekey;
-        size_t skiplow = 0;
+        uint8_t skiplow = 0;
         int rid = rand();
         bool equal = false;
         int insertpos = insert_binary(node, promotekey, 0, node->size - 1, skiplow, equal);
-        
+
         vector<KeyWT> allkeys;
         vector<NodeWT *> allptrs;
-        
-        for (int i = 0; i < insertpos; i++){
+
+        for (int i = 0; i < insertpos; i++) {
             allkeys.push_back(node->keys.at(i));
         }
 
-        if(this->non_leaf_comp){
-            if (insertpos > 0){
+        if (this->non_leaf_comp) {
+            if (insertpos > 0) {
                 string prev_key = get_key(node, insertpos - 1);
                 uint8_t pfx = compute_prefix_wt(prev_key, promotekey);
                 string compressed = promotekey.substr(pfx);
                 allkeys.push_back(KeyWT(compressed, pfx, rid));
-            }else{
+            }
+            else {
                 allkeys.push_back(KeyWT(promotekey, 0, rid));
             }
-        } else {
+        }
+        else {
             allkeys.push_back(KeyWT(promotekey, 0, rid));
         }
-        
-        for (int i = insertpos; i < node->size; i++){
+
+        for (int i = insertpos; i < node->size; i++) {
             allkeys.push_back(node->keys.at(i));
         }
 
-        for (int i = 0; i < insertpos + 1; i++){
+        for (int i = 0; i < insertpos + 1; i++) {
             allptrs.push_back(node->ptrs.at(i));
         }
         allptrs.push_back(childsplit.right);
-        for (int i = insertpos + 1; i < node->size + 1; i++){
+        for (int i = insertpos + 1; i < node->size + 1; i++) {
             allptrs.push_back(node->ptrs.at(i));
         }
         node->keys = allkeys;
         node->ptrs = allptrs;
         node->size = node->size + 1;
 
-        if(this->non_leaf_comp){
+        if (this->non_leaf_comp) {
             // Rebuild prefixes if a new item is inserted in position 0
-        build_page_prefixes(node, insertpos, promotekey); // Populate new prefixes
+            build_page_prefixes(node, insertpos, promotekey); // Populate new prefixes
         }
 
         node->unlock(WRITE);
     }
 }
 
-void BPTreeWTMT::insert_leaf(NodeWT *leaf, vector<NodeWT *> &parents, string key){
+void BPTreeWTMT::insert_leaf(NodeWT *leaf, vector<NodeWT *> &parents, string key) {
     // Change shared lock to exclusive
     leaf->unlock(READ);
     leaf->lock(WRITE);
     // Move right if any splits occurred
     leaf = move_right(leaf, key);
-    
-    if (check_split_condition(leaf)){
+
+    if (check_split_condition(leaf)) {
         splitReturnWT split = split_leaf(leaf, parents, key);
-        if (leaf == root){
+        if (leaf == root) {
             NodeWT *newRoot = new NodeWT;
             int rid = rand();
             newRoot->keys.push_back(KeyWT(split.promotekey, 0, rid));
@@ -184,46 +182,48 @@ void BPTreeWTMT::insert_leaf(NodeWT *leaf, vector<NodeWT *> &parents, string key
             setRoot(newRoot);
             split.right->unlock(WRITE);
             leaf->unlock(WRITE);
-        }else{
-            //Fetch parents if new levels have been added
-            if (parents.size() == 0)
-            {
+        }
+        else {
+            // Fetch parents if new levels have been added
+            if (parents.size() == 0) {
                 bt_fetch_root(leaf, parents);
             }
             NodeWT *parent = parents.at(parents.size() - 1);
             insert_nonleaf(parent, parents, parents.size() - 2, split);
         }
-    }else{
-        size_t skiplow = 0;
+    }
+    else {
+        uint8_t skiplow = 0;
         int rid = rand();
         bool equal = false;
         int insertpos = insert_binary(leaf, key, 0, leaf->size - 1, skiplow, equal);
         vector<KeyWT> allkeys;
-        if (equal) {	
-            allkeys = leaf->keys;	
-            allkeys.at(insertpos - 1).addRecord(rid);	
+        if (equal) {
+            allkeys = leaf->keys;
+            allkeys.at(insertpos - 1).addRecord(rid);
         }
         else {
-            for (int i = 0; i < insertpos; i++){
+            for (int i = 0; i < insertpos; i++) {
                 allkeys.push_back(leaf->keys.at(i));
             }
 
-            if (insertpos > 0){
+            if (insertpos > 0) {
                 string prev_key = get_key(leaf, insertpos - 1);
                 uint8_t pfx = compute_prefix_wt(prev_key, key);
                 string compressed = key.substr(pfx);
                 allkeys.push_back(KeyWT(compressed, pfx, rid));
-            } else {
+            }
+            else {
                 allkeys.push_back(KeyWT(key, 0, rid));
             }
 
-            for (int i = insertpos; i < leaf->size; i++){
+            for (int i = insertpos; i < leaf->size; i++) {
                 allkeys.push_back(leaf->keys.at(i));
             }
         }
 
         leaf->keys = allkeys;
-        if(!equal) {
+        if (!equal) {
             leaf->size = leaf->size + 1;
             build_page_prefixes(leaf, insertpos, key); // Populate new prefixes
         }
@@ -232,51 +232,53 @@ void BPTreeWTMT::insert_leaf(NodeWT *leaf, vector<NodeWT *> &parents, string key
     }
 }
 
-int BPTreeWTMT::split_point(vector<KeyWT> allkeys){
+int BPTreeWTMT::split_point(vector<KeyWT> allkeys) {
     int size = allkeys.size();
     int bestsplit = size / 2;
     return bestsplit;
 }
 
-splitReturnWT BPTreeWTMT::split_nonleaf(NodeWT *node, vector<NodeWT *> parents, int pos, splitReturnWT childsplit){
+splitReturnWT BPTreeWTMT::split_nonleaf(NodeWT *node, vector<NodeWT *> parents, int pos, splitReturnWT childsplit) {
     splitReturnWT newsplit;
     NodeWT *right = new NodeWT;
     string promotekey = childsplit.promotekey;
     string splitprefix;
-    size_t skiplow = 0;
+    uint8_t skiplow = 0;
     int rid = rand();
     bool equal = false;
     int insertpos = insert_binary(node, promotekey, 0, node->size - 1, skiplow, equal);
-    
+
     vector<KeyWT> allkeys;
     vector<NodeWT *> allptrs;
 
-    for (int i = 0; i < insertpos; i++){
+    for (int i = 0; i < insertpos; i++) {
         allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
     }
 
-    if(this->non_leaf_comp){
-        if (insertpos > 0){
+    if (this->non_leaf_comp) {
+        if (insertpos > 0) {
             string prev_key = get_key(node, insertpos - 1);
             uint8_t pfx = compute_prefix_wt(prev_key, promotekey);
             string compressed = promotekey.substr(pfx);
             allkeys.push_back(KeyWT(compressed, pfx, rid));
-        } else {
+        }
+        else {
             allkeys.push_back(KeyWT(promotekey, 0, rid));
         }
-    } else {
+    }
+    else {
         allkeys.push_back(KeyWT(promotekey, 0, rid));
     }
-    
-    for (int i = insertpos; i < node->size; i++){
+
+    for (int i = insertpos; i < node->size; i++) {
         allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
     }
 
-    for (int i = 0; i < insertpos + 1; i++){
+    for (int i = 0; i < insertpos + 1; i++) {
         allptrs.push_back(node->ptrs.at(i));
     }
     allptrs.push_back(childsplit.right);
-    for (int i = insertpos + 1; i < node->size + 1; i++){
+    for (int i = insertpos + 1; i < node->size + 1; i++) {
         allptrs.push_back(node->ptrs.at(i));
     }
 
@@ -294,11 +296,12 @@ splitReturnWT BPTreeWTMT::split_nonleaf(NodeWT *node, vector<NodeWT *> parents, 
     string splitkey;
     string firstright;
 
-    if(this->non_leaf_comp){
+    if (this->non_leaf_comp) {
         firstright = get_uncompressed_key_before_insert(node, split + 1, insertpos, promotekey, equal);
         rightkeys.at(0) = KeyWT(firstright, 0, rightkeys.at(0).ridList);
         splitkey = get_uncompressed_key_before_insert(node, split, insertpos, promotekey, equal);
-    } else {
+    }
+    else {
         splitkey = allkeys.at(split).value;
     }
 
@@ -320,7 +323,7 @@ splitReturnWT BPTreeWTMT::split_nonleaf(NodeWT *node, vector<NodeWT *> parents, 
     // Set high keys
     right->highkey = node->highkey;
     node->highkey = newsplit.promotekey;
-    
+
     // Set next pointers
     NodeWT *next = node->next;
     right->prev = node;
@@ -333,8 +336,8 @@ splitReturnWT BPTreeWTMT::split_nonleaf(NodeWT *node, vector<NodeWT *> parents, 
     if (next)
         next->unlock(WRITE);
 
-    if(this->non_leaf_comp){
-        if (insertpos < split){
+    if (this->non_leaf_comp) {
+        if (insertpos < split) {
             build_page_prefixes(node, insertpos, promotekey); // Populate new prefixes
         }
         build_page_prefixes(right, 0, firstright); // Populate new prefixes
@@ -346,35 +349,35 @@ splitReturnWT BPTreeWTMT::split_nonleaf(NodeWT *node, vector<NodeWT *> parents, 
     return newsplit;
 }
 
-splitReturnWT BPTreeWTMT::split_leaf(NodeWT *node, vector<NodeWT *> &parents, string newkey){
+splitReturnWT BPTreeWTMT::split_leaf(NodeWT *node, vector<NodeWT *> &parents, string newkey) {
     splitReturnWT newsplit;
     NodeWT *right = new NodeWT;
-    size_t skiplow = 0;
-    int rid = rand();	
+    uint8_t skiplow = 0;
+    int rid = rand();
     bool equal = false;
     int insertpos = insert_binary(node, newkey, 0, node->size - 1, skiplow, equal);
     vector<KeyWT> allkeys;
-    if (equal) {	
-        allkeys = node->keys;	
-        allkeys.at(insertpos - 1).addRecord(rid);	
+    if (equal) {
+        allkeys = node->keys;
+        allkeys.at(insertpos - 1).addRecord(rid);
     }
     else {
-        for (int i = 0; i < insertpos; i++){
+        for (int i = 0; i < insertpos; i++) {
             allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
         }
-        if (insertpos > 0){
+        if (insertpos > 0) {
             string prev_key = get_key(node, insertpos - 1);
             uint8_t pfx = compute_prefix_wt(prev_key, newkey);
             string compressed = newkey.substr(pfx);
             allkeys.push_back(KeyWT(compressed, pfx, rid));
-        } else {
+        }
+        else {
             allkeys.push_back(KeyWT(newkey, 0, rid));
         }
 
-        for (int i = insertpos; i < node->size; i++){
+        for (int i = insertpos; i < node->size; i++) {
             allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
         }
-
     }
 
     int split = split_point(allkeys);
@@ -389,10 +392,11 @@ splitReturnWT BPTreeWTMT::split_leaf(NodeWT *node, vector<NodeWT *> &parents, st
     firstright = get_uncompressed_key_before_insert(node, split, insertpos, newkey, equal);
     rightkeys.at(0) = KeyWT(firstright, 0, rightkeys.at(0).ridList);
 
-    if(this->suffix_comp){
+    if (this->suffix_comp) {
         string lastleft = get_uncompressed_key_before_insert(node, split - 1, insertpos, newkey, equal);
         newsplit.promotekey = promote_key(node, lastleft, firstright);
-    } else {
+    }
+    else {
         newsplit.promotekey = firstright;
     }
 
@@ -423,7 +427,7 @@ splitReturnWT BPTreeWTMT::split_leaf(NodeWT *node, vector<NodeWT *> &parents, st
     if (next)
         next->unlock(WRITE);
 
-    if (!equal && insertpos < split){
+    if (!equal && insertpos < split) {
         build_page_prefixes(node, insertpos, newkey); // Populate new prefixes
     }
     build_page_prefixes(right, 0, firstright); // Populate new prefixes
@@ -434,10 +438,10 @@ splitReturnWT BPTreeWTMT::split_leaf(NodeWT *node, vector<NodeWT *> &parents, st
     return newsplit;
 }
 
-bool BPTreeWTMT::check_split_condition(NodeWT *node){
+bool BPTreeWTMT::check_split_condition(NodeWT *node) {
 #ifdef SPLIT_STRATEGY_SPACE
     int currspace = 0;
-    for (int i = 0; i < node->keys.size(); i++){
+    for (int i = 0; i < node->keys.size(); i++) {
         currspace += node->keys.at(i).getSize();
     }
     return node->size > 1 && currspace >= MAX_SIZE_IN_BYTES;
@@ -446,18 +450,19 @@ bool BPTreeWTMT::check_split_condition(NodeWT *node){
 #endif
 }
 
-int BPTreeWTMT::insert_binary(NodeWT *cursor, string_view key, int low, int high, size_t &skiplow, bool &equal){
+int BPTreeWTMT::insert_binary(NodeWT *cursor, string_view key, int low, int high, uint8_t &skiplow, bool &equal) {
     stringstream ss;
-    size_t skiphigh = 0;
-    while (low <= high){
+    uint8_t skiphigh = 0;
+    while (low <= high) {
         int mid = low + (high - low) / 2;
         string pagekey = extract_key(cursor, mid, this->non_leaf_comp);
         int cmp;
-        size_t match = min(skiplow, skiphigh);
+        uint8_t match = min(skiplow, skiphigh);
         cmp = lex_compare_skip(string(key), pagekey, &match);
-        if (cmp > 0){
+        if (cmp > 0) {
             skiplow = match;
-        } else if (cmp < 0){
+        }
+        else if (cmp < 0) {
             skiphigh = match;
         }
         if (cmp == 0) {
@@ -472,10 +477,9 @@ int BPTreeWTMT::insert_binary(NodeWT *cursor, string_view key, int low, int high
     return high + 1;
 }
 
-NodeWT* BPTreeWTMT::search_leaf_node(NodeWT *root, string_view key, vector<NodeWT *> &parents, size_t &skiplow)
-{
+NodeWT *BPTreeWTMT::search_leaf_node(NodeWT *root, string_view key, vector<NodeWT *> &parents, uint8_t &skiplow) {
     // Tree is empty
-    if (root->size == 0){
+    if (root->size == 0) {
         cout << "Tree is empty" << endl;
         return nullptr;
     }
@@ -485,15 +489,14 @@ NodeWT* BPTreeWTMT::search_leaf_node(NodeWT *root, string_view key, vector<NodeW
     cursor->lock(READ);
 
     // Till we reach leaf node
-    while (!cursor->IS_LEAF){
+    while (!cursor->IS_LEAF) {
         string_view searchkey = key;
-         // Acquire read lock before scanning node
+        // Acquire read lock before scanning node
         NodeWT *nextPtr = scan_node(cursor, string(searchkey), skiplow);
-        if (nextPtr != cursor->next)
-        {
+        if (nextPtr != cursor->next) {
             parents.push_back(cursor);
         }
-         // Release read lock after scanning node
+        // Release read lock after scanning node
         cursor->unlock(READ);
         // Acquire lock on next ptr
         nextPtr->lock(READ);
@@ -502,19 +505,19 @@ NodeWT* BPTreeWTMT::search_leaf_node(NodeWT *root, string_view key, vector<NodeW
     return cursor;
 }
 
-int BPTreeWTMT::search_binary(NodeWT *cursor, string_view key, int low, int high, size_t &skiplow){
-    size_t skiphigh = 0;
-    size_t match;
-    while (low <= high){
+int BPTreeWTMT::search_binary(NodeWT *cursor, string_view key, int low, int high, uint8_t &skiplow) {
+    uint8_t skiphigh = 0;
+    uint8_t match;
+    while (low <= high) {
         int mid = low + (high - low) / 2;
-        string pagekey = extract_key(cursor, mid, this->non_leaf_comp
-        );
+        string pagekey = extract_key(cursor, mid, this->non_leaf_comp);
         int cmp;
         match = min(skiplow, skiphigh);
         cmp = lex_compare_skip(string(key), pagekey, &match);
-        if (cmp > 0){
+        if (cmp > 0) {
             skiplow = match;
-        } else if (cmp < 0) {
+        }
+        else if (cmp < 0) {
             skiphigh = match;
         }
         if (cmp == 0)
@@ -527,29 +530,25 @@ int BPTreeWTMT::search_binary(NodeWT *cursor, string_view key, int low, int high
     return -1;
 }
 
-NodeWT* BPTreeWTMT::scan_node(NodeWT *node, string key, size_t &skiplow){
-    if (node->highkey.compare(MAXHIGHKEY) != 0 && node->highkey.compare(key) <= 0)
-    {
+NodeWT *BPTreeWTMT::scan_node(NodeWT *node, string key, uint8_t &skiplow) {
+    if (node->highkey.compare(MAXHIGHKEY) != 0 && node->highkey.compare(key) <= 0) {
         skiplow = 0;
         return node->next;
     }
     else if (node->IS_LEAF)
         return node;
-    else
-    {
+    else {
         bool equal = false;
         int pos = insert_binary(node, key, 0, node->size - 1, skiplow, equal);
         return node->ptrs.at(pos);
     }
 }
 
-NodeWT* BPTreeWTMT::move_right(NodeWT *node, string key)
-{
+NodeWT *BPTreeWTMT::move_right(NodeWT *node, string key) {
     NodeWT *current = node;
     NodeWT *nextPtr;
-    size_t skiplow = 0;    //Skip low is not relevant here
-    while ((nextPtr = scan_node(current, string(key), skiplow)) == current->next)
-    {
+    uint8_t skiplow = 0; // Skip low is not relevant here
+    while ((nextPtr = scan_node(current, string(key), skiplow)) == current->next) {
         current->unlock(WRITE);
         nextPtr->lock(WRITE);
         current = nextPtr;
@@ -558,33 +557,29 @@ NodeWT* BPTreeWTMT::move_right(NodeWT *node, string key)
     return current;
 }
 
-//Fetch root if it was changed by concurrent threads
-void BPTreeWTMT::bt_fetch_root(NodeWT *currRoot, vector<NodeWT *> &parents){
+// Fetch root if it was changed by concurrent threads
+void BPTreeWTMT::bt_fetch_root(NodeWT *currRoot, vector<NodeWT *> &parents) {
     NodeWT *cursor = root;
 
     cursor->lock(READ);
-    if (cursor->level == currRoot->level)
-    {
+    if (cursor->level == currRoot->level) {
         cursor->unlock(READ);
         return;
     }
 
     string key = currRoot->keys.at(0).value;
     NodeWT *nextPtr;
-    size_t skiplow = 0; //skip low is not relevant here
+    uint8_t skiplow = 0; // skip low is not relevant here
 
-    while (cursor->level != currRoot->level)
-    {
+    while (cursor->level != currRoot->level) {
         NodeWT *nextPtr = scan_node(cursor, key, skiplow);
-        if (nextPtr != cursor->next)
-        {
+        if (nextPtr != cursor->next) {
             parents.push_back(cursor);
         }
 
         cursor->unlock(READ);
 
-        if (nextPtr->level != currRoot->level)
-        {
+        if (nextPtr->level != currRoot->level) {
             nextPtr->lock(READ);
         }
 
@@ -601,67 +596,70 @@ void BPTreeWTMT::bt_fetch_root(NodeWT *currRoot, vector<NodeWT *> &parents){
 */
 
 void BPTreeWTMT::getSize(NodeWT *cursor, int &numNodeWTs, int &numNonLeaf, int &numKeyWTs,
-                     int &totalBranching, unsigned long &totalKeyWTSize, int &totalPrefixSize){
-    if (cursor != NULL){
+                         int &totalBranching, unsigned long &totalKeyWTSize, int &totalPrefixSize) {
+    if (cursor != NULL) {
         int currSize = 0;
         int prefixSize = 0;
-        for (int i = 0; i < cursor->size; i++){
-          currSize += cursor->keys.at(i).getSize();
-          prefixSize += sizeof(cursor->keys.at(i).prefix);
+        for (int i = 0; i < cursor->size; i++) {
+            currSize += cursor->keys.at(i).getSize();
+            prefixSize += sizeof(cursor->keys.at(i).prefix);
         }
         totalKeyWTSize += currSize;
         numKeyWTs += cursor->size;
         totalPrefixSize += prefixSize;
         numNodeWTs += 1;
-        if (cursor->IS_LEAF != true){
-          totalBranching += cursor->ptrs.size();
-          numNonLeaf += 1;
-          for (int i = 0; i < cursor->size + 1; i++){
-            getSize(cursor->ptrs[i], numNodeWTs, numNonLeaf, numKeyWTs, totalBranching, totalKeyWTSize, totalPrefixSize);
-          }
+        if (cursor->IS_LEAF != true) {
+            totalBranching += cursor->ptrs.size();
+            numNonLeaf += 1;
+            for (int i = 0; i < cursor->size + 1; i++) {
+                getSize(cursor->ptrs[i], numNodeWTs, numNonLeaf, numKeyWTs, totalBranching, totalKeyWTSize, totalPrefixSize);
+            }
         }
     }
 }
 
-
-int BPTreeWTMT::getHeight(NodeWT *cursor){
+int BPTreeWTMT::getHeight(NodeWT *cursor) {
     if (cursor == NULL)
         return 0;
     if (cursor->IS_LEAF == true)
         return 1;
     int maxHeight = 0;
-    for (int i = 0; i < cursor->size + 1; i++)
-    {
+    for (int i = 0; i < cursor->size + 1; i++) {
         maxHeight = max(maxHeight, getHeight(cursor->ptrs.at(i)));
     }
     return maxHeight + 1;
 }
 
-void BPTreeWTMT::printTree(NodeWT *x, vector<bool> flag, bool compressed, int depth, bool isLast){
+void BPTreeWTMT::printTree(NodeWT *x, vector<bool> flag, bool compressed, int depth, bool isLast) {
     // Condition when node is None
     if (x == NULL)
         return;
 
     // Loop to print the depths of the
     // current node
-    for (int i = 1; i < depth; ++i){
-
+    for (int i = 1; i < depth; ++i) {
         // Condition when the depth
         // is exploring
-        if (flag[i] == true){
-            cout << "| " << " " << " " << " ";
+        if (flag[i] == true) {
+            cout << "| "
+                 << " "
+                 << " "
+                 << " ";
         }
 
         // Otherwise print
         // the blank spaces
-        else{
-            cout << " " << " " << " " << " ";
+        else {
+            cout << " "
+                 << " "
+                 << " "
+                 << " ";
         }
     }
 
     // Condition when the current
     // node is the root node
-    if (depth == 0){
+    if (depth == 0) {
         printKeys_wt(x, compressed);
         cout << endl;
     }
@@ -669,7 +667,7 @@ void BPTreeWTMT::printTree(NodeWT *x, vector<bool> flag, bool compressed, int de
     // Condition when the node is
     // the last node of
     // the exploring depth
-    else if (isLast){
+    else if (isLast) {
         cout << "+--- ";
         printKeys_wt(x, compressed);
         cout << endl;
@@ -677,7 +675,8 @@ void BPTreeWTMT::printTree(NodeWT *x, vector<bool> flag, bool compressed, int de
         // No more childrens turn it
         // to the non-exploring depth
         flag[depth] = false;
-    }else{
+    }
+    else {
         cout << "+--- ";
         printKeys_wt(x, compressed);
         cout << endl;

@@ -197,8 +197,8 @@ NodeWT::NodeWT() {
     next = nullptr;
     prefixstart = 0;
     prefixstop = 0;
-    buf = NewPage();
-    SetEmptyPage(buf);
+    base = NewPage();
+    SetEmptyPage(base);
     space_top = 0;
     space_bottom = MAX_SIZE_IN_BYTES;
 }

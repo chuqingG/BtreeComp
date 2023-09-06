@@ -1,5 +1,6 @@
 #include "../include/config.h"
 #include "node.cpp"
+#include "node_inline.h"
 #include "util.cpp"
 #include <chrono>
 #include <iostream>

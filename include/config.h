@@ -9,6 +9,7 @@
 #define CHARALL
 #define SINGLE_DEBUG
 #define VERBOSE_PRINT // enable to write some intermediate results to output file (if set -o)
+// #define WTCACHE
 // #define DUPKEY
 // #define TOFIX  // enable to fix some skipped problem
 

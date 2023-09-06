@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include "node.cpp"
+#include "node_inline.h"
 #include "./compression/compression_db2.cpp"
 #include "util.cpp"
 #include "../include/config.h"

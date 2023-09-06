@@ -39,8 +39,7 @@ int lex_compare(string a, string b) {
                                              1);
 }
 
-int lex_compare_skip(string a, string b, size_t *matchp) {
-    string userp, treep;
+int lex_compare_skip(string a, string b, uint8_t *matchp) {
     size_t len, usz, tsz;
     usz = a.length();
     tsz = b.length();
@@ -58,6 +57,21 @@ int lex_compare_skip(string a, string b, size_t *matchp) {
     /* Contents are equal up to the smallest length. */
     return ((usz == tsz) ? 0 : (usz < tsz) ? -1 :
                                              1);
+}
+
+int char_cmp_skip(const char *a, const char *b,
+                  int alen, int blen, uint8_t *matchp) {
+    // 1 : a > b
+    // const size_t min_len = (alen < blen) ? alen : blen;
+    int cmp_len = min(alen, blen) - *matchp;
+    int idx = *matchp;
+    for (; cmp_len > 0; --cmp_len, ++idx, ++*matchp) {
+        int cmp = a[idx] - b[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    /* Contents are equal up to the smallest length. */
+    return (alen - blen);
 }
 
 string get_common_prefix(string x, string y) {

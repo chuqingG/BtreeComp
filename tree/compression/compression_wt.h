@@ -20,5 +20,6 @@ void record_page_prefix_group(NodeWT *node);
 void populate_prefix_backward(NodeWT *node, int pos, char *newkey, int keylen);
 uint8_t compute_new_prefix_len(const char *pkey, const char *ckey,
                                int pkey_len, int ckey_len, uint8_t ppfx_len);
+WTitem suffix_truncate(WTitem *lastleft, WTitem *firstright, bool isleaf);
 string promote_key(NodeWT *node, string lastleft, string firstright);
-string get_uncompressed_key_before_insert(NodeWT *node, int ind, int insertpos, string newkey, bool equal);
+// string get_uncompressed_key_before_insert(NodeWT *node, int ind, int insertpos, string newkey, bool equal);

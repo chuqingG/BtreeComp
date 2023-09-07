@@ -117,6 +117,8 @@
 // Get the ith header, i starts at 0
 #define GetHeader(nptr, i) (WThead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(WThead))
 
+#define PageOffset(nptr, off) (char *)(nptr->base + off)
+
 // TODO: think whether need to maintain space_bottom
 // The prefix should be cutoff before calling this
 inline void InsertKeyWT(NodeWT *nptr, int pos, const char *k, int klen, int plen) {
@@ -137,6 +139,16 @@ inline void InsertKeyWT(NodeWT *nptr, int pos, const char *k, int klen, int plen
     nptr->size += 1;
 }
 
-#define GetKeyWT(nptr, i) (char *)(nptr->base + GetHeader(nptr, i)->key_offset)
-
-#define PageOffset(nptr, off) (char *)(nptr->base + off)
+inline void CopyToNewPageWT(NodeWT *nptr, int low, int high, char *newbase, int &top) {
+    for (int i = low; i < high; i++) {
+        int newidx = i - low;
+        WThead *oldhead = GetHeader(nptr, i);
+        WThead *newhead = (WThead *)(newbase + MAX_SIZE_IN_BYTES
+                                     - (newidx + 1) * sizeof(WThead));
+        strncpy(newbase + top, PageOffset(nptr, oldhead->key_offset), oldhead->key_len);
+        newhead->key_len = oldhead->key_len;
+        newhead->key_offset = top;
+        newhead->pfx_len = oldhead->pfx_len;
+        top += oldhead->key_len + 1;
+    }
+}

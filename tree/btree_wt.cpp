@@ -149,16 +149,21 @@ void BPTreeWT::insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *ke
         int insertpos = search_insert_pos(leaf, key, keylen,
                                           0, leaf->size - 1, skiplow, equal);
 
+        WTitem prevkey;
         if (insertpos == 0) {
             InsertKeyWT(leaf, insertpos, key, keylen, 0);
+            // use key as placeholder of key_before_pos
+            prevkey.addr = key;
         }
         else {
             // fetch the previous key, compute prefix_len
-            WTitem prevkey = get_key(leaf, insertpos - 1);
+            prevkey = get_key(leaf, insertpos - 1);
             uint8_t pfx_len = get_common_prefix_len(prevkey.addr, key,
                                                     prevkey.size, keylen);
             InsertKeyWT(leaf, insertpos, key + pfx_len, keylen - pfx_len, pfx_len);
         }
+        if (!equal)
+            update_next_prefix(leaf, insertpos, prevkey.addr, key, keylen);
         // vector<KeyWT> allkeys;
         //
         // for (int i = 0; i < insertpos; i++) {
@@ -178,16 +183,16 @@ void BPTreeWT::insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *ke
         // }
         // leaf->keys = allkeys;
 
-        if (!equal) {
-            // leaf->size = leaf->size + 1;
-            build_page_prefixes(leaf, insertpos, key, keylen); // Populate new prefixes
-        }
+        // if (!equal) {
+        //     // leaf->size = leaf->size + 1;
+        //     build_page_prefixes(leaf, insertpos, key, keylen); // Populate new prefixes
+        // }
     }
 }
 
-int BPTreeWT::split_point(vector<KeyWT> allkeys) {
-    int size = allkeys.size();
-    int bestsplit = size / 2;
+int BPTreeWT::split_point(NodeWT *node) {
+    // int size = allkeys.size();
+    int bestsplit = node->size / 2;
     return bestsplit;
 }
 
@@ -293,69 +298,108 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, vector<NodeWT *> parents, in
     return newsplit;
 }
 
-splitReturnWT BPTreeWT::split_leaf(NodeWT *node, vector<NodeWT *> &parents, string newkey) {
+splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     splitReturnWT newsplit;
-    NodeWT *right = new NodeWT;
+    NodeWT *right = new NodeWT();
     uint8_t skiplow = 0;
-    int rid = rand();
+
     bool equal = false;
-    int insertpos = insert_binary(node, newkey, 0, node->size - 1, skiplow, equal);
-    vector<KeyWT> allkeys;
-
-    if (equal) {
-        allkeys = node->keys;
-        allkeys.at(insertpos - 1).addRecord(rid);
+    int insertpos = search_insert_pos(node, newkey, keylen,
+                                      0, node->size - 1, skiplow, equal);
+    // insert the newkey into page
+    WTitem prevkey;
+    if (insertpos == 0) {
+        InsertKeyWT(node, insertpos, newkey, keylen, 0);
+        // use key as placeholder of key_before_pos
+        prevkey.addr = newkey;
     }
     else {
-        for (int i = 0; i < insertpos; i++) {
-            allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
-        }
-        if (insertpos > 0) {
-            string prev_key = get_key(node, insertpos - 1);
-            uint8_t pfx = compute_prefix_wt(prev_key, newkey);
-            string compressed = newkey.substr(pfx);
-            allkeys.push_back(KeyWT(compressed, pfx, rid));
-        }
-        else {
-            allkeys.push_back(KeyWT(newkey, 0, rid));
-        }
-
-        for (int i = insertpos; i < node->size; i++) {
-            allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
-        }
+        // fetch the previous key, compute prefix_len
+        prevkey = get_key(node, insertpos - 1);
+        uint8_t pfx_len = get_common_prefix_len(prevkey.addr, newkey,
+                                                prevkey.size, keylen);
+        InsertKeyWT(node, insertpos, newkey + pfx_len, keylen - pfx_len, pfx_len);
     }
+    if (!equal)
+        update_next_prefix(node, insertpos, prevkey.addr, newkey, keylen);
 
-    int split = split_point(allkeys);
+    // vector<KeyWT> allkeys;
+    // int rid = rand();
+    // if (equal) {
+    //     allkeys = node->keys;
+    //     allkeys.at(insertpos - 1).addRecord(rid);
+    // }
+    // else {
+    //     for (int i = 0; i < insertpos; i++) {
+    //         allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
+    //     }
+    //     if (insertpos > 0) {
+    //         string prev_key = get_key(node, insertpos - 1);
+    //         uint8_t pfx = compute_prefix_wt(prev_key, newkey);
+    //         string compressed = newkey.substr(pfx);
+    //         allkeys.push_back(KeyWT(compressed, pfx, rid));
+    //     }
+    //     else {
+    //         allkeys.push_back(KeyWT(newkey, 0, rid));
+    //     }
 
-    vector<KeyWT> leftkeys;
-    vector<KeyWT> rightkeys;
-    copy(allkeys.begin(), allkeys.begin() + split, back_inserter(leftkeys));
-    copy(allkeys.begin() + split, allkeys.end(), back_inserter(rightkeys));
-    int orgind;
-    string firstright;
+    //     for (int i = insertpos; i < node->size; i++) {
+    //         allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
+    //     }
+    // }
 
-    firstright = get_uncompressed_key_before_insert(node, split, insertpos, newkey, equal);
-    rightkeys.at(0) = KeyWT(firstright, 0, rightkeys.at(0).ridList);
+    int split = split_point(node);
 
+    // vector<KeyWT> leftkeys;
+    // vector<KeyWT> rightkeys;
+    // copy(allkeys.begin(), allkeys.begin() + split, back_inserter(leftkeys));
+    // copy(allkeys.begin() + split, allkeys.end(), back_inserter(rightkeys));
+
+    // ? I guess old code did this because it didn't update the original node above
+    // firstright = get_uncompressed_key_before_insert(node, split, insertpos, newkey, equal);
+    // rightkeys.at(0) = KeyWT(firstright, 0, rightkeys.at(0).ridList);
+
+    // 1. get separator
+    WTitem firstright_fullkey = get_key(node, split);
     if (this->suffix_comp) {
-        string lastleft = get_uncompressed_key_before_insert(node, split - 1, insertpos, newkey, equal);
-        newsplit.promotekey = promote_key(node, lastleft, firstright);
+        WTitem lastleft_fullkey = get_key(node, split - 1);
+        newsplit.promotekey = suffix_truncate(&lastleft_fullkey, &firstright_fullkey,
+                                              node->IS_LEAF);
+        // string lastleft = get_uncompressed_key_before_insert(node, split - 1, insertpos, newkey, equal);
+        // newsplit.promotekey = promote_key(node, lastleft, firstright);
     }
     else {
-        newsplit.promotekey = firstright;
+        newsplit.promotekey = firstright_fullkey;
     }
 
-    node->size = leftkeys.size();
-    node->keys = leftkeys;
+    // 2. Substitute the first key in right part with its full key
+    WThead *header_rf = GetHeader(node, split);
+    strncpy(BufTop(node), firstright_fullkey.addr, firstright_fullkey.size);
+    header_rf->key_len = firstright_fullkey.size;
+    header_rf->pfx_len = 0;
+    header_rf->key_offset = node->space_top;
+    node->space_top += header_rf->key_len + 1;
 
-    right->size = rightkeys.size();
+    // 3. copy the two parts into new pages
+    char *leftbase = NewPage();
+    char *rightbase = right->base;
+    int left_top = 0, right_top = 0;
+
+    CopyToNewPageWT(node, 0, split, leftbase, left_top);
+    CopyToNewPageWT(node, split, node->size, rightbase, right_top);
+
+    right->size = node->size - split;
+    right->space_top = right_top;
     right->IS_LEAF = true;
-    right->keys = rightkeys;
 
-    if (!equal && insertpos < split) {
-        build_page_prefixes(node, insertpos, newkey); // Populate new prefixes
-    }
-    build_page_prefixes(right, 0, firstright); // Populate new prefixes
+    node->size = split;
+    node->space_top = left_top;
+    UpdateBase(node, leftbase);
+
+    // if (!equal && insertpos < split) {
+    //     build_page_prefixes(node, insertpos, newkey); // Populate new prefixes
+    // }
+    // build_page_prefixes(right, 0, firstright); // Populate new prefixes
 
     // Set next pointers
     NodeWT *next = node->next;

@@ -537,17 +537,32 @@ string promote_key(NodeWT *node, string lastleft, string firstright) {
     return firstright.substr(0, size);
 }
 
-string get_uncompressed_key_before_insert(NodeWT *node, int ind, int insertpos, string newkey, bool equal) {
-    if (equal) {
-        return get_key(node, ind);
-    }
-    string uncompressed;
-    if (insertpos == ind) {
-        uncompressed = newkey;
+WTitem suffix_truncate(WTitem *lastleft, WTitem *firstright, bool isleaf) {
+    WTitem separator;
+    separator.addr = firstright->addr;
+    separator.newallocated = false;
+    if (isleaf) {
+        separator.size = firstright->size;
     }
     else {
-        int origind = insertpos < ind ? ind - 1 : ind;
-        uncompressed = get_key(node, origind);
+        int common = get_common_prefix_len(lastleft->addr, firstright->addr,
+                                           lastleft->size, firstright->size);
+        separator.size = common + 1;
     }
-    return uncompressed;
+    return separator;
 }
+
+// string get_uncompressed_key_before_insert(NodeWT *node, int ind, int insertpos, string newkey, bool equal) {
+//     if (equal) {
+//         return get_key(node, ind);
+//     }
+//     string uncompressed;
+//     if (insertpos == ind) {
+//         uncompressed = newkey;
+//     }
+//     else {
+//         int origind = insertpos < ind ? ind - 1 : ind;
+//         uncompressed = get_key(node, origind);
+//     }
+//     return uncompressed;
+// }

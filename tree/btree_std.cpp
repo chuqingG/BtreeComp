@@ -416,6 +416,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new child
     UpdatePtrs(node, leftptrs, split + 1);
     UpdateBase(node, left_base);
     UpdateSize(node, left_size);
+    node->ptr_cnt = split + 1;
 
     // set key bound
     right->highkey = node->highkey;

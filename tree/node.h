@@ -235,6 +235,7 @@ public:
     vector<NodeWT *> ptrs;
     NodeWT *prev; // Prev node pointer
     NodeWT *next; // Next node pointer
+    uint16_t ptr_cnt;
     NodeWT();
     ~NodeWT();
 };

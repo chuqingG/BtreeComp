@@ -1,5 +1,6 @@
 #pragma once
 #include "node.h"
+#include "node_inline.h"
 
 // Data::Data(const char *s) {
 //     size = strlen(s);
@@ -195,6 +196,7 @@ NodeWT::NodeWT() {
     size = 0;
     prev = nullptr;
     next = nullptr;
+    ptr_cnt = 0;
     prefixstart = 0;
     prefixstop = 0;
     base = NewPage();
@@ -208,7 +210,7 @@ NodeWT::~NodeWT() {
     // for (NodeWT *childptr : ptrs) {
     //     delete childptr;
     // }
-    delete buf;
+    delete base;
 }
 
 KeyMyISAM::KeyMyISAM(string v, int p, int rid) {

@@ -50,97 +50,128 @@ void BPTreeWT::insert(char *x) {
     insert_leaf(leaf, search_path, path_level, x, keylen);
 }
 
-void BPTreeWT::insert_nonleaf(NodeWT *node, vector<NodeWT *> &parents, int pos, splitReturnWT childsplit) {
-    if (check_split_condition(node)) {
+void BPTreeWT::insert_nonleaf(NodeWT *node, NodeWT **path, int parentlevel, splitReturnWT childsplit) {
+    if (check_split_condition(node, childsplit.promotekey.size)) {
         NodeWT *parent = nullptr;
-        if (pos >= 0) {
-            parent = parents.at(pos);
+        if (parentlevel >= 0) {
+            parent = path[parentlevel];
         }
-        splitReturnWT currsplit = split_nonleaf(node, parents, pos, childsplit);
+        splitReturnWT currsplit = split_nonleaf(node, parentlevel, childsplit);
         if (node == _root) {
-            NodeWT *newRoot = new NodeWT;
-            int rid = rand();
-            newRoot->keys.push_back(KeyWT(currsplit.promotekey, 0, rid));
-            newRoot->ptrs.push_back(currsplit.left);
-            newRoot->ptrs.push_back(currsplit.right);
+            NodeWT *newRoot = new NodeWT();
+
+            // int rid = rand();
+            // newRoot->keys.push_back(KeyWT(currsplit.promotekey, 0, rid));
+            // newRoot->ptrs.push_back(currsplit.left);
+            // newRoot->ptrs.push_back(currsplit.right);
+            InsertNode(newRoot, 0, currsplit.left);
+            InsertKeyWT(newRoot, 0,
+                        currsplit.promotekey.addr, currsplit.promotekey.size, 0);
+            InsertNode(newRoot, 1, currsplit.right);
+
             newRoot->IS_LEAF = false;
-            newRoot->size = 1;
             _root = newRoot;
+            max_level++;
         }
         else {
             if (parent == nullptr)
                 return;
-            insert_nonleaf(parent, parents, pos - 1, currsplit);
+            insert_nonleaf(parent, path, parentlevel - 1, currsplit);
         }
     }
     else {
-        string promotekey = childsplit.promotekey;
+        WTitem *splitkey = &(childsplit.promotekey);
         uint8_t skiplow = 0;
-        int rid = rand();
+        // int rid = rand();
         bool equal = false;
-        int insertpos = insert_binary(node, promotekey, 0, node->size - 1, skiplow, equal);
-        vector<KeyWT> allkeys;
-        vector<NodeWT *> allptrs;
+        int insertpos = search_insert_pos(node, splitkey->addr, splitkey->size,
+                                          0, node->size - 1, skiplow, equal);
 
-        for (int i = 0; i < insertpos; i++) {
-            allkeys.push_back(node->keys.at(i));
-        }
+        // vector<KeyWT> allkeys;
 
-        if (this->non_leaf_comp) {
-            if (insertpos > 0) {
-                string prev_key = get_key(node, insertpos - 1);
-                uint8_t pfx = compute_prefix_wt(prev_key, promotekey);
-                string compressed = promotekey.substr(pfx);
-                allkeys.push_back(KeyWT(compressed, pfx, rid));
-            }
-            else {
-                allkeys.push_back(KeyWT(promotekey, 0, rid));
-            }
+        // for (int i = 0; i < insertpos; i++) {
+        //     allkeys.push_back(node->keys.at(i));
+        // }
+        //
+        // if (this->non_leaf_comp) {
+        //     if (insertpos > 0) {
+        //         string prev_key = get_key(node, insertpos - 1);
+        //         uint8_t pfx = compute_prefix_wt(prev_key, promotekey);
+        //         string compressed = promotekey.substr(pfx);
+        //         allkeys.push_back(KeyWT(compressed, pfx, rid));
+        //     }
+        //     else {
+        //         allkeys.push_back(KeyWT(promotekey, 0, rid));
+        //     }
+        // }
+        // else {
+        //     allkeys.push_back(KeyWT(promotekey, 0, rid));
+        // }
+        //
+        // for (int i = insertpos; i < node->size; i++) {
+        //     allkeys.push_back(node->keys.at(i));
+        // }
+        WTitem prevkey;
+        if (this->non_leaf_comp && insertpos != 0) {
+            // fetch the previous key, compute prefix_len
+            prevkey = get_key(node, insertpos - 1);
+            uint8_t pfx_len = get_common_prefix_len(prevkey.addr, splitkey->addr,
+                                                    prevkey.size, splitkey->size);
+            InsertKeyWT(node, insertpos, splitkey->addr + pfx_len,
+                        splitkey->size - pfx_len, pfx_len);
         }
         else {
-            allkeys.push_back(KeyWT(promotekey, 0, rid));
+            InsertKeyWT(node, insertpos, splitkey->addr, splitkey->size, 0);
+            // use key as placeholder of key_before_pos
+            prevkey.addr = splitkey->addr;
         }
+        if (this->non_leaf_comp && !equal)
+            update_next_prefix(node, insertpos, prevkey.addr, splitkey->addr, splitkey->size);
 
-        for (int i = insertpos; i < node->size; i++) {
-            allkeys.push_back(node->keys.at(i));
-        }
+        // insert pointer
+        // vector<NodeWT *> allptrs;
+        // for (int i = 0; i < insertpos + 1; i++) {
+        //     allptrs.push_back(node->ptrs.at(i));
+        // }
+        // allptrs.push_back(childsplit.right);
+        // for (int i = insertpos + 1; i < node->size + 1; i++) {
+        //     allptrs.push_back(node->ptrs.at(i));
+        // }
+        InsertNode(node, insertpos + 1, childsplit.right);
 
-        for (int i = 0; i < insertpos + 1; i++) {
-            allptrs.push_back(node->ptrs.at(i));
-        }
-        allptrs.push_back(childsplit.right);
-        for (int i = insertpos + 1; i < node->size + 1; i++) {
-            allptrs.push_back(node->ptrs.at(i));
-        }
-        node->keys = allkeys;
-        node->ptrs = allptrs;
-        node->size = node->size + 1;
+        // node->keys = allkeys;
+        // node->ptrs = allptrs;
+        // node->size = node->size + 1;
 
-        if (this->non_leaf_comp) {
-            // Rebuild prefixes if a new item is inserted in position 0
-            build_page_prefixes(node, insertpos, promotekey); // Populate new prefixes
-        }
+        // if (this->non_leaf_comp) {
+        //     // Rebuild prefixes if a new item is inserted in position 0
+        //     build_page_prefixes(node, insertpos, promotekey); // Populate new prefixes
+        // }
     }
 }
 
 void BPTreeWT::insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *key, int keylen) {
     if (check_split_condition(leaf, keylen)) {
-        splitReturnWT split = split_leaf(leaf, parents, key);
+        splitReturnWT split = split_leaf(leaf, key, keylen);
         if (leaf == _root) {
             NodeWT *newRoot = new NodeWT();
 
             // newRoot->keys.push_back(KeyWT(split.promotekey, 0, rid));
+            InsertNode(newRoot, 0, split.left);
             InsertKeyWT(newRoot, 0,
                         split.promotekey.addr, split.promotekey.size, 0);
-            newRoot->ptrs.push_back(split.left);
-            newRoot->ptrs.push_back(split.right);
+            InsertNode(newRoot, 1, split.right);
+
+            // newRoot->ptrs.push_back(split.left);
+            // newRoot->ptrs.push_back(split.right);
 
             newRoot->IS_LEAF = false;
             _root = newRoot;
+            max_level++;
         }
         else {
-            NodeWT *parent = parents.at(parents.size() - 1);
-            insert_nonleaf(parent, parents, parents.size() - 2, split);
+            NodeWT *parent = path[path_level - 1];
+            insert_nonleaf(parent, path, path_level - 2, split);
         }
     }
     else {
@@ -196,86 +227,159 @@ int BPTreeWT::split_point(NodeWT *node) {
     return bestsplit;
 }
 
-splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, vector<NodeWT *> parents, int pos, splitReturnWT childsplit) {
+splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT childsplit) {
     splitReturnWT newsplit;
-    NodeWT *right = new NodeWT;
-    string promotekey = childsplit.promotekey;
-    string splitprefix;
+    NodeWT *right = new NodeWT();
+    WTitem *promotekey = &(childsplit.promotekey);
+
+    // string splitprefix;
     uint8_t skiplow = 0;
-    int rid = rand();
+    // int rid = rand();
     bool equal = false;
-    int insertpos = insert_binary(node, promotekey, 0, node->size - 1, skiplow, equal);
+    int insertpos = search_insert_pos(node, promotekey->addr, promotekey->size,
+                                      0, node->size - 1, skiplow, equal);
 
-    vector<KeyWT> allkeys;
-    vector<NodeWT *> allptrs;
+    // vector<KeyWT> allkeys;
+    //
+    // for (int i = 0; i < insertpos; i++) {
+    //     allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
+    // }
+    // // Non-leaf nodes won't have duplicates
+    // if (this->non_leaf_comp) {
+    //     if (insertpos > 0) {
+    //         string prev_key = get_key(node, insertpos - 1);
+    //         uint8_t pfx = compute_prefix_wt(prev_key, promotekey);
+    //         string compressed = promotekey.substr(pfx);
+    //         allkeys.push_back(KeyWT(compressed, pfx, rid));
+    //     }
+    //     else {
+    //         allkeys.push_back(KeyWT(promotekey, 0, rid));
+    //     }
+    // }
+    // else {
+    //     allkeys.push_back(KeyWT(promotekey, 0, rid));
+    // }
+    //
+    // for (int i = insertpos; i < node->size; i++) {
+    //     allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
+    // }
 
-    for (int i = 0; i < insertpos; i++) {
-        allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
-    }
-
+    WTitem prevkey;
     // Non-leaf nodes won't have duplicates
-    if (this->non_leaf_comp) {
-        if (insertpos > 0) {
-            string prev_key = get_key(node, insertpos - 1);
-            uint8_t pfx = compute_prefix_wt(prev_key, promotekey);
-            string compressed = promotekey.substr(pfx);
-            allkeys.push_back(KeyWT(compressed, pfx, rid));
-        }
-        else {
-            allkeys.push_back(KeyWT(promotekey, 0, rid));
-        }
+    if (this->non_leaf_comp && insertpos != 0) {
+        // fetch the previous key, compute prefix_len
+        prevkey = get_key(node, insertpos - 1);
+        uint8_t pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr,
+                                                prevkey.size, promotekey->size);
+        InsertKeyWT(node, insertpos, promotekey->addr + pfx_len,
+                    promotekey->size - pfx_len, pfx_len);
     }
     else {
-        allkeys.push_back(KeyWT(promotekey, 0, rid));
+        InsertKeyWT(node, insertpos, promotekey->addr, promotekey->size, 0);
+        // use key as placeholder of key_before_pos
+        prevkey.addr = promotekey->addr;
     }
+    if (this->non_leaf_comp)
+        update_next_prefix(node, insertpos, prevkey.addr, promotekey->addr, promotekey->size);
 
-    for (int i = insertpos; i < node->size; i++) {
-        allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
-    }
+    // vector<NodeWT *> allptrs;
+    // for (int i = 0; i < insertpos + 1; i++) {
+    //     allptrs.push_back(node->ptrs.at(i));
+    // }
+    // allptrs.push_back(childsplit.right);
+    // for (int i = insertpos + 1; i < node->size + 1; i++) {
+    //     allptrs.push_back(node->ptrs.at(i));
+    // }
+    InsertNode(node, insertpos + 1, childsplit.right);
 
-    for (int i = 0; i < insertpos + 1; i++) {
-        allptrs.push_back(node->ptrs.at(i));
-    }
-    allptrs.push_back(childsplit.right);
-    for (int i = insertpos + 1; i < node->size + 1; i++) {
-        allptrs.push_back(node->ptrs.at(i));
-    }
-
-    int split = split_point(allkeys);
+    int split = split_point(node);
 
     // cout << "Best Split point " << split << " size " << allkeys.size() << endl;
 
-    vector<KeyWT> leftkeys;
-    vector<KeyWT> rightkeys;
-    vector<NodeWT *> leftptrs;
-    vector<NodeWT *> rightptrs;
-    copy(allkeys.begin(), allkeys.begin() + split, back_inserter(leftkeys));
-    copy(allkeys.begin() + split + 1, allkeys.end(), back_inserter(rightkeys));
-    copy(allptrs.begin(), allptrs.begin() + split + 1, back_inserter(leftptrs));
-    copy(allptrs.begin() + split + 1, allptrs.end(), back_inserter(rightptrs));
+    // vector<KeyWT> leftkeys;
+    // vector<KeyWT> rightkeys;
+    // vector<NodeWT *> leftptrs;
+    // vector<NodeWT *> rightptrs;
+    // copy(allkeys.begin(), allkeys.begin() + split, back_inserter(leftkeys));
+    // copy(allkeys.begin() + split + 1, allkeys.end(), back_inserter(rightkeys));
+    // copy(allptrs.begin(), allptrs.begin() + split + 1, back_inserter(leftptrs));
+    // copy(allptrs.begin() + split + 1, allptrs.end(), back_inserter(rightptrs));
+    //
+    // string splitkey;
+    // string firstright;
+    //
+    // if (this->non_leaf_comp) {
+    //     firstright = get_uncompressed_key_before_insert(node, split + 1, insertpos, promotekey, equal);
+    //     rightkeys.at(0) = KeyWT(firstright, 0, rightkeys.at(0).ridList);
+    //     splitkey = get_uncompressed_key_before_insert(node, split, insertpos, promotekey, equal);
+    // }
+    // else {
+    //     splitkey = allkeys.at(split).value;
+    // }
+    //
+    // newsplit.promotekey = splitkey;
 
-    string splitkey;
-    string firstright;
+    // 1. get separator
+    // WTitem firstright_fullkey = get_key(node, split);
 
     if (this->non_leaf_comp) {
-        firstright = get_uncompressed_key_before_insert(node, split + 1, insertpos, promotekey, equal);
-        rightkeys.at(0) = KeyWT(firstright, 0, rightkeys.at(0).ridList);
-        splitkey = get_uncompressed_key_before_insert(node, split, insertpos, promotekey, equal);
+        // separator = k[split]
+        newsplit.promotekey = get_key(node, split);
     }
     else {
-        splitkey = allkeys.at(split).value;
+        WThead *header_split = GetHeader(node, split);
+        newsplit.promotekey.addr = PageOffset(node, header_split->key_offset);
+        newsplit.promotekey.size = header_split->key_len;
     }
 
-    newsplit.promotekey = splitkey;
+    // 2. Substitute the first key in right part with its full key
+    if (this->non_leaf_comp) {
+        WThead *header_rf = GetHeader(node, split + 1);
+        WTitem firstright_fullkey = get_key(node, split + 1);
+        strncpy(BufTop(node), firstright_fullkey.addr, firstright_fullkey.size);
+        header_rf->key_len = firstright_fullkey.size;
+        header_rf->pfx_len = 0;
+        header_rf->key_offset = node->space_top;
+        node->space_top += header_rf->key_len + 1;
+    }
 
-    node->size = leftkeys.size();
-    node->keys = leftkeys;
-    node->ptrs = leftptrs;
+    // 3. copy the two parts into new pages
+    char *leftbase = NewPage();
+    char *rightbase = right->base;
+    int left_top = 0, right_top = 0;
 
-    right->size = rightkeys.size();
+    CopyToNewPageWT(node, 0, split, leftbase, left_top);
+    CopyToNewPageWT(node, split + 1, node->size, rightbase, right_top);
+
+    // 4. update pointers
+    vector<NodeWT *> leftptrs;
+    vector<NodeWT *> rightptrs;
+
+    copy(node->ptrs.begin(), node->ptrs.begin() + split + 1,
+         back_inserter(leftptrs));
+    copy(node->ptrs.begin() + split + 1, node->ptrs.end(),
+         back_inserter(rightptrs));
+
+    right->size = node->size - (split + 1);
+    right->space_top = right_top;
     right->IS_LEAF = false;
-    right->keys = rightkeys;
     right->ptrs = rightptrs;
+    right->ptr_cnt = node->size - split;
+
+    node->size = split;
+    node->space_top = left_top;
+    UpdateBase(node, leftbase);
+    node->ptrs = leftptrs;
+    node->ptr_cnt = split + 1;
+
+    // node->size = leftkeys.size();
+    // node->keys = leftkeys;
+    // node->ptrs = leftptrs;
+
+    // right->size = rightkeys.size();
+    // right->IS_LEAF = false;
+    // right->keys = rightkeys;
+    // right->ptrs = rightptrs;
 
     // Set next pointers
     NodeWT *next = node->next;
@@ -285,12 +389,12 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, vector<NodeWT *> parents, in
         next->prev = right;
     node->next = right;
 
-    if (this->non_leaf_comp) {
-        if (insertpos < split) {
-            build_page_prefixes(node, insertpos, promotekey); // Populate new prefixes
-        }
-        build_page_prefixes(right, 0, firstright); // Populate new prefixes
-    }
+    // if (this->non_leaf_comp) {
+    //     if (insertpos < split) {
+    //         build_page_prefixes(node, insertpos, promotekey); // Populate new prefixes
+    //     }
+    //     build_page_prefixes(right, 0, firstright); // Populate new prefixes
+    // }
 
     newsplit.left = node;
     newsplit.right = right;
@@ -421,8 +525,11 @@ bool BPTreeWT::check_split_condition(NodeWT *node, int keylen) {
     //     currspace += node->keys.at(i).getSize();
     // }
     // return node->size > 1 && currspace >= MAX_SIZE_IN_BYTES;
-    if (node->space_top + node->size * sizeof(WThead) + 2 * keylen
-        >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
+
+    int currspace = node->space_top + node->size * sizeof(WThead);
+    // Update prefix need more space
+    int splitcost = keylen + sizeof(WThead) + 2 * max(keylen, APPROX_KEY_SIZE);
+    if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
     else
         return false;

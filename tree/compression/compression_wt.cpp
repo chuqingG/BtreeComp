@@ -331,14 +331,9 @@ string get_full_key(NodeWT *node, int slot) {
 //     return keyb;
 // }
 
-// finish
+// Store the decompressed key into key
 void get_full_key(NodeWT *node, int idx, WTitem &key) {
-    // WTitem key;
     WThead *header = GetHeader(node, idx);
-    // string key;
-    // uint8_t prefix_len;
-    // key = node->keys.at(idx).value;
-    // prefix_len = node->keys.at(idx).prefix;
     key.addr = PageOffset(node, header->key_offset);
     key.size = header->key_len;
     int pfx_len = header->pfx_len;
@@ -346,30 +341,6 @@ void get_full_key(NodeWT *node, int idx, WTitem &key) {
     if (key.size != 0 && pfx_len == 0) { // no prefix
         return;
     }
-    // we may not use prefixstart and stop
-    // if (key.size != 0 && idx > node->prefixstart && idx <= node->prefixstop) {
-    //     // in best prefix segment
-    //     char *decomp_key = new char[key.size + pfx_len + 1];
-    //     WThead *basekey_header = GetHeader(node, node->prefixstart);
-    //     strncpy(decomp_key, PageOffset(node, basekey_header->key_offset), pfx_len);
-    //     strcpy(decomp_key, key.addr);
-    //     key.addr = decomp_key;
-    //     key.size += pfx_len;
-    //     key.newallocated = true;
-    //     return key;
-    //     // string groupkey = node->keys.at(node->prefixstart).value;
-    //     // string prefixstr = groupkey.substr(0, prefix_len);
-    //     // return prefixstr + key;
-    // }
-
-    // int base_idx;
-    // for (int i = idx - 1; i >= 0; i--) {
-    //     WThead *head_i = GetHeader(node, i);
-    //     if (head_i->pfx_len == 0) {
-    //         base_idx = i;
-    //         break;
-    //     }
-    // }
 
     char *decomp_key = new char[key.size + pfx_len + 1];
     // Get the compressed prefix from k[base] to k[i]
@@ -378,15 +349,12 @@ void get_full_key(NodeWT *node, int idx, WTitem &key) {
     for (int i = idx - 1; prefix_need > 0 && i >= 0; i--) {
         WThead *head_i = GetHeader(node, i);
         if (head_i->pfx_len < prefix_need) {
-            // int pfx_slot = prefix_need - head_i->pfx_len;
             strncpy(decomp_key + head_i->pfx_len,
                     PageOffset(node, head_i->key_offset), prefix_need - head_i->pfx_len);
             prefix_need = head_i->pfx_len;
         }
     }
 
-    // WThead *base_header = GetHeader(node, base_idx);
-    // strncpy(decomp_key, PageOffset(node, base_header->key_offset), pfx_len);
     strcpy(decomp_key + pfx_len, key.addr);
     key.addr = decomp_key;
     key.size += pfx_len;

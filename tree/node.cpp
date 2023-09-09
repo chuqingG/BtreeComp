@@ -197,8 +197,10 @@ NodeWT::NodeWT() {
     prev = nullptr;
     next = nullptr;
     ptr_cnt = 0;
+#ifdef WTCACHE
     prefixstart = 0;
     prefixstop = 0;
+#endif
     base = NewPage();
     SetEmptyPage(base);
     space_top = 0;
@@ -213,6 +215,7 @@ NodeWT::~NodeWT() {
     delete base;
 }
 
+#ifdef DUPKEY
 KeyMyISAM::KeyMyISAM(string v, int p, int rid) {
     value = v;
     setPrefix(p);
@@ -257,18 +260,24 @@ int KeyMyISAM::getSize() {
     }
     return totalLen;
 }
+#endif
 
 NodeMyISAM::NodeMyISAM() {
     size = 0;
     prev = nullptr;
     next = nullptr;
+    ptr_cnt = 0;
+    base = NewPage();
+    SetEmptyPage(base);
+    space_top = 0;
 }
 
 // Destructor of NodeMyISAM
 NodeMyISAM::~NodeMyISAM() {
-    for (NodeMyISAM *childptr : ptrs) {
-        delete childptr;
-    }
+    // for (NodeMyISAM *childptr : ptrs) {
+    //     delete childptr;
+    // }
+    delete base;
 }
 
 // Constructor of Key when pKB is enabled

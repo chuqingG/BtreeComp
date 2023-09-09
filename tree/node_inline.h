@@ -153,3 +153,20 @@ inline void CopyToNewPageWT(NodeWT *nptr, int low, int high, char *newbase, int 
         top += oldhead->key_len + 1;
     }
 }
+
+#define GetHeaderMyISAM(nptr, i) (MyISAMhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(MyISAMhead))
+
+inline void InsertKeyMyISAM(NodeMyISAM *nptr, int pos, const char *k, int klen, int plen) {
+    strcpy(BufTop(nptr), k);
+    // shift the headers
+    for (int i = nptr->size; i > pos; i--) {
+        memcpy(GetHeaderMyISAM(nptr, i), GetHeaderMyISAM(nptr, i - 1), sizeof(MyISAMhead));
+    }
+    // Set the new header
+    MyISAMhead *header = GetHeaderMyISAM(nptr, pos);
+    header->key_offset = nptr->space_top;
+    header->key_len = (uint8_t)klen;
+    header->pfx_len = (uint8_t)plen;
+    nptr->space_top += klen + 1;
+    nptr->size += 1;
+}

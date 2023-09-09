@@ -3,36 +3,43 @@
 #include <vector>
 #include <iostream>
 #include "node.cpp"
+#include "node_inline.h"
 #include "util.cpp"
 #include "../include/config.h"
 
 using namespace std;
 
 // BP tree
-class BPTreeMyISAM{
+class BPTreeMyISAM {
 public:
-	// NodeMyISAM *root;
-	BPTreeMyISAM(bool non_leaf_comp=false);
-	~BPTreeMyISAM();
-	int search(string_view);
-	void insert(string);
-	void getSize(NodeMyISAM *, int &, int &, int &, int &, unsigned long &, int &);
-	int getHeight(NodeMyISAM *);
-	NodeMyISAM *getRoot();
-	void printTree(NodeMyISAM *x, vector<bool> flag, bool compressed = false,
-				   int depth = 0, bool isLast = false);
+    // NodeMyISAM *root;
+    BPTreeMyISAM(bool non_leaf_comp = false);
+    ~BPTreeMyISAM();
+    int search(const char *);
+    void insert(char *);
+    void getSize(NodeMyISAM *, int &, int &, int &, int &, unsigned long &, int &);
+    int getHeight(NodeMyISAM *);
+    NodeMyISAM *getRoot();
+    void printTree(NodeMyISAM *x, vector<bool> flag, bool compressed = false,
+                   int depth = 0, bool isLast = false);
+
 private:
-	NodeMyISAM *root;
+    NodeMyISAM *_root;
     bool non_leaf_comp;
-	int prefix_insert(NodeMyISAM *cursor, string_view key, bool &equal);
-	int prefix_search(NodeMyISAM *node, string_view key);
-	void insert_leaf(NodeMyISAM *leaf, vector<NodeMyISAM *> &parents, string key);
-	void insert_nonleaf(NodeMyISAM *node, vector<NodeMyISAM *> &parents, int pos, splitReturnMyISAM childsplit);
-	int insert_binary(NodeMyISAM *cursor, string_view key, int low, int high, bool &equal);
-	int search_binary(NodeMyISAM *cursor, string_view key, int low, int high);
-	NodeMyISAM* search_leaf_node(NodeMyISAM *root, string_view key, vector<NodeMyISAM *> &parents);
-	bool check_split_condition(NodeMyISAM *node);
-	int split_point(vector<KeyMyISAM> allkeys);
-	splitReturnMyISAM split_nonleaf(NodeMyISAM *node, vector<NodeMyISAM *> parents, int pos, splitReturnMyISAM childsplit);
-	splitReturnMyISAM split_leaf(NodeMyISAM *node, vector<NodeMyISAM *> &parents, string newkey);
+    int max_level;
+    int prefix_insert(NodeMyISAM *cursor, const char *key, int keylen, bool &equal);
+    int prefix_search(NodeMyISAM *node, string_view key);
+    void insert_leaf(NodeMyISAM *leaf, NodeMyISAM **path, int path_level, char *key, int keylen);
+    void insert_nonleaf(NodeMyISAM *node, NodeMyISAM **path, int pos, splitReturnMyISAM *childsplit);
+    // insert_binary
+    int insert_binary(NodeMyISAM *cursor, const char *key, int keylen, int low, int high, bool &equal);
+    // search_bianry
+    int search_binary(NodeMyISAM *cursor, const char *key, int keylen, int low, int high);
+    NodeMyISAM *search_leaf_node(NodeMyISAM *searchroot, const char *key, int keylen);
+    NodeMyISAM *search_leaf_node_for_insert(NodeMyISAM *searchroot, const char *key, int keylen,
+                                            NodeMyISAM **path, int &path_level);
+    bool check_split_condition(NodeMyISAM *node, int keylen);
+    int split_point(NodeMyISAM *node);
+    splitReturnMyISAM split_nonleaf(NodeMyISAM *node, int pos, splitReturnMyISAM *childsplit);
+    splitReturnMyISAM split_leaf(NodeMyISAM *node, char *newkey, int newkey_len);
 };

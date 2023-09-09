@@ -152,7 +152,7 @@ private:
     BPTreeDB2 *_tree;
 };
 
-class BPTreeMyISAMBenchmark : public Benchmark {
+class BPTreeMyISAMBenchmark : public Benchmark_c {
 public:
     ~BPTreeMyISAMBenchmark() override {
         delete _tree;
@@ -167,14 +167,17 @@ public:
         _tree = nullptr;
     }
 
-    void Insert(const vector<string> &values) override {
-        for (uint32_t i = 0; i < values.size(); ++i)
+    void Insert(const vector<char *> &values) override {
+        for (uint32_t i = 0; i < values.size(); ++i) {
             _tree->insert(values.at(i));
+            // vector<bool> flag(i + 1);
+            // _tree->printTree(_tree->getRoot(), flag, true);
+        }
     }
 
-    bool Search(const std::vector<string> &values) override {
+    bool Search(const std::vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); ++i)
-            if (_tree->search(values.at(i)) == -1)
+            if (_tree->search(values[i]) == -1)
                 return false;
         return true;
     }

@@ -149,6 +149,7 @@ public:
 #endif
 // Key with prefix and suffix encoding
 // Duplicates represented as <key, {rid list}>
+#ifdef DUPKEY
 class KeyMyISAM {
 public:
     string value;
@@ -175,6 +176,32 @@ public:
     NodeMyISAM();
     ~NodeMyISAM();
 };
+#else
+struct MyISAMhead {
+    uint16_t key_offset;
+    uint8_t key_len;
+    uint8_t pfx_len;
+    /* We assume all the prefix are less than 128 Byte, so remove is1Byte in MyISAM
+     *  May need to consider the case key/pfx_len in [128, 256)
+     */
+    // bool is1B;
+} __attribute__((packed));
+
+class NodeMyISAM {
+public:
+    bool IS_LEAF;
+    int size;
+    char *base;
+    uint16_t space_top;
+
+    vector<NodeMyISAM *> ptrs;
+    NodeMyISAM *prev; // Prev node pointer
+    NodeMyISAM *next; // Next node pointer
+    uint16_t ptr_cnt;
+    NodeMyISAM();
+    ~NodeMyISAM();
+};
+#endif
 
 #ifdef DUPKEY
 // Duplicates represented as <key, {rid list}>
@@ -235,10 +262,10 @@ public:
     char *base;
     uint16_t space_top;
     uint16_t space_bottom;
-
+#ifdef WTCACHE
     uint16_t prefixstart; /* Best page prefix starting slot */
     uint16_t prefixstop;  /* Maximum slot to which the best page prefix applies */
-
+#endif
     vector<NodeWT *> ptrs;
     NodeWT *prev; // Prev node pointer
     NodeWT *next; // Next node pointer
@@ -315,7 +342,7 @@ struct splitReturnDB2 {
 };
 
 struct splitReturnMyISAM {
-    string promotekey;
+    WTitem promotekey;
     NodeMyISAM *left;
     NodeMyISAM *right;
 };

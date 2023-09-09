@@ -28,7 +28,7 @@ int BPTreeWT::search(const char *key) {
     NodeWT *leaf = search_leaf_node(_root, key, keylen, skiplow);
     if (leaf == nullptr)
         return -1;
-    return search_binary(leaf, key, 0, leaf->size - 1, skiplow);
+    return search_in_leaf(leaf, key, keylen, 0, leaf->size - 1, skiplow);
 }
 
 void BPTreeWT::insert(char *x) {
@@ -50,8 +50,8 @@ void BPTreeWT::insert(char *x) {
     insert_leaf(leaf, search_path, path_level, x, keylen);
 }
 
-void BPTreeWT::insert_nonleaf(NodeWT *node, NodeWT **path, int parentlevel, splitReturnWT childsplit) {
-    if (check_split_condition(node, childsplit.promotekey.size)) {
+void BPTreeWT::insert_nonleaf(NodeWT *node, NodeWT **path, int parentlevel, splitReturnWT *childsplit) {
+    if (check_split_condition(node, childsplit->promotekey.size)) {
         NodeWT *parent = nullptr;
         if (parentlevel >= 0) {
             parent = path[parentlevel];
@@ -76,11 +76,11 @@ void BPTreeWT::insert_nonleaf(NodeWT *node, NodeWT **path, int parentlevel, spli
         else {
             if (parent == nullptr)
                 return;
-            insert_nonleaf(parent, path, parentlevel - 1, currsplit);
+            insert_nonleaf(parent, path, parentlevel - 1, &currsplit);
         }
     }
     else {
-        WTitem *splitkey = &(childsplit.promotekey);
+        WTitem *splitkey = &(childsplit->promotekey);
         uint8_t skiplow = 0;
         // int rid = rand();
         bool equal = false;
@@ -95,7 +95,7 @@ void BPTreeWT::insert_nonleaf(NodeWT *node, NodeWT **path, int parentlevel, spli
         //
         // if (this->non_leaf_comp) {
         //     if (insertpos > 0) {
-        //         string prev_key = get_key(node, insertpos - 1);
+        //         string prev_key = get_full_key(node, insertpos - 1);
         //         uint8_t pfx = compute_prefix_wt(prev_key, promotekey);
         //         string compressed = promotekey.substr(pfx);
         //         allkeys.push_back(KeyWT(compressed, pfx, rid));
@@ -114,7 +114,7 @@ void BPTreeWT::insert_nonleaf(NodeWT *node, NodeWT **path, int parentlevel, spli
         WTitem prevkey;
         if (this->non_leaf_comp && insertpos != 0) {
             // fetch the previous key, compute prefix_len
-            prevkey = get_key(node, insertpos - 1);
+            get_full_key(node, insertpos - 1, prevkey);
             uint8_t pfx_len = get_common_prefix_len(prevkey.addr, splitkey->addr,
                                                     prevkey.size, splitkey->size);
             InsertKeyWT(node, insertpos, splitkey->addr + pfx_len,
@@ -137,7 +137,7 @@ void BPTreeWT::insert_nonleaf(NodeWT *node, NodeWT **path, int parentlevel, spli
         // for (int i = insertpos + 1; i < node->size + 1; i++) {
         //     allptrs.push_back(node->ptrs.at(i));
         // }
-        InsertNode(node, insertpos + 1, childsplit.right);
+        InsertNode(node, insertpos + 1, childsplit->right);
 
         // node->keys = allkeys;
         // node->ptrs = allptrs;
@@ -171,7 +171,7 @@ void BPTreeWT::insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *ke
         }
         else {
             NodeWT *parent = path[path_level - 1];
-            insert_nonleaf(parent, path, path_level - 2, split);
+            insert_nonleaf(parent, path, path_level - 2, &split);
         }
     }
     else {
@@ -188,7 +188,7 @@ void BPTreeWT::insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *ke
         }
         else {
             // fetch the previous key, compute prefix_len
-            prevkey = get_key(leaf, insertpos - 1);
+            get_full_key(leaf, insertpos - 1, prevkey);
             uint8_t pfx_len = get_common_prefix_len(prevkey.addr, key,
                                                     prevkey.size, keylen);
             InsertKeyWT(leaf, insertpos, key + pfx_len, keylen - pfx_len, pfx_len);
@@ -201,7 +201,7 @@ void BPTreeWT::insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *ke
         //     allkeys.push_back(leaf->keys.at(i));
         // }
         // if (insertpos > 0) {
-        //     string prev_key = get_key(leaf, insertpos - 1);
+        //     string prev_key = get_full_key(leaf, insertpos - 1);
         //     uint8_t pfx = compute_prefix_wt(prev_key, key);
         //     string compressed = key.substr(pfx);
         //     allkeys.push_back(KeyWT(compressed, pfx, rid));
@@ -227,10 +227,10 @@ int BPTreeWT::split_point(NodeWT *node) {
     return bestsplit;
 }
 
-splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT childsplit) {
+splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT *childsplit) {
     splitReturnWT newsplit;
     NodeWT *right = new NodeWT();
-    WTitem *promotekey = &(childsplit.promotekey);
+    WTitem *promotekey = &(childsplit->promotekey);
 
     // string splitprefix;
     uint8_t skiplow = 0;
@@ -247,7 +247,7 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT child
     // // Non-leaf nodes won't have duplicates
     // if (this->non_leaf_comp) {
     //     if (insertpos > 0) {
-    //         string prev_key = get_key(node, insertpos - 1);
+    //         string prev_key = get_full_key(node, insertpos - 1);
     //         uint8_t pfx = compute_prefix_wt(prev_key, promotekey);
     //         string compressed = promotekey.substr(pfx);
     //         allkeys.push_back(KeyWT(compressed, pfx, rid));
@@ -268,7 +268,7 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT child
     // Non-leaf nodes won't have duplicates
     if (this->non_leaf_comp && insertpos != 0) {
         // fetch the previous key, compute prefix_len
-        prevkey = get_key(node, insertpos - 1);
+        get_full_key(node, insertpos - 1, prevkey);
         uint8_t pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr,
                                                 prevkey.size, promotekey->size);
         InsertKeyWT(node, insertpos, promotekey->addr + pfx_len,
@@ -290,7 +290,7 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT child
     // for (int i = insertpos + 1; i < node->size + 1; i++) {
     //     allptrs.push_back(node->ptrs.at(i));
     // }
-    InsertNode(node, insertpos + 1, childsplit.right);
+    InsertNode(node, insertpos + 1, childsplit->right);
 
     int split = split_point(node);
 
@@ -320,22 +320,29 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT child
     // newsplit.promotekey = splitkey;
 
     // 1. get separator
-    // WTitem firstright_fullkey = get_key(node, split);
+    // WTitem firstright_fullkey = get_full_key(node, split);
 
     if (this->non_leaf_comp) {
         // separator = k[split]
-        newsplit.promotekey = get_key(node, split);
+        get_full_key(node, split, newsplit.promotekey);
     }
     else {
         WThead *header_split = GetHeader(node, split);
         newsplit.promotekey.addr = PageOffset(node, header_split->key_offset);
         newsplit.promotekey.size = header_split->key_len;
     }
+    // make a copy, the addr will be reallocated after write into new page
+    char *keycopy = new char[newsplit.promotekey.size + 1];
+    strncpy(keycopy, newsplit.promotekey.addr, newsplit.promotekey.size);
+    keycopy[newsplit.promotekey.size] = '\0';
+    newsplit.promotekey.addr = keycopy;
+    newsplit.promotekey.newallocated = true;
 
     // 2. Substitute the first key in right part with its full key
     if (this->non_leaf_comp) {
         WThead *header_rf = GetHeader(node, split + 1);
-        WTitem firstright_fullkey = get_key(node, split + 1);
+        WTitem firstright_fullkey;
+        get_full_key(node, split + 1, firstright_fullkey);
         strncpy(BufTop(node), firstright_fullkey.addr, firstright_fullkey.size);
         header_rf->key_len = firstright_fullkey.size;
         header_rf->pfx_len = 0;
@@ -345,6 +352,7 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT child
 
     // 3. copy the two parts into new pages
     char *leftbase = NewPage();
+    SetEmptyPage(leftbase);
     char *rightbase = right->base;
     int left_top = 0, right_top = 0;
 
@@ -419,7 +427,7 @@ splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     }
     else {
         // fetch the previous key, compute prefix_len
-        prevkey = get_key(node, insertpos - 1);
+        get_full_key(node, insertpos - 1, prevkey);
         uint8_t pfx_len = get_common_prefix_len(prevkey.addr, newkey,
                                                 prevkey.size, keylen);
         InsertKeyWT(node, insertpos, newkey + pfx_len, keylen - pfx_len, pfx_len);
@@ -427,6 +435,9 @@ splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     if (!equal)
         update_next_prefix(node, insertpos, prevkey.addr, newkey, keylen);
 
+    // vector<bool> flag(node->size);
+    // printTree(node, flag, true);
+    // cout << "split1: " << node->space_top << "+" << node->size * sizeof(WThead) << endl;
     // vector<KeyWT> allkeys;
     // int rid = rand();
     // if (equal) {
@@ -438,7 +449,7 @@ splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     //         allkeys.push_back(KeyWT(node->keys.at(i).value, node->keys.at(i).prefix, node->keys.at(i).ridList));
     //     }
     //     if (insertpos > 0) {
-    //         string prev_key = get_key(node, insertpos - 1);
+    //         string prev_key = get_full_key(node, insertpos - 1);
     //         uint8_t pfx = compute_prefix_wt(prev_key, newkey);
     //         string compressed = newkey.substr(pfx);
     //         allkeys.push_back(KeyWT(compressed, pfx, rid));
@@ -464,17 +475,25 @@ splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     // rightkeys.at(0) = KeyWT(firstright, 0, rightkeys.at(0).ridList);
 
     // 1. get separator
-    WTitem firstright_fullkey = get_key(node, split);
+    WTitem firstright_fullkey;
+    get_full_key(node, split, firstright_fullkey);
     if (this->suffix_comp) {
-        WTitem lastleft_fullkey = get_key(node, split - 1);
-        newsplit.promotekey = suffix_truncate(&lastleft_fullkey, &firstright_fullkey,
-                                              node->IS_LEAF);
+        WTitem lastleft_fullkey;
+        get_full_key(node, split - 1, lastleft_fullkey);
+        suffix_truncate(&lastleft_fullkey, &firstright_fullkey,
+                        node->IS_LEAF, newsplit.promotekey);
         // string lastleft = get_uncompressed_key_before_insert(node, split - 1, insertpos, newkey, equal);
         // newsplit.promotekey = promote_key(node, lastleft, firstright);
     }
     else {
         newsplit.promotekey = firstright_fullkey;
     }
+    // make a copy, the addr will be reallocated after write into new page
+    char *keycopy = new char[newsplit.promotekey.size + 1];
+    strncpy(keycopy, newsplit.promotekey.addr, newsplit.promotekey.size);
+    keycopy[newsplit.promotekey.size] = '\0';
+    newsplit.promotekey.addr = keycopy;
+    newsplit.promotekey.newallocated = true;
 
     // 2. Substitute the first key in right part with its full key
     WThead *header_rf = GetHeader(node, split);
@@ -484,8 +503,13 @@ splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     header_rf->key_offset = node->space_top;
     node->space_top += header_rf->key_len + 1;
 
+    // vector<bool> flag(node->size);
+    // printTree(node, flag, true);
+    // cout << "split2: " << node->space_top << "+" << node->size * sizeof(WThead) << endl;
+
     // 3. copy the two parts into new pages
     char *leftbase = NewPage();
+    SetEmptyPage(leftbase);
     char *rightbase = right->base;
     int left_top = 0, right_top = 0;
 
@@ -500,6 +524,10 @@ splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     node->space_top = left_top;
     UpdateBase(node, leftbase);
 
+    // vector<bool> flag1(node->size);
+    // printTree(node, flag, true);
+    // vector<bool> flag2(right->size);
+    // printTree(right, flag, true);
     // if (!equal && insertpos < split) {
     //     build_page_prefixes(node, insertpos, newkey); // Populate new prefixes
     // }
@@ -529,6 +557,7 @@ bool BPTreeWT::check_split_condition(NodeWT *node, int keylen) {
     int currspace = node->space_top + node->size * sizeof(WThead);
     // Update prefix need more space
     int splitcost = keylen + sizeof(WThead) + 2 * max(keylen, APPROX_KEY_SIZE);
+    // cout << "current cost:" << currspace << "+" << splitcost << endl;
     if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
     else
@@ -541,14 +570,14 @@ int BPTreeWT::search_insert_pos(NodeWT *cursor, const char *key, int keylen,
     while (low <= high) {
         int mid = low + (high - low) / 2;
         WTitem curkey;
-        if (!cursor->IS_LEAF && this->non_leaf_comp) {
+        if (!cursor->IS_LEAF && !this->non_leaf_comp) {
             // non-compressed
             WThead *header = GetHeader(cursor, mid);
             curkey.addr = PageOffset(cursor, header->key_offset);
             curkey.size = header->key_len;
         }
         else {
-            curkey = get_key(cursor, mid);
+            get_full_key(cursor, mid, curkey);
         }
         // char *pagekey = extract_key(cursor, mid, this->non_leaf_comp);
         int cmp;
@@ -612,15 +641,21 @@ NodeWT *BPTreeWT::search_leaf_node_for_insert(NodeWT *searchroot, const char *ke
     return cursor;
 }
 
-int BPTreeWT::search_binary(NodeWT *cursor, string_view key, int low, int high, uint8_t &skiplow) {
-    skiphigh = 0;
-    match;
+int BPTreeWT::search_in_leaf(NodeWT *cursor, const char *key, int keylen,
+                             int low, int high, uint8_t &skiplow) {
+    uint8_t skiphigh = 0;
+    // uint8_t match;
     while (low <= high) {
         int mid = low + (high - low) / 2;
-        string pagekey = extract_key(cursor, mid, this->non_leaf_comp);
+        WTitem curkey;
+        get_full_key(cursor, mid, curkey);
+
+        // string pagekey = extract_key(cursor, mid, this->non_leaf_comp);
         int cmp;
-        match = min(skiplow, skiphigh);
-        cmp = lex_compare_skip(string(key), pagekey, &match);
+        uint8_t match = min(skiplow, skiphigh);
+        cmp = char_cmp_skip(key, curkey.addr, keylen, curkey.size, &match);
+        // cmp = lex_compare_skip(string(key), pagekey, &match);
+
         if (cmp > 0) {
             skiplow = match;
         }
@@ -649,8 +684,9 @@ void BPTreeWT::getSize(NodeWT *cursor, int &numNodeWTs, int &numNonLeaf, int &nu
         int currSize = 0;
         int prefixSize = 0;
         for (int i = 0; i < cursor->size; i++) {
-            currSize += cursor->keys.at(i).getSize();
-            prefixSize += sizeof(cursor->keys.at(i).prefix);
+            WThead *header = GetHeader(cursor, i);
+            currSize += header->key_len + sizeof(header->pfx_len);
+            prefixSize += sizeof(header->pfx_len);
         }
         totalKeyWTSize += currSize;
         numKeyWTs += cursor->size;

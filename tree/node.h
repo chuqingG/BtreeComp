@@ -215,8 +215,15 @@ struct WTitem {
     uint8_t size;
     bool newallocated = false;
     ~WTitem() {
-        if (newallocated)
+        if (newallocated) {
             delete addr;
+        }
+    }
+    WTitem &operator=(WTitem &old) {
+        addr = old.addr;
+        size = old.size;
+        newallocated = false;
+        return *this;
     }
 };
 

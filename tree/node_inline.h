@@ -1,3 +1,4 @@
+#pragma once
 #include "node.h"
 #include "../include/config.h"
 
@@ -130,8 +131,8 @@ inline void InsertKeyWT(NodeWT *nptr, int pos, const char *k, int klen, int plen
     // Set the new header
     WThead *header = GetHeader(nptr, pos);
     header->key_offset = nptr->space_top;
-    header->key_len = klen;
-    header->pfx_len = plen;
+    header->key_len = (uint8_t)klen;
+    header->pfx_len = (uint8_t)plen;
 #ifdef WTCACHE
     header->initialized = false;
 #endif
@@ -146,9 +147,9 @@ inline void CopyToNewPageWT(NodeWT *nptr, int low, int high, char *newbase, int 
         WThead *newhead = (WThead *)(newbase + MAX_SIZE_IN_BYTES
                                      - (newidx + 1) * sizeof(WThead));
         strncpy(newbase + top, PageOffset(nptr, oldhead->key_offset), oldhead->key_len);
-        newhead->key_len = oldhead->key_len;
+        newhead->key_len = (uint8_t)oldhead->key_len;
         newhead->key_offset = top;
-        newhead->pfx_len = oldhead->pfx_len;
+        newhead->pfx_len = (uint8_t)oldhead->pfx_len;
         top += oldhead->key_len + 1;
     }
 }

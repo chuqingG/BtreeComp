@@ -28,17 +28,17 @@ private:
     bool suffix_comp;
     int max_level;
     void insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *key, int keylen);
-    void insert_nonleaf(NodeWT *node, NodeWT **path, int pos, splitReturnWT childsplit);
+    void insert_nonleaf(NodeWT *node, NodeWT **path, int pos, splitReturnWT *childsplit);
     // insert_binary
     int search_insert_pos(NodeWT *cursor, const char *key, int keylen,
                           int low, int high, uint8_t &skiplow, bool &equal);
     // search_binary
-    int search_binary(NodeWT *cursor, const char *key, int low, int high, uint8_t &skiplow);
+    int search_in_leaf(NodeWT *cursor, const char *key, int keylen, int low, int high, uint8_t &skiplow);
     NodeWT *search_leaf_node(NodeWT *root, const char *key, int keylen, uint8_t &skiplow);
     NodeWT *search_leaf_node_for_insert(NodeWT *root, const char *key, int keylen,
                                         NodeWT **path, int &path_level, uint8_t &skiplow);
     bool check_split_condition(NodeWT *node, int keylen);
     int split_point(NodeWT *node);
-    splitReturnWT split_nonleaf(NodeWT *node, int pos, splitReturnWT childsplit);
+    splitReturnWT split_nonleaf(NodeWT *node, int pos, splitReturnWT *childsplit);
     splitReturnWT split_leaf(NodeWT *node, char *newkey, int newkey_len);
 };

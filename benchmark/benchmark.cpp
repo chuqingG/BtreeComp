@@ -58,8 +58,8 @@ const std::vector<std::tuple<std::string, Benchmark_c *>> kIndexStructures{
     // {"Btree-Head", new BPTreeHeadCompBenchmark()},
     // {"Btree-Tail", new BPTreeTailCompBenchmark()},
     // {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
-    {"Btree-DB2", new BPTreeDB2Benchmark()},
-    // {"Btree-WT", new BPTreeWTBenchmark()},
+    // {"Btree-DB2", new BPTreeDB2Benchmark()},
+    {"Btree-WT", new BPTreeWTBenchmark()},
     // {"Btree-MyISAM", new BPTreeMyISAMBenchmark()},
     // {"Btree-PkB", new BPTreePkBBenchmark()},
 };
@@ -165,18 +165,18 @@ auto RunBenchmarkIteration(std::vector<char *> values,
         structure_statistics[i] = structure->CalcStatistics();
 #ifdef VERBOSE_PRINT
         if (write_to_file) {
-                std::ofstream myfile;
-                auto ss = structure_statistics[i];
-                string file_name = output_path + ".txt";
-                myfile.open(file_name, fstream::out | ios::app);
-                myfile << "name\theight\tkeysize\tprefix\tfanout\tnodes\tnonleaf\t\n";
-                myfile << name << "\t" << ss.height << "   \t" 
-                        << ss.totalKeySize / (double)ss.numKeys << "\t"
-                        << ss.totalPrefixSize / (double)ss.numKeys << "\t" 
-                        << ss.totalBranching / (double)ss.nonLeafNodes << "\t"
-                       << ss.numNodes << "\t" << ss.nonLeafNodes << std::endl;
-                myfile << "--------------------------------------------------" << endl;
-                myfile.close();
+            std::ofstream myfile;
+            auto ss = structure_statistics[i];
+            string file_name = output_path + ".txt";
+            myfile.open(file_name, fstream::out | ios::app);
+            myfile << "name\theight\tkeysize\tprefix\tfanout\tnodes\tnonleaf\t\n";
+            myfile << name << "\t" << ss.height << "   \t"
+                   << ss.totalKeySize / (double)ss.numKeys << "\t"
+                   << ss.totalPrefixSize / (double)ss.numKeys << "\t"
+                   << ss.totalBranching / (double)ss.nonLeafNodes << "\t"
+                   << ss.numNodes << "\t" << ss.nonLeafNodes << std::endl;
+            myfile << "--------------------------------------------------" << endl;
+            myfile.close();
         }
 #endif
         structure->DeleteStructure();
@@ -224,7 +224,7 @@ void PerformanceBenchmarkResults(
     std::vector<map<BenchmarkTypes, vector<double>>>
         structure_benchmark_times) {
     std::ofstream myfile;
-    if(write_to_file){
+    if (write_to_file) {
         string file_name = output_path + ".txt";
         myfile.open(file_name, fstream::out | ios::app);
         myfile << "===========================START SUMMARY========================" << endl;
@@ -267,7 +267,7 @@ void PerformanceBenchmarkResults(
             const double med =
                 times.size() % 2 == 1 ? times[times.size() / 2] : (times[times.size() / 2] + times[times.size() / 2 + 1]) / 2.0;
 
-            std::cout << name  << "\t";
+            std::cout << name << "\t";
 
             const double avg_ops = key_numbers / avg / 1e6;
             const double med_ops = key_numbers / med / 1e6;
@@ -358,7 +358,6 @@ void TreeStatisticBenchmarkResults(
                        << avg_prefix_size << "," << avg_branch_degree << ","
                        << avg_nodes << "," << avg_non_leaf_nodes << std::endl;
             myfile << output_row.str();
-
         }
 
         structure->DeleteStructure();

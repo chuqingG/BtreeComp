@@ -151,7 +151,7 @@ string initialize_prefix_compressed_key(NodeWT *node, int ind) {
 }
 
 // finish
-string get_key(NodeWT *node, int slot) {
+string get_full_key(NodeWT *node, int slot) {
     // Optimization to directly return initialized key value
     string key;
     uint8_t prefix;
@@ -181,10 +181,10 @@ string get_key(NodeWT *node, int slot) {
 string extract_key(NodeWT *node, int ind, bool non_leaf) {
     string key = node->keys.at(ind).value;
     if (node->IS_LEAF)
-        return get_key(node, ind);
+        return get_full_key(node, ind);
     else {
         if (non_leaf)
-            return get_key(node, ind);
+            return get_full_key(node, ind);
         else
             return key;
     }
@@ -265,7 +265,7 @@ string promote_key(NodeWT *node, string lastleft, string firstright) {
 
 string get_uncompressed_key_before_insert(NodeWT *node, int ind, int insertpos, string newkey, bool equal) {
     if (equal) {
-        return get_key(node, ind);
+        return get_full_key(node, ind);
     }
     string uncompressed;
     if (insertpos == ind) {
@@ -273,7 +273,7 @@ string get_uncompressed_key_before_insert(NodeWT *node, int ind, int insertpos, 
     }
     else {
         int origind = insertpos < ind ? ind - 1 : ind;
-        uncompressed = get_key(node, origind);
+        uncompressed = get_full_key(node, origind);
     }
     return uncompressed;
 }

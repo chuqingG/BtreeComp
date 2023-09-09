@@ -158,7 +158,7 @@ string initialize_prefix_compressed_key(NodeWT *node, int ind) {
 }
 
 // finish
-string get_key(NodeWT *node, int slot) {
+string get_full_key(NodeWT *node, int slot) {
     // Optimization to directly return initialized key value
     string key;
     uint8_t prefix;
@@ -332,8 +332,8 @@ string get_key(NodeWT *node, int slot) {
 // }
 
 // finish
-WTitem get_key(NodeWT *node, int idx) {
-    WTitem key;
+void get_full_key(NodeWT *node, int idx, WTitem &key) {
+    // WTitem key;
     WThead *header = GetHeader(node, idx);
     // string key;
     // uint8_t prefix_len;
@@ -344,7 +344,7 @@ WTitem get_key(NodeWT *node, int idx) {
     int pfx_len = header->pfx_len;
 
     if (key.size != 0 && pfx_len == 0) { // no prefix
-        return key;
+        return;
     }
     // we may not use prefixstart and stop
     // if (key.size != 0 && idx > node->prefixstart && idx <= node->prefixstop) {
@@ -362,48 +362,70 @@ WTitem get_key(NodeWT *node, int idx) {
     //     // return prefixstr + key;
     // }
 
+    // int base_idx;
+    // for (int i = idx - 1; i >= 0; i--) {
+    //     WThead *head_i = GetHeader(node, i);
+    //     if (head_i->pfx_len == 0) {
+    //         base_idx = i;
+    //         break;
+    //     }
+    // }
+
     char *decomp_key = new char[key.size + pfx_len + 1];
-    WThead *basekey_header = GetHeader(node, node->prefixstart);
-    strncpy(decomp_key, PageOffset(node, basekey_header->key_offset), pfx_len);
-    strcpy(decomp_key, key.addr);
+    // Get the compressed prefix from k[base] to k[i]
+    // means we need [0:pfx_need - 1] bytes of the prefix, stop when pfx_need == -1
+    int prefix_need = pfx_len;
+    for (int i = idx - 1; prefix_need > 0 && i >= 0; i--) {
+        WThead *head_i = GetHeader(node, i);
+        if (head_i->pfx_len < prefix_need) {
+            // int pfx_slot = prefix_need - head_i->pfx_len;
+            strncpy(decomp_key + head_i->pfx_len,
+                    PageOffset(node, head_i->key_offset), prefix_need - head_i->pfx_len);
+            prefix_need = head_i->pfx_len;
+        }
+    }
+
+    // WThead *base_header = GetHeader(node, base_idx);
+    // strncpy(decomp_key, PageOffset(node, base_header->key_offset), pfx_len);
+    strcpy(decomp_key + pfx_len, key.addr);
     key.addr = decomp_key;
     key.size += pfx_len;
     key.newallocated = true;
-    return key;
+    return;
 }
 #endif
 
-// finish
-WTitem extract_key(NodeWT *node, int idx, bool non_leaf_comp) {
-    // string key = node->keys.at(idx).value;
-    WTitem key;
-    WThead *header = GetHeader(node, idx);
-    // char *key = PageOffset(node, header->key_offset);
-    key.addr = PageOffset(node, header->key_offset);
-    key.size = header->key_len;
-    if (node->IS_LEAF || non_leaf_comp)
-        return get_key(node, idx);
-    else {
-        return key;
-    }
-}
+// // finish
+// WTitem extract_key(NodeWT *node, int idx, bool non_leaf_comp) {
+//     // string key = node->keys.at(idx).value;
+//     WTitem key;
+//     WThead *header = GetHeader(node, idx);
+//     // char *key = PageOffset(node, header->key_offset);
+//     key.addr = PageOffset(node, header->key_offset);
+//     key.size = header->key_len;
+//     if (node->IS_LEAF || non_leaf_comp)
+//         return get_full_key(node, idx);
+//     else {
+//         return key;
+//     }
+// }
 
-// Apply changes in the following keys in the node
-void build_page_prefixes(NodeWT *node, int pos, string key_at_pos) {
-    if (node->size == 0)
-        return;
-    string prev_key = key_at_pos;
-    uint8_t prev_pfx = node->keys.at(pos).prefix;
-    for (int i = pos + 1; i < node->keys.size(); i++) {
-        string currkey = prev_key.substr(0, node->keys.at(i).prefix) + node->keys.at(i).value;
-        uint8_t curr_pfx = compute_prefix_wt(prev_key, currkey, prev_pfx);
-        node->keys.at(i).value = currkey.substr(curr_pfx);
-        node->keys.at(i).prefix = curr_pfx;
-        prev_pfx = curr_pfx;
-        prev_key = currkey;
-    }
-    record_page_prefix_group(node);
-}
+// // Apply changes in the following keys in the node
+// void build_page_prefixes(NodeWT *node, int pos, string key_at_pos) {
+//     if (node->size == 0)
+//         return;
+//     string prev_key = key_at_pos;
+//     uint8_t prev_pfx = node->keys.at(pos).prefix;
+//     for (int i = pos + 1; i < node->keys.size(); i++) {
+//         string currkey = prev_key.substr(0, node->keys.at(i).prefix) + node->keys.at(i).value;
+//         uint8_t curr_pfx = compute_prefix_wt(prev_key, currkey, prev_pfx);
+//         node->keys.at(i).value = currkey.substr(curr_pfx);
+//         node->keys.at(i).prefix = curr_pfx;
+//         prev_pfx = curr_pfx;
+//         prev_key = currkey;
+//     }
+//     record_page_prefix_group(node);
+// }
 
 void populate_prefix_backward(NodeWT *node, int pos, char *fullkey_before_pos, int keylen) {
     if (node->size == 0)
@@ -480,81 +502,81 @@ void update_next_prefix(NodeWT *node, int pos, char *fullkey_before_pos,
 }
 
 // inmem_row_leaf
-void record_page_prefix_group(NodeWT *node) {
-    uint32_t best_prefix_count, best_prefix_start, best_prefix_stop;
-    uint32_t last_slot, prefix_count, prefix_start, prefix_stop, slot;
-    uint8_t smallest_prefix;
+// void record_page_prefix_group(NodeWT *node) {
+//     uint32_t best_prefix_count, best_prefix_start, best_prefix_stop;
+//     uint32_t last_slot, prefix_count, prefix_start, prefix_stop, slot;
+//     uint8_t smallest_prefix;
 
-    best_prefix_count = prefix_count = 0;
-    smallest_prefix = 0;
-    prefix_start = prefix_stop = 0;
-    last_slot = 0;
-    best_prefix_start = best_prefix_stop = 0;
+//     best_prefix_count = prefix_count = 0;
+//     smallest_prefix = 0;
+//     prefix_start = prefix_stop = 0;
+//     last_slot = 0;
+//     best_prefix_start = best_prefix_stop = 0;
 
-    for (int slot = 0; slot < node->keys.size(); slot++) {
-        int prefix = node->keys.at(slot).prefix;
-        if (prefix == 0) {
-            /* If the last prefix group was the best, track it. */
-            if (prefix_count > best_prefix_count) {
-                best_prefix_start = prefix_start;
-                best_prefix_stop = prefix_stop;
-                best_prefix_count = prefix_count;
-            }
-            prefix_count = 0;
-            prefix_start = slot;
-        }
-        else {
-            /* Check for starting or continuing a prefix group. */
-            if (prefix_count == 0 || (last_slot == slot - 1 && prefix <= smallest_prefix)) {
-                smallest_prefix = prefix;
-                last_slot = prefix_stop = slot;
-                ++prefix_count;
-            }
-        }
-    }
+//     for (int slot = 0; slot < node->keys.size(); slot++) {
+//         int prefix = node->keys.at(slot).prefix;
+//         if (prefix == 0) {
+//             /* If the last prefix group was the best, track it. */
+//             if (prefix_count > best_prefix_count) {
+//                 best_prefix_start = prefix_start;
+//                 best_prefix_stop = prefix_stop;
+//                 best_prefix_count = prefix_count;
+//             }
+//             prefix_count = 0;
+//             prefix_start = slot;
+//         }
+//         else {
+//             /* Check for starting or continuing a prefix group. */
+//             if (prefix_count == 0 || (last_slot == slot - 1 && prefix <= smallest_prefix)) {
+//                 smallest_prefix = prefix;
+//                 last_slot = prefix_stop = slot;
+//                 ++prefix_count;
+//             }
+//         }
+//     }
 
-    /* If the last prefix group was the best, track it. Save the best prefix group for the page. */
-    if (prefix_count > best_prefix_count) {
-        best_prefix_start = prefix_start;
-        best_prefix_stop = prefix_stop;
-    }
-    node->prefixstart = best_prefix_start;
-    node->prefixstop = best_prefix_stop;
-}
+//     /* If the last prefix group was the best, track it. Save the best prefix group for the page. */
+//     if (prefix_count > best_prefix_count) {
+//         best_prefix_start = prefix_start;
+//         best_prefix_stop = prefix_stop;
+//     }
+//     node->prefixstart = best_prefix_start;
+//     node->prefixstop = best_prefix_stop;
+// }
 
-string promote_key(NodeWT *node, string lastleft, string firstright) {
-    if (!node->IS_LEAF)
-        return firstright;
-    int len = min(lastleft.length(), firstright.length());
-    int size = len + 1;
-    for (int cnt = 1; len > 0; ++cnt, --len)
-        if (lastleft.at(cnt - 1) != firstright.at(cnt - 1)) {
-            if (size != cnt) {
-                size = cnt;
-            }
-            break;
-        }
-    return firstright.substr(0, size);
-}
+// string promote_key(NodeWT *node, string lastleft, string firstright) {
+//     if (!node->IS_LEAF)
+//         return firstright;
+//     int len = min(lastleft.length(), firstright.length());
+//     int size = len + 1;
+//     for (int cnt = 1; len > 0; ++cnt, --len)
+//         if (lastleft.at(cnt - 1) != firstright.at(cnt - 1)) {
+//             if (size != cnt) {
+//                 size = cnt;
+//             }
+//             break;
+//         }
+//     return firstright.substr(0, size);
+// }
 
-WTitem suffix_truncate(WTitem *lastleft, WTitem *firstright, bool isleaf) {
-    WTitem separator;
-    separator.addr = firstright->addr;
-    separator.newallocated = false;
+void suffix_truncate(WTitem *lastleft, WTitem *firstright, bool isleaf, WTitem &result) {
+    // WTitem separator;
+    result.addr = firstright->addr;
+    result.newallocated = false;
     if (isleaf) {
-        separator.size = firstright->size;
+        result.size = firstright->size;
     }
     else {
         int common = get_common_prefix_len(lastleft->addr, firstright->addr,
                                            lastleft->size, firstright->size);
-        separator.size = common + 1;
+        result.size = common + 1;
     }
-    return separator;
+    return;
 }
 
 // string get_uncompressed_key_before_insert(NodeWT *node, int ind, int insertpos, string newkey, bool equal) {
 //     if (equal) {
-//         return get_key(node, ind);
+//         return get_full_key(node, ind);
 //     }
 //     string uncompressed;
 //     if (insertpos == ind) {
@@ -562,7 +584,7 @@ WTitem suffix_truncate(WTitem *lastleft, WTitem *firstright, bool isleaf) {
 //     }
 //     else {
 //         int origind = insertpos < ind ? ind - 1 : ind;
-//         uncompressed = get_key(node, origind);
+//         uncompressed = get_full_key(node, origind);
 //     }
 //     return uncompressed;
 // }

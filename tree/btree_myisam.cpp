@@ -50,26 +50,14 @@ void BPTreeMyISAM::insert(char *key) {
    {https://github.com/mysql/mysql-server/blob/a246bad76b9271cb4333634e954040a970222e0a/storage/myisam/mi_search.cc#L277}
 */
 int BPTreeMyISAM::prefix_search(NodeMyISAM *cursor, const char *key, int keylen) {
-    // int cmplen;
     /*  matched: how many chars from prefix were already matched
      *  len: length of previous key unpacked
      */
     int len = 0, matched = 0, idx = 0;
-    // int my_flag;
-
-    // int ind = 0;
-    // cmplen = key.length();
-
-    // matched = 0; /* how many chars from prefix were already matched */
-    // len = 0;     /* length of previous key unpacked */
 
     while (idx < cursor->size) {
         MyISAMhead *head = GetHeaderMyISAM(cursor, idx);
-        // int prefix = cursor->keys.at(ind).getPrefix();
-        // string suffix = cursor->keys.at(ind).value;
         len = head->pfx_len + head->key_len;
-
-        // string pagekey = suffix;
 
         if (matched >= head->pfx_len) {
             /* We have to compare. But we can still skip part of the key */
@@ -79,22 +67,8 @@ int BPTreeMyISAM::prefix_search(NodeMyISAM *cursor, const char *key, int keylen)
             If prefix_len > cmplen then we are in the end-space comparison
             phase. Do not try to access the key any more ==> left= 0.
             */
-
             uint8_t left = ((len <= keylen) ? head->key_len :
                                               ((head->pfx_len < keylen) ? keylen - head->pfx_len : 0));
-
-            // matched = prefix + left;
-
-            // int ppos = 0;
-            // int kpos = prefix;
-            // for (my_flag = 0; left; left--) {
-            //     string c1(1, pagekey.at(ppos));
-            //     string c2(1, key.at(kpos));
-            //     if ((my_flag = c1.compare(c2)))
-            //         break;
-            //     kpos++;
-            //     ppos++;
-            // }
 
             // compare the compressed k[idx] with key[idx.pfx_len: ]
             // if they have a common pfx of length n, then subtract n from left
@@ -110,16 +84,6 @@ int BPTreeMyISAM::prefix_search(NodeMyISAM *cursor, const char *key, int keylen)
             if (cmp_result > 0) /* mismatch */
                 break;
             if (cmp_result == 0) {
-                // if (len < cmplen) {
-                //     my_flag = -1;
-                // }
-                // else if (len > cmplen) {
-                //     my_flag = 1;
-                // }
-                // if (my_flag > 0)
-                //     break;
-                // if (my_flag == 0)
-                //     return idx;
                 cmp_result = len - keylen;
                 if (cmp_result > 0)
                     break;
@@ -127,7 +91,6 @@ int BPTreeMyISAM::prefix_search(NodeMyISAM *cursor, const char *key, int keylen)
                     return idx;
                 }
             }
-            // matched -= left;
             matched = head->pfx_len + common;
         }
         idx++;
@@ -136,25 +99,14 @@ int BPTreeMyISAM::prefix_search(NodeMyISAM *cursor, const char *key, int keylen)
 }
 
 int BPTreeMyISAM::prefix_insert(NodeMyISAM *cursor, const char *key, int keylen, bool &equal) {
-    // int cmplen;
     /* matched: how many chars from prefix were already matched
      *  len: length of previous key unpacked
      */
     int len = 0, matched = 0, idx = 0;
-    // int my_flag;
-
-    // int ind = 0;
-    // cmplen = key.length();
-    // matched = 0; /* how many chars from prefix were already matched */
-    // len = 0;     /* length of previous key unpacked */
 
     while (idx < cursor->size) {
         MyISAMhead *head = GetHeaderMyISAM(cursor, idx);
-        // int prefix = cursor->keys.at(ind).getPrefix();
-        // string suffix = cursor->keys.at(ind).value;
         len = head->pfx_len + head->key_len;
-
-        // string pagekey = suffix;
 
         if (matched >= head->pfx_len) {
             /* We have to compare. But we can still skip part of the key */
@@ -166,8 +118,6 @@ int BPTreeMyISAM::prefix_insert(NodeMyISAM *cursor, const char *key, int keylen,
             uint8_t left = ((len <= keylen) ? head->key_len :
                                               ((head->pfx_len < keylen) ? keylen - head->pfx_len : 0));
 
-            // matched = head->pfx_len + left;
-
             // compare the compressed k[idx] with key[idx.pfx_len: ]
             // if they have a common pfx of length n, then subtract n from left
             int common = 0;
@@ -178,27 +128,10 @@ int BPTreeMyISAM::prefix_insert(NodeMyISAM *cursor, const char *key, int keylen,
                     break;
                 common++;
             }
-            // left -= common;
-            // int ppos = 0;
-            // int kpos = prefix;
-            // for (my_flag = 0; left; left--) {
-            //     string c1(1, pagekey.at(ppos));
-            //     string c2(1, key.at(kpos));
-            //     if ((my_flag = c1.compare(c2)))
-            //         break;
-            //     ppos++;
-            //     kpos++;
-            // }
 
             if (cmp_result > 0) /* mismatch */
                 return idx;
             if (cmp_result == 0) {
-                // if (len < keylen) {
-                //     my_flag = -1;
-                // }
-                // else if (len > keylen) {
-                //     my_flag = 1;
-                // }
                 cmp_result = len - keylen;
                 if (cmp_result > 0)
                     return idx;
@@ -230,10 +163,7 @@ void BPTreeMyISAM::insert_nonleaf(NodeMyISAM *node, NodeMyISAM **path, int paren
             InsertKeyMyISAM(newRoot, 0,
                             currsplit.promotekey.addr, currsplit.promotekey.size, 0);
             InsertNode(newRoot, 1, currsplit.right);
-            // int rid = rand();
-            // newRoot->keys.push_back(KeyMyISAM(currsplit.promotekey, 0, rid));
-            // newRoot->ptrs.push_back(currsplit.left);
-            // newRoot->ptrs.push_back(currsplit.right);
+
             newRoot->IS_LEAF = false;
             _root = newRoot;
             max_level++;
@@ -256,29 +186,6 @@ void BPTreeMyISAM::insert_nonleaf(NodeMyISAM *node, NodeMyISAM **path, int paren
             insertpos = search_insert_pos(node, promotekey->addr, promotekey->size, 0, node->size - 1, equal);
         }
 
-        // vector<KeyMyISAM> allkeys;
-        // for (int i = 0; i < insertpos; i++) {
-        //     allkeys.push_back(node->keys.at(i));
-        // }
-        // if (this->non_leaf_comp) {
-        //     if (insertpos > 0) {
-        //         string prev_key = get_key(node, insertpos - 1);
-        //         int pfx = compute_prefix_myisam(prev_key, promotekey);
-        //         string compressed = promotekey.substr(pfx);
-        //         allkeys.push_back(KeyMyISAM(compressed, pfx, rid));
-        //     }
-        //     else {
-        //         allkeys.push_back(KeyMyISAM(promotekey, 0, rid));
-        //     }
-        // }
-        // else {
-        //     allkeys.push_back(KeyMyISAM(promotekey, 0, rid));
-        // }
-
-        // for (int i = insertpos; i < node->size; i++) {
-        //     allkeys.push_back(node->keys.at(i));
-        // }
-
         // Insert the new key
         WTitem prevkey;
         if (!this->non_leaf_comp || insertpos == 0) {
@@ -296,21 +203,6 @@ void BPTreeMyISAM::insert_nonleaf(NodeMyISAM *node, NodeMyISAM **path, int paren
             update_next_prefix(node, insertpos, prevkey.addr, promotekey->addr, promotekey->size);
 
         InsertNode(node, insertpos + 1, childsplit->right);
-
-        // vector<NodeMyISAM *> allptrs;
-        // for (int i = 0; i < insertpos + 1; i++) {
-        //     allptrs.push_back(node->ptrs.at(i));
-        // }
-        // allptrs.push_back(childsplit.right);
-        // for (int i = insertpos + 1; i < node->size + 1; i++) {
-        //     allptrs.push_back(node->ptrs.at(i));
-        // }
-        // node->keys = allkeys;
-        // node->ptrs = allptrs;
-        // node->size = node->size + 1;
-
-        // if (this->non_leaf_comp)
-        //     build_page_prefixes(node, insertpos, promotekey); // Populate new prefixes
     }
 }
 
@@ -320,10 +212,7 @@ void BPTreeMyISAM::insert_leaf(NodeMyISAM *leaf, NodeMyISAM **path, int path_lev
         splitReturnMyISAM split = split_leaf(leaf, key, keylen);
         if (leaf == _root) {
             NodeMyISAM *newRoot = new NodeMyISAM;
-            // int rid = rand();
-            // newRoot->keys.push_back(KeyMyISAM(split.promotekey, 0, rid));
-            // newRoot->ptrs.push_back(split.left);
-            // newRoot->ptrs.push_back(split.right);
+
             InsertNode(newRoot, 0, split.left);
             InsertKeyMyISAM(newRoot, 0,
                             split.promotekey.addr, split.promotekey.size, 0);
@@ -339,8 +228,6 @@ void BPTreeMyISAM::insert_leaf(NodeMyISAM *leaf, NodeMyISAM **path, int path_lev
         }
     }
     else {
-        // int insertpos;
-        // int rid = rand();
         bool equal = false;
         int insertpos = prefix_insert(leaf, key, keylen, equal);
 
@@ -359,35 +246,6 @@ void BPTreeMyISAM::insert_leaf(NodeMyISAM *leaf, NodeMyISAM **path, int path_lev
         }
         if (!equal)
             update_next_prefix(leaf, insertpos, prevkey.addr, key, keylen);
-
-        // vector<KeyMyISAM> allkeys;
-        // if (equal) {
-        //     allkeys = leaf->keys;
-        //     allkeys.at(insertpos - 1).addRecord(rid);
-        // }
-        // else {
-        //     for (int i = 0; i < insertpos; i++) {
-        //         allkeys.push_back(leaf->keys.at(i));
-        //     }
-        //     if (insertpos > 0) {
-        //         string prev_key = get_key(leaf, insertpos - 1);
-        //         int pfx = compute_prefix_myisam(prev_key, key);
-        //         string compressed = key.substr(pfx);
-        //         allkeys.push_back(KeyMyISAM(compressed, pfx, rid));
-        //     }
-        //     else {
-        //         allkeys.push_back(KeyMyISAM(key, 0, rid));
-        //     }
-
-        //     for (int i = insertpos; i < leaf->size; i++) {
-        //         allkeys.push_back(leaf->keys.at(i));
-        //     }
-        // }
-        // leaf->keys = allkeys;
-        // if (!equal) {
-        //     leaf->size = leaf->size + 1;
-        //     build_page_prefixes(leaf, insertpos, key); // Populate new prefixes
-        // }
     }
 }
 
@@ -402,8 +260,7 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
     NodeMyISAM *right = new NodeMyISAM;
     WTitem *promotekey = &(childsplit->promotekey);
     int insertpos;
-    // string splitprefix;
-    // int rid = rand();
+
     bool equal = false;
     if (this->non_leaf_comp) {
         insertpos = prefix_insert(node, promotekey->addr,
@@ -413,31 +270,6 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
         insertpos = search_insert_pos(node, promotekey->addr,
                                       promotekey->size, 0, node->size - 1, equal);
     }
-
-    // vector<KeyMyISAM> allkeys;
-    // vector<NodeMyISAM *> allptrs;
-
-    // for (int i = 0; i < insertpos; i++) {
-    //     allkeys.push_back(node->keys.at(i));
-    // }
-    // if (this->non_leaf_comp) {
-    //     if (insertpos > 0) {
-    //         string prev_key = get_key(node, insertpos - 1);
-    //         int pfx = compute_prefix_myisam(prev_key, promotekey);
-    //         string compressed = promotekey.substr(pfx);
-    //         allkeys.push_back(KeyMyISAM(compressed, pfx, rid));
-    //     }
-    //     else {
-    //         allkeys.push_back(KeyMyISAM(promotekey, 0, rid));
-    //     }
-    // }
-    // else {
-    //     allkeys.push_back(KeyMyISAM(promotekey, 0, rid));
-    // }
-
-    // for (int i = insertpos; i < node->size; i++) {
-    //     allkeys.push_back(node->keys.at(i));
-    // }
 
     // insert the new key
     WTitem prevkey;
@@ -458,17 +290,8 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
                            promotekey->addr, promotekey->size);
 
     InsertNode(node, insertpos + 1, childsplit->right);
-    // for (int i = 0; i < insertpos + 1; i++) {
-    //     allptrs.push_back(node->ptrs.at(i));
-    // }
-    // allptrs.push_back(childsplit.right);
-    // for (int i = insertpos + 1; i < node->size + 1; i++) {
-    //     allptrs.push_back(node->ptrs.at(i));
-    // }
 
     int split = split_point(node);
-
-    // cout << "Best Split point " << split << " size " << allkeys.size() << endl;
 
     // 1. get separator
     if (this->non_leaf_comp)
@@ -508,8 +331,6 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
     CopyToNewPageMyISAM(node, 0, split, leftbase, left_top);
     CopyToNewPageMyISAM(node, split + 1, node->size, rightbase, right_top);
 
-    // vector<KeyMyISAM> leftkeys;
-    // vector<KeyMyISAM> rightkeys;
     // 4. update pointers
     vector<NodeMyISAM *> leftptrs;
     vector<NodeMyISAM *> rightptrs;
@@ -517,25 +338,6 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
          back_inserter(leftptrs));
     copy(node->ptrs.begin() + split + 1, node->ptrs.end(),
          back_inserter(rightptrs));
-
-    // copy(allkeys.begin(), allkeys.begin() + split, back_inserter(leftkeys));
-    // copy(allkeys.begin() + split + 1, allkeys.end(), back_inserter(rightkeys));
-    // copy(allptrs.begin(), allptrs.begin() + split + 1, back_inserter(leftptrs));
-    // copy(allptrs.begin() + split + 1, allptrs.end(), back_inserter(rightptrs));
-
-    // string splitkey;
-    // string firstright;
-    //
-    // if (this->non_leaf_comp) {
-    //     firstright = get_uncompressed_key_before_insert(node, split + 1, insertpos, promotekey, equal);
-    //     rightkeys.at(0) = KeyMyISAM(firstright, 0, rightkeys.at(0).ridList);
-    //     splitkey = get_uncompressed_key_before_insert(node, split, insertpos, promotekey, equal);
-    // }
-    // else {
-    //     splitkey = allkeys.at(split).value;
-    // }
-    //
-    // newsplit.promotekey = splitkey;
 
     right->size = node->size - (split + 1);
     right->space_top = right_top;
@@ -549,15 +351,6 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
     node->ptrs = leftptrs;
     node->ptr_cnt = split + 1;
 
-    // node->size = leftkeys.size();
-    // node->keys = leftkeys;
-    // node->ptrs = leftptrs;
-    //
-    // right->size = rightkeys.size();
-    // right->IS_LEAF = false;
-    // right->keys = rightkeys;
-    // right->ptrs = rightptrs;
-
     // Set next pointers
     NodeMyISAM *next = node->next;
     right->prev = node;
@@ -565,13 +358,6 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
     if (next)
         next->prev = right;
     node->next = right;
-
-    // if (this->non_leaf_comp) {
-    //     if (insertpos < split) {
-    //         build_page_prefixes(node, insertpos, promotekey); // Populate new prefixes
-    //     }
-    //     build_page_prefixes(right, 0, firstright); // Populate new prefixes
-    // }
 
     newsplit.left = node;
     newsplit.right = right;
@@ -582,34 +368,9 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
 splitReturnMyISAM BPTreeMyISAM::split_leaf(NodeMyISAM *node, char *newkey, int keylen) {
     splitReturnMyISAM newsplit;
     NodeMyISAM *right = new NodeMyISAM;
-    // int rid = rand();
+
     bool equal = false;
     int insertpos = prefix_insert(node, newkey, keylen, equal);
-
-    // vector<KeyMyISAM> allkeys;
-    // if (equal) {
-    //     allkeys = node->keys;
-    //     allkeys.at(insertpos - 1).addRecord(rid);
-    // }
-    // else {
-    //     for (int i = 0; i < insertpos; i++) {
-    //         allkeys.push_back(node->keys.at(i));
-    //     }
-
-    //     if (insertpos > 0) {
-    //         string prev_key = get_key(node, insertpos - 1);
-    //         int pfx = compute_prefix_myisam(prev_key, newkey);
-    //         string compressed = newkey.substr(pfx);
-    //         allkeys.push_back(KeyMyISAM(compressed, pfx, rid));
-    //     }
-    //     else {
-    //         allkeys.push_back(KeyMyISAM(newkey, 0, rid));
-    //     }
-
-    //     for (int i = insertpos; i < node->size; i++) {
-    //         allkeys.push_back(node->keys.at(i));
-    //     }
-    // }
 
     // insert the new key
     WTitem prevkey;
@@ -630,7 +391,6 @@ splitReturnMyISAM BPTreeMyISAM::split_leaf(NodeMyISAM *node, char *newkey, int k
     int split = split_point(node);
 
     // 1. get separator
-    // WTitem firstright_fullkey;
     get_full_key(node, split, newsplit.promotekey);
     if (!newsplit.promotekey.newallocated) {
         // make a copy, in case the memory in page is reallocated
@@ -657,16 +417,6 @@ splitReturnMyISAM BPTreeMyISAM::split_leaf(NodeMyISAM *node, char *newkey, int k
     CopyToNewPageMyISAM(node, 0, split, leftbase, left_top);
     CopyToNewPageMyISAM(node, split, node->size, rightbase, right_top);
 
-    // vector<KeyMyISAM> leftkeys;
-    // vector<KeyMyISAM> rightkeys;
-    // copy(allkeys.begin(), allkeys.begin() + split, back_inserter(leftkeys));
-    // copy(allkeys.begin() + split, allkeys.end(), back_inserter(rightkeys));
-
-    // string firstright;
-    // firstright = get_uncompressed_key_before_insert(node, split, insertpos, newkey, equal);
-    // rightkeys.at(0) = KeyMyISAM(firstright, 0, rightkeys.at(0).ridList);
-    // newsplit.promotekey = firstright;
-
     right->size = node->size - split;
     right->space_top = right_top;
     right->IS_LEAF = true;
@@ -674,18 +424,6 @@ splitReturnMyISAM BPTreeMyISAM::split_leaf(NodeMyISAM *node, char *newkey, int k
     node->size = split;
     node->space_top = left_top;
     UpdateBase(node, leftbase);
-
-    // node->size = leftkeys.size();
-    // node->keys = leftkeys;
-
-    // right->size = rightkeys.size();
-    // right->IS_LEAF = true;
-    // right->keys = rightkeys;
-
-    // if (!equal && insertpos < split) {
-    //     build_page_prefixes(node, insertpos, newkey); // Populate new prefixes
-    // }
-    // build_page_prefixes(right, 0, firstright); // Populate new prefixes
 
     // Set prev and next pointers
     NodeMyISAM *next = node->next;
@@ -727,8 +465,6 @@ int BPTreeMyISAM::search_insert_pos(NodeMyISAM *cursor, const char *key, int key
             get_full_key(cursor, mid, curkey);
         }
 
-        // string pagekey = cursor->keys.at(mid).value;
-        // int cmp = lex_compare(string(key), cursor->keys.at(mid).value);
         int cmp = char_cmp_new(key, curkey.addr, keylen, curkey.size);
         if (cmp == 0) {
             equal = true;
@@ -753,8 +489,6 @@ NodeMyISAM *BPTreeMyISAM::search_leaf_node(NodeMyISAM *searchroot, const char *k
     bool equal = false;
     // Till we reach leaf node
     while (!cursor->IS_LEAF) {
-        // string_view searchkey = key;
-        // parents.push_back(cursor);
         int pos = prefix_insert(cursor, key, keylen, equal);
         cursor = cursor->ptrs.at(pos);
     }
@@ -773,29 +507,12 @@ NodeMyISAM *BPTreeMyISAM::search_leaf_node_for_insert(NodeMyISAM *searchroot, co
     bool equal = false;
     // Till we reach leaf node
     while (!cursor->IS_LEAF) {
-        // string_view searchkey = key;
-        // parents.push_back(cursor);
         path[path_level++] = cursor;
         int pos = prefix_insert(cursor, key, keylen, equal);
         cursor = cursor->ptrs[pos];
     }
     return cursor;
 }
-
-// int BPTreeMyISAM::search_binary(NodeMyISAM *cursor, string_view key, int low, int high) {
-//     while (low <= high) {
-//         int mid = low + (high - low) / 2;
-//         string pagekey = cursor->keys.at(mid).value;
-//         int cmp = lex_compare(string(key), pagekey);
-//         if (cmp == 0)
-//             return mid;
-//         else if (cmp > 0)
-//             low = mid + 1;
-//         else
-//             high = mid - 1;
-//     }
-//     return -1;
-// }
 
 /*
 ================================================

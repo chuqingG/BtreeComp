@@ -33,8 +33,6 @@ private:
     void insert_nonleaf(NodeMyISAM *node, NodeMyISAM **path, int pos, splitReturnMyISAM *childsplit);
     // insert_binary
     int search_insert_pos(NodeMyISAM *cursor, const char *key, int keylen, int low, int high, bool &equal);
-    // search_bianry
-    // int search_binary(NodeMyISAM *cursor, const char *key, int keylen, int low, int high);
     NodeMyISAM *search_leaf_node(NodeMyISAM *searchroot, const char *key, int keylen);
     NodeMyISAM *search_leaf_node_for_insert(NodeMyISAM *searchroot, const char *key, int keylen,
                                             NodeMyISAM **path, int &path_level);

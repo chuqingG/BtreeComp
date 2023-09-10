@@ -643,7 +643,8 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
 #ifdef DUPKEY
         int cmp = char_cmp(key, cursor->keys.at(mid).value);
 #else
-        int cmp = char_cmp(key, GetKey(cursor, mid), keylen);
+        // int cmp = char_cmp(key, GetKey(cursor, mid), keylen);
+        int cmp = char_cmp_new(key, GetKey(cursor, mid), keylen, cursor->keys_size[mid]);
 #endif
         if (cmp == 0) {
             equal = true;
@@ -721,7 +722,9 @@ int BPTree::search_in_nonleaf(Node *cursor, const char *key, int keylen, int low
 #ifdef DUPKEY
         int cmp = char_cmp(key, cursor->keys.at(mid).value);
 #else
-        int cmp = char_cmp(key, GetKey(cursor, mid), keylen);
+        // int cmp = char_cmp(key, GetKey(cursor, mid), keylen);
+        int cmp = char_cmp_new(key, GetKey(cursor, mid), keylen, cursor->keys_size[mid]);
+
 #endif
         if (cmp == 0) {
             return mid + 1;
@@ -740,7 +743,8 @@ int BPTree::search_in_leaf(Node *cursor, const char *key, int keylen, int low, i
 #ifdef DUPKEY
         int cmp = char_cmp(key, cursor->keys.at(mid).value);
 #else
-        int cmp = char_cmp(key, GetKey(cursor, mid), keylen);
+        // int cmp = char_cmp(key, GetKey(cursor, mid), keylen);
+        int cmp = char_cmp_new(key, GetKey(cursor, mid), keylen, cursor->keys_size[mid]);
 #endif
         if (cmp == 0)
             return mid;

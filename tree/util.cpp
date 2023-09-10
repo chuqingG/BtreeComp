@@ -59,21 +59,6 @@ int lex_compare_skip(string a, string b, uint8_t *matchp) {
                                              1);
 }
 
-int char_cmp_skip(const char *a, const char *b,
-                  int alen, int blen, uint8_t *matchp) {
-    // 1 : a > b
-    // const size_t min_len = (alen < blen) ? alen : blen;
-    int cmp_len = min(alen, blen) - *matchp;
-    int idx = *matchp;
-    for (; cmp_len > 0; --cmp_len, ++idx, ++*matchp) {
-        int cmp = a[idx] - b[idx];
-        if (cmp != 0)
-            return cmp;
-    }
-    /* Contents are equal up to the smallest length. */
-    return (alen - blen);
-}
-
 string get_common_prefix(string x, string y) {
     string prefix = "";
     int i = 0, j = 0;
@@ -93,11 +78,40 @@ int get_common_prefix_len(const char *a, const char *b, int alen, int blen) {
     return idx;
 }
 
+int char_cmp_skip(const char *a, const char *b,
+                  int alen, int blen, uint8_t *matchp) {
+    // 1 : a > b
+    // const size_t min_len = (alen < blen) ? alen : blen;
+    int cmp_len = min(alen, blen) - *matchp;
+    int idx = *matchp;
+    for (; cmp_len > 0; --cmp_len, ++idx, ++*matchp) {
+        int cmp = a[idx] - b[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    /* Contents are equal up to the smallest length. */
+    return (alen - blen);
+}
+
+int char_cmp_new(const char *a, const char *b, int alen, int blen) {
+    // 1 : a > b
+    // const size_t min_len = (alen < blen) ? alen : blen;
+    int cmp_len = min(alen, blen);
+    // int idx = *matchp;
+    for (int idx = 0; idx < cmp_len; ++idx) {
+        int cmp = a[idx] - b[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    /* Contents are equal up to the smallest length. */
+    return (alen - blen);
+}
+
 int char_cmp(const char *a, const char *b, int alen) {
     // 1 : a > b
     int blen = strlen(b);
     // const size_t min_len = (alen < blen) ? alen : blen;
-    size_t min_len;
+    int min_len;
     int len_cmp;
     if (alen < blen) {
         min_len = alen;

@@ -170,3 +170,17 @@ inline void InsertKeyMyISAM(NodeMyISAM *nptr, int pos, const char *k, int klen, 
     nptr->space_top += klen + 1;
     nptr->size += 1;
 }
+
+inline void CopyToNewPageMyISAM(NodeMyISAM *nptr, int low, int high, char *newbase, int &top) {
+    for (int i = low; i < high; i++) {
+        int newidx = i - low;
+        MyISAMhead *oldhead = GetHeaderMyISAM(nptr, i);
+        MyISAMhead *newhead = (MyISAMhead *)(newbase + MAX_SIZE_IN_BYTES
+                                             - (newidx + 1) * sizeof(MyISAMhead));
+        strncpy(newbase + top, PageOffset(nptr, oldhead->key_offset), oldhead->key_len);
+        newhead->key_len = (uint8_t)oldhead->key_len;
+        newhead->key_offset = top;
+        newhead->pfx_len = (uint8_t)oldhead->pfx_len;
+        top += oldhead->key_len + 1;
+    }
+}

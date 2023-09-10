@@ -28,13 +28,13 @@ private:
     bool non_leaf_comp;
     int max_level;
     int prefix_insert(NodeMyISAM *cursor, const char *key, int keylen, bool &equal);
-    int prefix_search(NodeMyISAM *node, string_view key);
+    int prefix_search(NodeMyISAM *node, const char *key, int keylen);
     void insert_leaf(NodeMyISAM *leaf, NodeMyISAM **path, int path_level, char *key, int keylen);
     void insert_nonleaf(NodeMyISAM *node, NodeMyISAM **path, int pos, splitReturnMyISAM *childsplit);
     // insert_binary
-    int insert_binary(NodeMyISAM *cursor, const char *key, int keylen, int low, int high, bool &equal);
+    int search_insert_pos(NodeMyISAM *cursor, const char *key, int keylen, int low, int high, bool &equal);
     // search_bianry
-    int search_binary(NodeMyISAM *cursor, const char *key, int keylen, int low, int high);
+    // int search_binary(NodeMyISAM *cursor, const char *key, int keylen, int low, int high);
     NodeMyISAM *search_leaf_node(NodeMyISAM *searchroot, const char *key, int keylen);
     NodeMyISAM *search_leaf_node_for_insert(NodeMyISAM *searchroot, const char *key, int keylen,
                                             NodeMyISAM **path, int &path_level);

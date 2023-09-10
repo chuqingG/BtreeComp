@@ -423,18 +423,22 @@ void printKeys_db2(DB2Node *node, bool compressed) {
 #endif
 
 void printKeys_myisam(NodeMyISAM *node, bool compressed) {
-    string prev_key = "";
-    string curr_key = "";
-    for (uint32_t i = 0; i < node->keys.size(); i++) {
-        // Loop through rid list to print duplicates
-        for (uint32_t j = 0; j < node->keys.at(i).ridList.size(); j++) {
-            if (compressed || node->keys.at(i).getPrefix() == 0) {
-                curr_key = node->keys.at(i).value;
-            }
-            else {
-                curr_key = prev_key.substr(0, node->keys.at(i).getPrefix()) + node->keys.at(i).value;
-            }
+    // string prev_key = "";
+    // string curr_key = "";
+    char *prev_key;
+    char *curr_key;
+    for (uint32_t i = 0; i < node->size; i++) {
+        MyISAMhead *head = GetHeaderMyISAM(node, i);
+        if (compressed || head->pfx_len == 0 || i == 0) {
+            curr_key = PageOffset(node, head->key_offset);
+            cout << unsigned(head->pfx_len) << ":" << curr_key << ",";
+        }
+        else {
+            curr_key = new char[head->pfx_len + head->key_len + 1];
+            strncpy(curr_key, prev_key, head->pfx_len);
+            strcpy(curr_key + head->pfx_len, PageOffset(node, head->key_offset));
             cout << curr_key << ",";
+            // curr_key = prev_key.substr(0, node->keys.at(i).prefix) + node->keys.at(i).value;
         }
         prev_key = curr_key;
     }

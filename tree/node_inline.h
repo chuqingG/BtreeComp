@@ -184,3 +184,31 @@ inline void CopyToNewPageMyISAM(NodeMyISAM *nptr, int low, int high, char *newba
         top += oldhead->key_len + 1;
     }
 }
+
+#define GetHeaderPkB(nptr, i) (PkBhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(PkBhead))
+
+inline void InsertKeyPkB(NodePkB *nptr, int pos, const char *k, int klen, int plen) {
+    strcpy(BufTop(nptr), k);
+    // shift the headers
+    for (int i = nptr->size; i > pos; i--) {
+        memcpy(GetHeaderMyISAM(nptr, i), GetHeaderMyISAM(nptr, i - 1), sizeof(MyISAMhead));
+    }
+    // Set the new header
+    PkBhead *header = GetHeaderPkB(nptr, pos);
+    header->key_offset = nptr->space_top;
+    header->key_len = (uint8_t)klen;
+    header->pfx_len = (uint8_t)plen;
+    if (plen < klen) {
+        int pk_len = min(klen - plen, PKB_LEN);
+        strncpy(header->pk, k + plen, pk_len);
+        header->pk[pk_len] = '\0';
+        header->pk_len = pk_len;
+    }
+    else {
+        memset(header->pk, 0, sizeof(header->pk));
+        header->pk_len = 0;
+    }
+
+    nptr->space_top += klen + 1;
+    nptr->size += 1;
+}

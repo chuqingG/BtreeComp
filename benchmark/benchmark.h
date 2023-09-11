@@ -234,7 +234,7 @@ private:
     BPTreeWT *_tree;
 };
 
-class BPTreePkBBenchmark : public Benchmark {
+class BPTreePkBBenchmark : public Benchmark_c {
 public:
     ~BPTreePkBBenchmark() override {
         delete _tree;
@@ -249,7 +249,7 @@ public:
         _tree = nullptr;
     }
 
-    void Insert(const vector<string> &values) override {
+    void Insert(const vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); i++) {
             char *ptr = new char[values.at(i).length() + 1];
             strcpy(ptr, values.at(i).c_str());
@@ -259,7 +259,7 @@ public:
             _tree->insert(values.at(i));
     }
 
-    bool Search(const std::vector<string> &values) override {
+    bool Search(const std::vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); ++i)
             if (_tree->search(values.at(i)) == -1)
                 return false;

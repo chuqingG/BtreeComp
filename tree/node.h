@@ -289,8 +289,7 @@ public:
 };
 #endif
 
-const int PKB_LEN = 2;
-
+#ifdef DUPKEY
 // Duplicates represented as <key, {rid list}>
 class KeyPkB {
 public:
@@ -317,6 +316,30 @@ public:
     NodePkB();
     ~NodePkB();
 };
+
+#else
+struct PkBhead {
+    uint8_t pfx_len;
+    uint8_t key_len;
+    uint8_t pk_len;
+    char pk[PKB_LEN + 1];
+    uint16_t key_offset;
+} __attribute__((packed));
+
+class NodePkB {
+public:
+    bool IS_LEAF;
+    int size;
+    char *base;
+    uint16_t space_top;
+    vector<NodePkB *> ptrs;
+    uint16_t ptr_cnt;
+    NodePkB *prev; // Prev node pointer
+    NodePkB *next; // Next node pointer
+    NodePkB();
+    ~NodePkB();
+};
+#endif
 
 struct uncompressedKey { // for pkb
     string key;
@@ -354,7 +377,7 @@ struct splitReturnWT {
 };
 
 struct splitReturnPkB {
-    string promotekey;
+    WTitem promotekey;
     char *keyptr;
     NodePkB *left;
     NodePkB *right;

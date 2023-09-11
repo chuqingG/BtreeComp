@@ -280,6 +280,7 @@ NodeMyISAM::~NodeMyISAM() {
     delete base;
 }
 
+#ifdef DUPKEY
 // Constructor of Key when pKB is enabled
 KeyPkB::KeyPkB(int pos, string value, char *ptr, int rid) {
     offset = pos;
@@ -351,6 +352,25 @@ NodePkB::~NodePkB() {
         delete childptr;
     }
 }
+#else
+NodePkB::NodePkB() {
+    size = 0;
+    prev = nullptr;
+    next = nullptr;
+    ptr_cnt = 0;
+    base = NewPage();
+    SetEmptyPage(base);
+    space_top = 0;
+}
+
+// Destructor of NodePkB
+NodePkB::~NodePkB() {
+    // for (NodePkB *childptr : ptrs) {
+    //     delete childptr;
+    // }
+    delete base;
+}
+#endif
 
 #ifdef DUPKEY
 void printKeys(Node *node, bool compressed) {
@@ -470,16 +490,16 @@ void printKeys_wt(NodeWT *node, bool compressed) {
 
 void printKeys_pkb(NodePkB *node, bool compressed) {
     string curr_key;
-    for (int i = 0; i < node->keys.size(); i++) {
-        // Loop through rid list to print duplicates
-        for (uint32_t j = 0; j < node->keys.at(i).ridList.size(); j++) {
-            if (compressed) {
-                curr_key = node->keys.at(i).partialKey;
-            }
-            else {
-                curr_key = node->keys.at(i).original;
-            }
-            cout << curr_key << ",";
+    for (int i = 0; i < node->size; i++) {
+        PkBhead *head = GetHeaderPkB(node, i);
+        if (compressed) {
+            cout << unsigned(head->pfx_len) << ":" << head->pk << ",";
+            // curr_key = node->keys.at(i).partialKey;
         }
+        else {
+            cout << PageOffset(node, head->key_offset) << ",";
+            // curr_key = node->keys.at(i).original;
+        }
+        // cout << curr_key << ",";
     }
 }

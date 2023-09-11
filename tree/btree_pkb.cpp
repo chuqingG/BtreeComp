@@ -105,7 +105,7 @@ void BPTreePkB::insert_nonleaf(NodePkB *node, NodePkB **path, int parentlevel, s
         generate_pkb_key(node, promotekey->addr, promotekey->size, insertpos,
                          path, parentlevel, prevkey);
         int pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr, prevkey.size, promotekey->size);
-        InsertKeyPkB(node, insertpos, promotekey->addr + pfx_len, promotekey->size - pfx_len, pfx_len);
+        InsertKeyPkB(node, insertpos, promotekey->addr, promotekey->size, pfx_len);
 
         update_next_prefix(node, insertpos, promotekey->addr, promotekey->size);
 
@@ -173,7 +173,7 @@ void BPTreePkB::insert_leaf(NodePkB *leaf, NodePkB **path, int path_level,
         generate_pkb_key(leaf, key, keylen, insertpos,
                          path, path_level - 1, prevkey);
         int pfx_len = get_common_prefix_len(prevkey.addr, key, prevkey.size, keylen);
-        InsertKeyPkB(leaf, insertpos, key + pfx_len, keylen - pfx_len, pfx_len);
+        InsertKeyPkB(leaf, insertpos, key, keylen, pfx_len);
 
         // vector<KeyPkB> allkeys;
         // if (equal) {
@@ -244,7 +244,7 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
     generate_pkb_key(node, promotekey->addr, promotekey->size, insertpos,
                      path, parentlevel, prevkey);
     int pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr, prevkey.size, promotekey->size);
-    InsertKeyPkB(node, insertpos, promotekey->addr + pfx_len, promotekey->size - pfx_len, pfx_len);
+    InsertKeyPkB(node, insertpos, promotekey->addr, promotekey->size, pfx_len);
     if (!equal) {
         update_next_prefix(node, insertpos, promotekey->addr, promotekey->size);
     }
@@ -380,10 +380,14 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
     generate_pkb_key(node, newkey, keylen, insertpos,
                      path, path_level - 1, prevkey);
     int pfx_len = get_common_prefix_len(prevkey.addr, newkey, prevkey.size, keylen);
-    InsertKeyPkB(node, insertpos, newkey + pfx_len, keylen - pfx_len, pfx_len);
+    InsertKeyPkB(node, insertpos, newkey, keylen, pfx_len);
+    // vector<bool> flag(node->size);
+    // printTree(node, flag, true);
     if (!equal) {
         update_next_prefix(node, insertpos, newkey, keylen);
     }
+    // vector<bool> flag(node->size);
+    // printTree(node, flag, true);
     // vector<KeyPkB> allkeys;
     // if (equal) {
     //     allkeys = node->keys;

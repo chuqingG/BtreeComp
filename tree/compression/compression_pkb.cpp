@@ -36,10 +36,12 @@ void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, W
             PkBhead *head = GetHeaderPkB(parent, nodepos - 1);
             key.addr = PageOffset(parent, head->key_offset);
             key.size = head->key_len;
+            return;
             // return parent->keys[nodepos - 1].original;
         }
         curr = parent;
     }
+    key.size = 0;
     return;
 }
 
@@ -49,7 +51,7 @@ void generate_pkb_key(NodePkB *node, char *newkey, int keylen, int insertpos,
     if (insertpos > 0) {
         // go to buffer get the complete key
         // basekey = get_key(node, insertpos - 1);
-        PkBhead *head = GetHeaderPkB(node, insertpos);
+        PkBhead *head = GetHeaderPkB(node, insertpos - 1);
         key.addr = PageOffset(node, head->key_offset);
         key.size = head->key_len;
         return;
@@ -100,7 +102,7 @@ void update_next_prefix(NodePkB *node, int pos, char *full_newkey, int keylen) {
     strncpy(header->pk, next_k + newpfx_len, pk_len);
     header->pk[pk_len] = '\0';
     header->pk_len = pk_len;
-
+    header->pfx_len = newpfx_len;
     // // under many cases, newpfx is shorter than prevpfx,
     // // then we need to store longer value in the buf
     // if (newpfx_len > header->pfx_len) {
@@ -180,6 +182,10 @@ compareKeyResult compare_part_key(NodePkB *node, int idx,
         if (result.offset > head->pfx_len + head->pk_len) {
             result.comp = EQ;
         }
+    }
+    else {
+        result.comp = comp;
+        result.offset = offset;
     }
 
     // result.comp = comp;

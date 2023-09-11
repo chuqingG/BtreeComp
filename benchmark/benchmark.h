@@ -257,8 +257,8 @@ public:
         // }
         for (uint32_t i = 0; i < values.size(); ++i) {
             _tree->insert(values.at(i));
-            vector<bool> flag(i + 1);
-            _tree->printTree(_tree->getRoot(), flag, true);
+            // vector<bool> flag(i + 1);
+            // _tree->printTree(_tree->getRoot(), flag, true);
         }
     }
 

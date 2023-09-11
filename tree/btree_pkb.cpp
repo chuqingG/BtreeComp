@@ -35,17 +35,14 @@ int BPTreePkB::search(const char *key) {
 
 void BPTreePkB::insert(char *key) {
     int keylen = strlen(key);
-    // auto it = strPtrMap.find(x);
     if (_root == nullptr) {
         _root = new NodePkB;
-        // int rid = rand();
-        // _root->keys.push_back(KeyPkB(0, x, it->second, rid));
+
         InsertKeyPkB(_root, 0, key, keylen, 0);
         _root->IS_LEAF = true;
-        // _root->size = 1;
         return;
     }
-    // vector<NodePkB *> parents;
+
     int offset = 0;
     int path_level = 0;
     NodePkB *search_path[max_level];
@@ -69,10 +66,7 @@ void BPTreePkB::insert_nonleaf(NodePkB *node, NodePkB **path, int parentlevel, s
         splitReturnPkB currsplit = split_nonleaf(node, path, parentlevel, childsplit, offset);
         if (node == _root) {
             NodePkB *newRoot = new NodePkB;
-            // int rid = rand();
-            // newRoot->keys.push_back(KeyPkB(0, currsplit.promotekey, currsplit.keyptr, rid));
-            // newRoot->ptrs.push_back(currsplit.left);
-            // newRoot->ptrs.push_back(currsplit.right);
+
             InsertNode(newRoot, 0, currsplit.left);
             InsertKeyPkB(newRoot, 0,
                          currsplit.promotekey.addr, currsplit.promotekey.size, 0);
@@ -90,12 +84,7 @@ void BPTreePkB::insert_nonleaf(NodePkB *node, NodePkB **path, int parentlevel, s
     }
     else {
         WTitem *promotekey = &(childsplit->promotekey);
-        // WTitem basekey;
-        // get_base_key_from_ancestor(path, parentlevel, node, basekey);
-        // int offset = get_common_prefix_len(basekey.addr, promotekey->addr,
-        //                                    basekey.size, promotekey->size);
-        // int insertpos;
-        // int rid = rand();
+
         bool equal = false;
         findNodeResult result = find_node(node, promotekey->addr, promotekey->size,
                                           offset, equal);
@@ -110,30 +99,6 @@ void BPTreePkB::insert_nonleaf(NodePkB *node, NodePkB **path, int parentlevel, s
         update_next_prefix(node, insertpos, promotekey->addr, promotekey->size);
 
         InsertNode(node, insertpos + 1, childsplit->right);
-        // vector<KeyPkB> allkeys;
-        // for (int i = 0; i < insertpos; i++) {
-        //     allkeys.push_back(node->keys.at(i));
-        // }
-        // KeyPkB pkbKey = generate_pkb_key(node, promotekey, childsplit.keyptr, insertpos, parents, pos, rid);
-        // allkeys.push_back(pkbKey);
-        //
-        // for (int i = insertpos; i < node->size; i++) {
-        //     allkeys.push_back(node->keys.at(i));
-        // }
-
-        // vector<NodePkB *> allptrs;
-        // for (int i = 0; i < insertpos + 1; i++) {
-        //     allptrs.push_back(node->ptrs.at(i));
-        // }
-        // allptrs.push_back(childsplit.right);
-        // for (int i = insertpos + 1; i < node->size + 1; i++) {
-        //     allptrs.push_back(node->ptrs.at(i));
-        // }
-        // node->keys = allkeys;
-        // node->ptrs = allptrs;
-        // node->size = node->size + 1;
-        //
-        // build_page_prefixes(node, insertpos); // Populate new prefixes
     }
 }
 
@@ -143,17 +108,13 @@ void BPTreePkB::insert_leaf(NodePkB *leaf, NodePkB **path, int path_level,
         splitReturnPkB split = split_leaf(leaf, path, path_level, key, keylen, offset);
         if (leaf == _root) {
             NodePkB *newRoot = new NodePkB;
-            // int rid = rand();
-            // newRoot->keys.push_back(KeyPkB(0, split.promotekey, split.keyptr, rid));
-            // newRoot->ptrs.push_back(split.left);
-            // newRoot->ptrs.push_back(split.right);
+
             InsertNode(newRoot, 0, split.left);
             InsertKeyPkB(newRoot, 0,
                          split.promotekey.addr, split.promotekey.size, 0);
             InsertNode(newRoot, 1, split.right);
 
             newRoot->IS_LEAF = false;
-            // newRoot->size = 1;
             _root = newRoot;
             max_level++;
         }
@@ -163,8 +124,6 @@ void BPTreePkB::insert_leaf(NodePkB *leaf, NodePkB **path, int path_level,
         }
     }
     else {
-        // int insertpos;
-        // int rid = rand();
         bool equal = false;
         findNodeResult result = find_node(leaf, key, keylen, offset, equal);
         int insertpos = result.high;
@@ -175,65 +134,23 @@ void BPTreePkB::insert_leaf(NodePkB *leaf, NodePkB **path, int path_level,
         int pfx_len = get_common_prefix_len(prevkey.addr, key, prevkey.size, keylen);
         InsertKeyPkB(leaf, insertpos, key, keylen, pfx_len);
 
-        // vector<KeyPkB> allkeys;
-        // if (equal) {
-        //     allkeys = leaf->keys;
-        //     allkeys.at(insertpos).addRecord(rid);
-        // }
-        // else {
-        //     for (int i = 0; i < insertpos; i++) {
-        //         allkeys.push_back(leaf->keys.at(i));
-        //     }
-        //     // KeyPkB pkbKey = generate_pkb_key(leaf, key, keyptr, insertpos, parents, parents.size() - 1, rid);
-        //     allkeys.push_back(pkbKey);
-        //     for (int i = insertpos; i < leaf->size; i++) {
-        //         allkeys.push_back(leaf->keys.at(i));
-        //     }
-        // }
-        // leaf->keys = allkeys;
-
         if (!equal) {
-            // leaf->size = leaf->size + 1;
-            // build_page_prefixes(leaf, insertpos); // Populate new prefixes
             update_next_prefix(leaf, insertpos, key, keylen);
         }
     }
 }
 
 int BPTreePkB::split_point(NodePkB *node) {
-    // int size = allkeys.size();
     int bestsplit = node->size / 2;
     return bestsplit;
 }
-
-// uncompressedKey BPTreePkB::get_uncompressed_key_before_insert(NodePkB *node, int ind, int insertpos, string newkey, char *newkeyptr, bool equal) {
-//     uncompressedKey uncompressed;
-//     if (equal) {
-//         uncompressed.key = get_key(node, ind);
-//         uncompressed.keyptr = node->keys.at(ind).original;
-//         return uncompressed;
-//     }
-//     if (insertpos == ind) {
-//         uncompressed.key = newkey;
-//         uncompressed.keyptr = newkeyptr;
-//     }
-//     else {
-//         int origind = insertpos < ind ? ind - 1 : ind;
-//         uncompressed.key = get_key(node, origind);
-//         uncompressed.keyptr = node->keys.at(origind).original;
-//     }
-//     return uncompressed;
-// }
 
 splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int parentlevel,
                                         splitReturnPkB *childsplit, int offset) {
     splitReturnPkB newsplit;
     NodePkB *right = new NodePkB;
-    // string promotekey = childsplit.promotekey;
-    // char *promotekeyptr = childsplit.keyptr;
     WTitem *promotekey = &(childsplit->promotekey);
-    // int insertpos;
-    // int rid = rand();
+
     bool equal = false;
     findNodeResult result = find_node(node, promotekey->addr, promotekey->size,
                                       offset, equal);
@@ -250,26 +167,6 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
     }
 
     InsertNode(node, insertpos + 1, childsplit->right);
-    // vector<KeyPkB> allkeys;
-    // vector<NodePkB *> allptrs;
-    //
-    // for (int i = 0; i < insertpos; i++) {
-    //     allkeys.push_back(node->keys.at(i));
-    // }
-    // KeyPkB pkbKey = generate_pkb_key(node, promotekey, promotekeyptr, insertpos, parents, pos, rid);
-    // allkeys.push_back(pkbKey);
-    //
-    // for (int i = insertpos; i < node->size; i++) {
-    //     allkeys.push_back(node->keys.at(i));
-    // }
-
-    // for (int i = 0; i < insertpos + 1; i++) {
-    //     allptrs.push_back(node->ptrs.at(i));
-    // }
-    // allptrs.push_back(childsplit.right);
-    // for (int i = insertpos + 1; i < node->size + 1; i++) {
-    //     allptrs.push_back(node->ptrs.at(i));
-    // }
 
     int split = split_point(node);
 
@@ -284,9 +181,9 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
     // update the firstright key
     // Or no need to update, cause it's originally set
     // Difference with split_leaf: the separator is indeed the firstright, when here are different
-    PkBhead *head_rf = GetHeaderPkB(node, split + 1);
-    int pfx_len_rf = get_common_prefix_len(newsplit.promotekey.addr, PageOffset(node, head_rf->key_offset),
-                                           newsplit.promotekey.size, head_rf->key_len);
+    // PkBhead *head_rf = GetHeaderPkB(node, split + 1);
+    // int pfx_len_rf = get_common_prefix_len(newsplit.promotekey.addr, PageOffset(node, head_rf->key_offset),
+    //                                        newsplit.promotekey.size, head_rf->key_len);
 
     // 3. copy the two parts into new pages
     char *leftbase = NewPage();
@@ -305,26 +202,6 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
     copy(node->ptrs.begin() + split + 1, node->ptrs.end(),
          back_inserter(rightptrs));
 
-    // vector<KeyPkB> leftkeys;
-    // vector<KeyPkB> rightkeys;
-    // vector<NodePkB *> leftptrs;
-    // vector<NodePkB *> rightptrs;
-    // copy(allkeys.begin(), allkeys.begin() + split, back_inserter(leftkeys));
-    // copy(allkeys.begin() + split + 1, allkeys.end(), back_inserter(rightkeys));
-    // copy(allptrs.begin(), allptrs.begin() + split + 1, back_inserter(leftptrs));
-    // copy(allptrs.begin() + split + 1, allptrs.end(), back_inserter(rightptrs));
-    //
-    // string splitkey;
-
-    // uncompressedKey firstrightKeyAndPtr = get_uncompressed_key_before_insert(node, split + 1, insertpos, promotekey, promotekeyptr, equal);
-    // uncompressedKey splitKeyAndPtr = get_uncompressed_key_before_insert(node, split, insertpos, promotekey, promotekeyptr, equal);
-    // splitkey = splitKeyAndPtr.key;
-    // newsplit.promotekey = splitkey;
-    // newsplit.keyptr = splitKeyAndPtr.keyptr;
-    // int firstrightoffset = compute_offset(splitkey, firstrightKeyAndPtr.key);
-    // rightkeys.at(0) = KeyPkB(firstrightoffset, firstrightKeyAndPtr.key, firstrightKeyAndPtr.keyptr, rightkeys.at(0).ridList);
-
-    // newsplit.promotekey = splitkey;
     right->size = node->size - (split + 1);
     right->space_top = right_top;
     right->IS_LEAF = false;
@@ -336,20 +213,6 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
     UpdateBase(node, leftbase);
     node->ptrs = leftptrs;
     node->ptr_cnt = split + 1;
-
-    // node->size = leftkeys.size();
-    // node->keys = leftkeys;
-    // node->ptrs = leftptrs;
-
-    // right->size = rightkeys.size();
-    // right->IS_LEAF = false;
-    // right->keys = rightkeys;
-    // right->ptrs = rightptrs;
-
-    // if (insertpos < split) {
-    //     build_page_prefixes(node, insertpos); // Populate new prefixes
-    // }
-    // build_page_prefixes(right, 0); // Populate new prefixes
 
     // Set next pointers
     NodePkB *next = node->next;
@@ -369,8 +232,7 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
                                      char *newkey, int keylen, int offset) {
     splitReturnPkB newsplit;
     NodePkB *right = new NodePkB;
-    // int insertpos;
-    // int rid = rand();
+
     bool equal = false;
     findNodeResult result = find_node(node, newkey, keylen, offset, equal);
     int insertpos = result.high;
@@ -381,29 +243,10 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
                      path, path_level - 1, prevkey);
     int pfx_len = get_common_prefix_len(prevkey.addr, newkey, prevkey.size, keylen);
     InsertKeyPkB(node, insertpos, newkey, keylen, pfx_len);
-    // vector<bool> flag(node->size);
-    // printTree(node, flag, true);
+
     if (!equal) {
         update_next_prefix(node, insertpos, newkey, keylen);
     }
-    // vector<bool> flag(node->size);
-    // printTree(node, flag, true);
-    // vector<KeyPkB> allkeys;
-    // if (equal) {
-    //     allkeys = node->keys;
-    //     allkeys.at(insertpos).addRecord(rid);
-    // }
-    // else {
-    //     for (int i = 0; i < insertpos; i++) {
-    //         allkeys.push_back(node->keys.at(i));
-    //     }
-    //     KeyPkB pkbKey = generate_pkb_key(node, newkey, newkeyptr, insertpos, parents, parents.size() - 1, rid);
-    //     allkeys.push_back(pkbKey);
-
-    //     for (int i = insertpos; i < node->size; i++) {
-    //         allkeys.push_back(node->keys.at(i));
-    //     }
-    // }
 
     int split = split_point(node);
 
@@ -418,19 +261,6 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
     head_split->pfx_len = head_split->key_len;
     head_split->pk_len = 0;
     memset(head_split->pk, 0, sizeof(head_split->pk));
-
-    // vector<KeyPkB> leftkeys;
-    // vector<KeyPkB> rightkeys;
-    // copy(allkeys.begin(), allkeys.begin() + split, back_inserter(leftkeys));
-    // copy(allkeys.begin() + split, allkeys.end(), back_inserter(rightkeys));
-
-    // string firstright;
-    // uncompressedKey firstrightKeyAndPtr = get_uncompressed_key_before_insert(node, split, insertpos, newkey, newkeyptr, equal);
-    // firstright = firstrightKeyAndPtr.key;
-    // rightkeys.at(0) = KeyPkB(firstright.length(), firstright, firstrightKeyAndPtr.keyptr, rightkeys.at(0).ridList);
-    // newsplit.keyptr = firstrightKeyAndPtr.keyptr;
-
-    // newsplit.promotekey = firstright;
 
     // 3. copy the two parts into new pages
     char *leftbase = NewPage();
@@ -449,18 +279,6 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
     node->space_top = left_top;
     UpdateBase(node, leftbase);
 
-    // node->size = leftkeys.size();
-    // node->keys = leftkeys;
-
-    // right->size = rightkeys.size();
-    // right->IS_LEAF = true;
-    // right->keys = rightkeys;
-
-    // if (!equal && insertpos < split) {
-    //     build_page_prefixes(node, insertpos); // Populate new prefixes
-    // }
-    // build_page_prefixes(right, 0); // Populate new prefixes
-
     // Set next pointers
     NodePkB *next = node->next;
     right->prev = node;
@@ -475,11 +293,10 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
     return newsplit;
 }
 
-// TODO: copy from myisam, need to be more accurate
 bool BPTreePkB::check_split_condition(NodePkB *node, int keylen) {
     int currspace = node->space_top + node->size * sizeof(PkBhead);
-    // Update prefix need more space, the newkey, the following key, the decompressed split point
-    int splitcost = keylen + sizeof(PkBhead) + 2 * max(keylen, APPROX_KEY_SIZE);
+    // Update prefix need more space, the newkey
+    int splitcost = keylen + sizeof(PkBhead);
 
     if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
@@ -498,8 +315,6 @@ NodePkB *BPTreePkB::search_leaf_node(NodePkB *searchroot, const char *key, int k
     bool equal = false;
     // Till we reach leaf node
     while (!cursor->IS_LEAF) {
-        // string_view searchkey = key;
-
         findNodeResult result = find_node(cursor, key, keylen, offset, equal);
         // If equal key found, choose next position
         int pos;
@@ -525,8 +340,6 @@ NodePkB *BPTreePkB::search_leaf_node_for_insert(NodePkB *searchroot, const char 
     bool equal = false;
     // Till we reach leaf node
     while (!cursor->IS_LEAF) {
-        // string_view searchkey = key;
-        // parents.push_back(cursor);
         path[path_level++] = cursor;
 
         findNodeResult result = find_node(cursor, key, keylen, offset, equal);
@@ -553,12 +366,7 @@ void BPTreePkB::getSize(NodePkB *cursor, int &numNodes, int &numNonLeaf, int &nu
     if (cursor != NULL) {
         unsigned long currSize = 0;
         int prefixSize = 0;
-        // // One time computation
-        // if (cursor == _root) {
-        //     for (auto it = strPtrMap.begin(); it != strPtrMap.end(); it++) {
-        //         currSize += it->first.length();
-        //     }
-        // }
+
         for (int i = 0; i < cursor->size; i++) {
             PkBhead *head = GetHeaderPkB(cursor, i);
             currSize += head->key_len + sizeof(head->pfx_len) + head->pk_len;

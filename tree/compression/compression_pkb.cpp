@@ -1,23 +1,6 @@
 #pragma once
 #include "compression_pkb.h"
 
-// int compute_offset(string prev_key, string key) {
-//     int pfx = 0;
-//     int pfx_max = min(key.length(), prev_key.length());
-
-//     if (key.length() < pfx_max)
-//         pfx_max = key.length();
-//     if (prev_key.length() < pfx_max)
-//         pfx_max = prev_key.length();
-
-//     for (pfx = 0; pfx < pfx_max; ++pfx) {
-//         if (prev_key.at(pfx) != key.at(pfx))
-//             break;
-//     }
-
-//     return pfx;
-// }
-
 int bt_get_parent_child_pos(NodePkB *parent, NodePkB *node) {
     for (int i = 0; i < parent->ptr_cnt; i++) {
         if (parent->ptrs[i] == node)
@@ -31,13 +14,12 @@ void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, W
     for (int i = path_level; i >= 0; i--) {
         NodePkB *parent = path[i];
         int nodepos = bt_get_parent_child_pos(parent, curr);
-        // int size = parent->size;
+
         if (nodepos > 0) {
             PkBhead *head = GetHeaderPkB(parent, nodepos - 1);
             key.addr = PageOffset(parent, head->key_offset);
             key.size = head->key_len;
             return;
-            // return parent->keys[nodepos - 1].original;
         }
         curr = parent;
     }
@@ -50,7 +32,7 @@ void generate_pkb_key(NodePkB *node, char *newkey, int keylen, int insertpos,
     // string basekey;
     if (insertpos > 0) {
         // go to buffer get the complete key
-        // basekey = get_key(node, insertpos - 1);
+
         PkBhead *head = GetHeaderPkB(node, insertpos - 1);
         key.addr = PageOffset(node, head->key_offset);
         key.size = head->key_len;
@@ -59,26 +41,10 @@ void generate_pkb_key(NodePkB *node, char *newkey, int keylen, int insertpos,
     else {
         get_base_key_from_ancestor(path, path_level, node, key);
     }
-    // int pfx_len = get_common_prefix_len()
-    // int offset = compute_offset(basekey, newkey);
-    // return KeyPkB(offset, newkey, newkeyptr, rid);
 
     // It's enough to return, calculate the offset later
     return;
 }
-
-// // Build page prefixes from position
-// void build_page_prefixes(NodePkB *node, int pos) {
-//     if (node->size == 0)
-//         return;
-//     string basekey(node->keys.at(pos).original);
-//     for (int i = pos + 1; i < node->keys.size(); i++) {
-//         string currkey(node->keys.at(i).original);
-//         int offset = compute_offset(basekey, currkey);
-//         node->keys.at(i).updateOffset(offset);
-//         basekey = currkey;
-//     }
-// }
 
 // TODO: see what happens if the new-inserted node is ancestor of a node
 void update_next_prefix(NodePkB *node, int pos, char *full_newkey, int keylen) {
@@ -86,12 +52,6 @@ void update_next_prefix(NodePkB *node, int pos, char *full_newkey, int keylen) {
     if (node->size <= 1 || pos + 1 == node->size)
         return;
     PkBhead *header = GetHeaderPkB(node, pos + 1);
-    // int cur_len = header->pfx_len + header->key_len;
-
-    // build k[pos+1] from k[pos - 1]
-    // char *fullkey = new char[cur_len + 1];
-    // strncpy(fullkey, fullkey_before_pos, header->pfx_len);
-    // strcpy(fullkey + header->pfx_len, PageOffset(node, header->key_offset));
 
     // compare k[pos] and k[pos+1]
     char *next_k = PageOffset(node, header->key_offset);
@@ -103,37 +63,15 @@ void update_next_prefix(NodePkB *node, int pos, char *full_newkey, int keylen) {
     header->pk[pk_len] = '\0';
     header->pk_len = pk_len;
     header->pfx_len = newpfx_len;
-    // // under many cases, newpfx is shorter than prevpfx,
-    // // then we need to store longer value in the buf
-    // if (newpfx_len > header->pfx_len) {
-    //     // shift the pointer
-    //     header->key_len -= newpfx_len - header->pfx_len;
-    //     header->key_offset += newpfx_len - header->pfx_len;
-    //     // update after use
-    //     header->pfx_len = newpfx_len;
-    // }
-    // else if (newpfx_len < header->pfx_len) {
-    //     // write new item
-    //     strcpy(BufTop(node), fullkey + newpfx_len);
-    //     header->key_offset = node->space_top;
-    //     header->key_len = cur_len - newpfx_len;
-    //     header->pfx_len = newpfx_len;
-    //     node->space_top += header->key_len + 1;
-    // }
+
     return;
 }
 
-// string get_key(NodePkB *node, int slot) {
-//     return node->keys.at(slot).original;
-// }
-
 compareKeyResult compare_key(const char *a, const char *b, int alen, int blen, bool fullcomp) {
     compareKeyResult result;
-    // int len, usz, tsz;
-    // usz = a.length();
-    // tsz = b.length();
+
     int len = min(alen, blen);
-    // int idx = 0;
+
     for (int idx = 0; idx < len; ++idx) {
         int cmp = a[idx] - b[idx];
         if (cmp != 0) {
@@ -141,14 +79,6 @@ compareKeyResult compare_key(const char *a, const char *b, int alen, int blen, b
             result.offset = idx;
             return result;
         }
-        // string c1(1, a.at(ind));
-        // string c2(1, b.at(ind));
-        // int cmp = c1.compare(c2);
-        // if (cmp != 0) {
-        //     result.comp = cmp < 0 ? LT : GT;
-        //     result.offset = ind;
-        //     return result;
-        // }
     }
 
     if (!fullcomp || alen == blen)
@@ -171,10 +101,6 @@ compareKeyResult compare_part_key(NodePkB *node, int idx,
         result.offset = head->pfx_len;
     }
     else if (head->pfx_len == offset) {
-        // string partKey = searchKey.substr(0, indKey.offset) + indKey.partialKey;
-        // compareKeyResult partCmpResult = compare_key(searchKey, partKey, false);
-        // result.offset = partCmpResult.offset;
-
         compareKeyResult partCmpResult = compare_key(searchKey + head->pfx_len, head->pk,
                                                      keylen - head->pfx_len, head->pk_len, false);
         result.offset = head->pfx_len + partCmpResult.offset;
@@ -188,8 +114,6 @@ compareKeyResult compare_part_key(NodePkB *node, int idx,
         result.offset = offset;
     }
 
-    // result.comp = comp;
-    // result.offset = offset;
     return result;
 }
 
@@ -208,8 +132,6 @@ findNodeResult find_bit_tree(NodePkB *node, const char *searchKey, int keylen,
         if (currOffset >= keylen)
             idx++;
         else {
-            // string c1(1, searchKey.at(currOffset));
-            // string c2(1, diffBit);
             int cmp = searchKey[currOffset] - diffBit;
 
             if (cmp >= 0) {
@@ -228,7 +150,6 @@ findNodeResult find_bit_tree(NodePkB *node, const char *searchKey, int keylen,
         }
     }
     PkBhead *head = GetHeaderPkB(node, pos);
-    // string indexStr(node->keys.at(pos).original);
     compareKeyResult cmpResult = compare_key(searchKey, PageOffset(node, head->key_offset),
                                              keylen, head->key_len);
     if (cmpResult.comp == EQ) {
@@ -240,8 +161,7 @@ findNodeResult find_bit_tree(NodePkB *node, const char *searchKey, int keylen,
     // GT case
     else if (cmpResult.comp == GT) {
         int h = pos + 1;
-        // while (h <= high && node->keys.at(h).offset > cmpResult.offset)
-        //     h++;
+
         while (h <= high) {
             PkBhead *head_h = GetHeaderPkB(node, h);
             if (head_h->pfx_len <= cmpResult.offset)

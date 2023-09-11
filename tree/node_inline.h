@@ -212,3 +212,17 @@ inline void InsertKeyPkB(NodePkB *nptr, int pos, const char *k, int klen, int pl
     nptr->space_top += klen + 1;
     nptr->size += 1;
 }
+
+inline void CopyToNewPagePkB(NodePkB *nptr, int low, int high, char *newbase, int &top) {
+    for (int i = low; i < high; i++) {
+        int newidx = i - low;
+        PkBhead *oldhead = GetHeaderPkB(nptr, i);
+        PkBhead *newhead = (PkBhead *)(newbase + MAX_SIZE_IN_BYTES
+                                       - (newidx + 1) * sizeof(PkBhead));
+        strncpy(newbase + top, PageOffset(nptr, oldhead->key_offset), oldhead->key_len);
+        memcpy(newhead, oldhead, sizeof(PkBhead));
+        // offset is different
+        newhead->key_offset = top;
+        top += oldhead->key_len + 1;
+    }
+}

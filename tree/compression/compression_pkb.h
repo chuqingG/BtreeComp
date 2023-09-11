@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include "../node.cpp"
+#include "../util.cpp"
 
 using namespace std;
 
@@ -22,15 +23,18 @@ struct findNodeResult {
     int offset;
 };
 
-int compute_offset(string prev_key, string key);
+// int compute_offset(string prev_key, string key);
 
-string get_key(NodePkB *node, int slot);
+// string get_key(NodePkB *node, int slot);
 
-KeyPkB generate_pkb_key(NodePkB *node, string newkey, char *newkeyptr, int insertpos, vector<NodePkB *> parents, int parentpos, int rid);
+void generate_pkb_key(NodePkB *node, char *newkey, int keylen, int insertpos,
+                      NodePkB **path, int path_level, WTitem &key);
 
-string get_base_key_from_ancestor(vector<NodePkB *> parents, int pos, NodePkB *node);
+void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, WTitem &key);
 
-void build_page_prefixes(NodePkB *node, int pos);
+// void build_page_prefixes(NodePkB *node, int pos);
+
+void update_next_prefix(NodePkB *node, int pos, char *full_newkey, int keylen);
 
 compareKeyResult compare_key(const char *a, const char *b, int alen, int blen, bool fullcomp = true);
 

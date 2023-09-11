@@ -15,7 +15,7 @@ class BPTreePkB {
 public:
     BPTreePkB();
     ~BPTreePkB();
-    unordered_map<string, char *> strPtrMap;
+    // unordered_map<string, char *> strPtrMap;
     int search(const char *);
     void insert(char *);
     void getSize(NodePkB *, int &, int &, int &, int &, unsigned long &, int &);
@@ -26,7 +26,7 @@ public:
 
 private:
     NodePkB *_root;
-    bool max_level;
+    int max_level;
     void insert_leaf(NodePkB *leaf, NodePkB **path, int path_level, char *key, int keylen, int offset);
     void insert_nonleaf(NodePkB *node, NodePkB **path, int pos, splitReturnPkB *childsplit);
     NodePkB *search_leaf_node(NodePkB *root, const char *key, int keylen, int &offset);
@@ -34,7 +34,7 @@ private:
                                          NodePkB **path, int &path_level, int &offset);
     bool check_split_condition(NodePkB *node, int keylen);
     int split_point(NodePkB *node);
-    uncompressedKey get_uncompressed_key_before_insert(NodePkB *node, int ind, int insertpos, string newkey, char *newkeyptr, bool equal);
-    splitReturnPkB split_nonleaf(NodePkB *node, int pos, splitReturnPkB *childsplit, int offset);
-    splitReturnPkB split_leaf(NodePkB *node, char *newkey, int newkey_len, int offset);
+    // uncompressedKey get_uncompressed_key_before_insert(NodePkB *node, int ind, int insertpos, string newkey, char *newkeyptr, bool equal);
+    splitReturnPkB split_nonleaf(NodePkB *node, NodePkB **path, int parentlevel, splitReturnPkB *childsplit, int offset);
+    splitReturnPkB split_leaf(NodePkB *node, NodePkB **path, int path_level, char *newkey, int newkey_len, int offset);
 };

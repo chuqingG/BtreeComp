@@ -493,7 +493,9 @@ void printKeys_pkb(NodePkB *node, bool compressed) {
     for (int i = 0; i < node->size; i++) {
         PkBhead *head = GetHeaderPkB(node, i);
         if (compressed) {
-            cout << unsigned(head->pfx_len) << ":" << head->pk << ",";
+            cout << unsigned(head->pfx_len) << ":" << head->pk << "("
+                 << PageOffset(node, head->key_offset) << ")"
+                 << ",";
             // curr_key = node->keys.at(i).partialKey;
         }
         else {

@@ -107,19 +107,23 @@
         mem += klen + 1;                                     \
     }
 
-#define WriteKeyDB2Page(base, memusage, pos, size, idx, kptr, klen, prefixlen) \
-    {                                                                          \
-        strcpy(base + memusage, kptr + prefixlen);                             \
-        size[pos] = klen - prefixlen;                                          \
-        idx[pos] = memusage;                                                   \
-        memusage += size[pos] + 1;                                             \
-    }
+// #define WriteKeyDB2Page(base, memusage, pos, size, idx, kptr, klen, prefixlen) \
+//     {                                                                          \
+//         strcpy(base + memusage, kptr + prefixlen);                             \
+//         size[pos] = klen - prefixlen;                                          \
+//         idx[pos] = memusage;                                                   \
+//         memusage += size[pos] + 1;                                             \
+//     }
 
-#define GetKeyDB2ByPtr(resultptr, i) (char *)(resultptr->base + resultptr->newoffset[i])
-#define GetKeyDB2(result, i) (char *)(result.base + result.newoffset[i])
+// #define GetKeyDB2ByPtr(resultptr, i) (char *)(resultptr->base + resultptr->newoffset[i])
 /*
 ===============For DB2=============
 */
+#define GetKeyDB2(result, off) (char *)(result->base + off)
+#define GetPfxDB2(result, off) (char *)(result->pfxbase + off)
+#define GetHeaderInPageDB2(result, i) (DB2head *)(result->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(DB2head))
+#define GetPfxInPageDB2(result, i) (DB2pfxhead *)(result->pfxbase + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead))
+
 #define PfxTop(nptr) (nptr->pfxbase + nptr->pfx_top)
 
 #define GetHeaderDB2(nptr, i) (DB2head *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(DB2head))
@@ -172,6 +176,28 @@ inline void CopyToNewPageDB2(NodeDB2 *nptr, int low, int high, char *newbase, ui
     }
 }
 
+// for a single base without a node scope
+#define WriteKeyDB2Page(base, memusage, pos, k, klen, plen)                                     \
+    {                                                                                           \
+        strcpy(base + memusage, k + plen);                                                      \
+        DB2head *head = (DB2head *)(newbase + MAX_SIZE_IN_BYTES - (pos + 1) * sizeof(DB2head)); \
+        head->key_len = klen - plen;                                                            \
+        head->key_offset = memusage;                                                            \
+        memusage += head->key_len + 1;                                                          \
+    }
+
+// Only write to the end of prefix page
+#define WritePfxDB2Page(pfxbase, pfxtop, pfxitem, pfxsize)                                                  \
+    {                                                                                                       \
+        strcpy(pfxbase + pfxtop, pfxitem.prefix.addr);                                                      \
+        DB2pfxhead *head = (DB2pfxhead *)(pfxbase + DB2_PFX_MAX_SIZE - (pfxsize + 1) * sizeof(DB2pfxhead)); \
+        head->pfx_offset = pfx_top;                                                                         \
+        head->pfx_len = pfxitem.prefix.size;                                                                \
+        head->low = pfxitem.low;                                                                            \
+        head->high = pfxitem.high;                                                                          \
+        pfxtop += pfxitem.prefix.size + 1;                                                                  \
+        pfxsize++;                                                                                          \
+    }
 /*
 ===============For WiredTiger=============
 */

@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include "../node.cpp"
+#include "../node_inline.h"
 #include "../util.cpp"
 
 enum optimizationType {
@@ -28,15 +29,25 @@ struct db2split {
     Data *splitprefix;
 };
 
+struct prefixItem {
+    WTitem prefix;
+    int low = 0;
+    int high = 0;
+};
+
 // The offset in prefix_merge is length to add before head,
 //            in prefix_expand is the actual key_offset
 class prefixOptimization {
 public:
-    int memusage;
+    int space_top;
+    int pfx_top;
+    int pfx_size;
     char *base;
-    uint8_t *newsize;
-    uint16_t *newoffset;
-    vector<PrefixMetaData> prefixes;
+    char *pfxbase;
+    bool used;
+    // uint8_t *newsize;
+    // uint16_t *newoffset;
+    // vector<PrefixMetaData> prefixes;
 
     prefixOptimization();
     ~prefixOptimization();

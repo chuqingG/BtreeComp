@@ -76,16 +76,16 @@ prefixMergeSegment find_best_segment_in_closed_range(prefixOptimization *result,
 void merge_prefixes_in_segment(prefixOptimization *result,
                                prefixMergeSegment *bestsegment);
 
-prefixOptimization *prefix_merge(DB2Node *node);
+prefixOptimization *prefix_merge(NodeDB2 *node);
 
 int expand_prefixes_in_boundary(prefixOptimization *result, int index);
 
-prefixOptimization *prefix_expand(DB2Node *node);
+prefixOptimization *prefix_expand(NodeDB2 *node);
 
-// int search_prefix_metadata(DB2Node *cursor, string_view key);
+// int search_prefix_metadata(NodeDB2 *cursor, string_view key);
 
-int find_prefix_pos(DB2Node *cursor, const char *key, int keylen, bool forinsert);
+int find_prefix_pos(NodeDB2 *cursor, const char *key, int keylen, bool forinsert);
 
-// int find_insert_pos(DB2Node *node, const char* key, int keylen, int (*insertfunc)(DB2Node *, string_view, int, int, bool &), bool &equal);
+// int find_insert_pos(NodeDB2 *node, const char* key, int keylen, int (*insertfunc)(NodeDB2 *, string_view, int, int, bool &), bool &equal);
 
-void apply_prefix_optimization(DB2Node *node);
+void apply_prefix_optimization(NodeDB2 *node);

@@ -3,38 +3,33 @@
 #include "../node_mt.cpp"
 #include "../util.cpp"
 
-enum optimizationType
-{
+enum optimizationType {
     prefixmerge,
     prefixexpand
 };
 
-struct prefixMergeSegment
-{
+struct prefixMergeSegment {
     vector<PrefixMetaData> segment;
     string prefix;
     int cost;
     int firstindex;
 };
 
-struct closedRange
-{
+struct closedRange {
     vector<PrefixMetaData> prefixMetadatas;
     vector<int> positions;
 };
 
-struct db2split{
+struct db2split {
     vector<PrefixMetaData> leftmetadatas;
     vector<PrefixMetaData> rightmetadatas;
     string splitprefix;
 };
 
-struct prefixOptimization
-{
+struct prefixOptimization {
     vector<Key> keys;
     vector<PrefixMetaData> prefixMetadatas;
 };
-
 
 closedRange find_closed_range(vector<PrefixMetaData> prefixmetadatas, string n_p_i, int p_i_pos);
 
@@ -62,12 +57,12 @@ int expand_prefixes_in_boundary(vector<Key> &keys, vector<PrefixMetaData> &prefi
 
 prefixOptimization prefix_expand(vector<Key> keys, vector<PrefixMetaData> prefixmetadatas);
 
-db2split peform_split(DB2Node *node, int split, bool isleaf);
+db2split peform_split(NodeDB2 *node, int split, bool isleaf);
 
-int insert_prefix_metadata(DB2Node *cursor, string_view key);
+int insert_prefix_metadata(NodeDB2 *cursor, string_view key);
 
-int search_prefix_metadata(DB2Node *cursor, string_view key);
+int search_prefix_metadata(NodeDB2 *cursor, string_view key);
 
-int find_insert_pos(DB2Node *node, string &key, int (*insertfunc)(Node *, string_view, int, int), bool &equal);
+int find_insert_pos(NodeDB2 *node, string &key, int (*insertfunc)(Node *, string_view, int, int), bool &equal);
 
-void apply_prefix_optimization(DB2Node *node);
+void apply_prefix_optimization(NodeDB2 *node);

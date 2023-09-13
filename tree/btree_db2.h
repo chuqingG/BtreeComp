@@ -21,31 +21,31 @@ public:
     int search(const char *);
     void insert(char *);
 
-    void getSize(DB2Node *, int &, int &, int &, int &, unsigned long &, int &);
-    int getHeight(DB2Node *);
-    DB2Node *getRoot();
-    void printTree(DB2Node *x, vector<bool> flag, bool compressed = true,
+    void getSize(NodeDB2 *, int &, int &, int &, int &, unsigned long &, int &);
+    int getHeight(NodeDB2 *);
+    NodeDB2 *getRoot();
+    void printTree(NodeDB2 *x, vector<bool> flag, bool compressed = true,
                    int depth = 0, bool isLast = false);
 
 private:
-    DB2Node *_root;
+    NodeDB2 *_root;
     int max_level;
-    void insert_leaf(DB2Node *leaf, DB2Node **path, int path_level, char *key, int keylen);
-    void insert_nonleaf(DB2Node *node, DB2Node **path, int pos, splitReturnDB2 childsplit);
+    void insert_leaf(NodeDB2 *leaf, NodeDB2 **path, int path_level, char *key, int keylen);
+    void insert_nonleaf(NodeDB2 *node, NodeDB2 **path, int pos, splitReturnDB2 *childsplit);
     // insert_binary
-    static int search_insert_pos(DB2Node *cursor, const char *key, int keylen, int low, int high, bool &equal);
-    int insert_prefix_and_key(DB2Node *node, const char *key, int keylen, bool &equal);
+    static int search_insert_pos(NodeDB2 *cursor, const char *key, int keylen, int low, int high, bool &equal);
+    int insert_prefix_and_key(NodeDB2 *node, const char *key, int keylen, bool &equal);
     // search_binary
-    int search_in_leaf(DB2Node *cursor, const char *key, int keylen, int low, int high);
-    DB2Node *search_leaf_node(DB2Node *root, const char *key, int keylen);
-    DB2Node *search_leaf_node_for_insert(DB2Node *root, const char *key, int keylen,
-                                         DB2Node **path, int &path_level);
+    int search_in_leaf(NodeDB2 *cursor, const char *key, int keylen, int low, int high);
+    NodeDB2 *search_leaf_node(NodeDB2 *root, const char *key, int keylen);
+    NodeDB2 *search_leaf_node_for_insert(NodeDB2 *root, const char *key, int keylen,
+                                         NodeDB2 **path, int &path_level);
 
-    bool check_split_condition(DB2Node *node, int keylen);
-    int split_point(DB2Node *node); //
+    bool check_split_condition(NodeDB2 *node, int keylen);
+    int split_point(NodeDB2 *node); //
 
-    splitReturnDB2 split_nonleaf(DB2Node *node, int pos, splitReturnDB2 childsplit);
-    splitReturnDB2 split_leaf(DB2Node *node, char *newkey, int newkey_len);
-    Data *do_split_node(DB2Node *node, DB2Node *right, int splitpos, bool isleaf);
+    splitReturnDB2 split_nonleaf(NodeDB2 *node, int pos, splitReturnDB2 *childsplit);
+    splitReturnDB2 split_leaf(NodeDB2 *node, char *newkey, int newkey_len);
+    void do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool isleaf, WTitem &splitprefix)
 };
 #endif

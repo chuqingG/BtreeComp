@@ -4,11 +4,20 @@
 
 #define NewPage() (char *)malloc(MAX_SIZE_IN_BYTES * sizeof(char))
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
+#define BufTop(nptr) (nptr->base + nptr->space_top)
+
+#define PageOffset(nptr, off) (char *)(nptr->base + off)
 
 #define UpdateBase(node, newbase) \
     {                             \
         delete node->base;        \
         node->base = newbase;     \
+    }
+
+#define UpdatePfx(node, newpfx) \
+    {                           \
+        delete node->pfxbase;   \
+        node->pfxbase = newpfx; \
     }
 
 #define UpdatePtrs(node, newptrs, num)  \
@@ -108,17 +117,70 @@
 
 #define GetKeyDB2ByPtr(resultptr, i) (char *)(resultptr->base + resultptr->newoffset[i])
 #define GetKeyDB2(result, i) (char *)(result.base + result.newoffset[i])
+/*
+===============For DB2=============
+*/
+#define PfxTop(nptr) (nptr->pfxbase + nptr->pfx_top)
+
+#define GetHeaderDB2(nptr, i) (DB2head *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(DB2head))
+
+#define GetHeaderDB2pfx(nptr, i) (DB2pfxhead *)(nptr->pfxbase + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead))
+
+#define PfxOffset(node, off) (char *)(node->pfxbase + off)
+
+inline void InsertPfxDB2(NodeDB2 *nptr, int pos, const char *p, uint8_t plen, uint8_t low, uint8_t high) {
+    strcpy(PfxTop(nptr), p);
+    // shift the headers
+    for (int i = nptr->pfx_size; i > pos; i--) {
+        memcpy(GetHeaderDB2pfx(nptr, i), GetHeaderDB2pfx(nptr, i - 1), sizeof(DB2pfxhead));
+    }
+    // Set the new header
+    DB2pfxhead *header = GetHeaderDB2pfx(nptr, pos);
+    header->pfx_offset = nptr->pfx_top;
+    header->pfx_len = plen;
+    header->low = low;
+    header->high = high;
+    nptr->pfx_top += plen + 1;
+    nptr->pfx_size += 1;
+}
+
+inline void InsertKeyDB2(NodeDB2 *nptr, int pos, const char *k, uint8_t klen) {
+    strcpy(BufTop(nptr), k);
+    // shift the headers
+    for (int i = nptr->size; i > pos; i--) {
+        memcpy(GetHeaderDB2(nptr, i), GetHeaderDB2(nptr, i - 1), sizeof(DB2head));
+    }
+    // Set the new header
+    DB2head *header = GetHeaderDB2(nptr, pos);
+    header->key_offset = nptr->space_top;
+    header->key_len = klen;
+    // header->pfx_len = (uint8_t)plen;
+    nptr->space_top += klen + 1;
+    nptr->size += 1;
+}
+
+inline void CopyToNewPageDB2(NodeDB2 *nptr, int low, int high, char *newbase, uint16_t &top) {
+    for (int i = low; i < high; i++) {
+        int newidx = i - low;
+        DB2head *oldhead = GetHeaderDB2(nptr, i);
+        DB2head *newhead = (DB2head *)(newbase + MAX_SIZE_IN_BYTES
+                                       - (newidx + 1) * sizeof(DB2head));
+        strncpy(newbase + top, PageOffset(nptr, oldhead->key_offset), oldhead->key_len);
+        newhead->key_len = oldhead->key_len;
+        newhead->key_offset = top;
+        top += oldhead->key_len + 1;
+    }
+}
 
 /*
 ===============For WiredTiger=============
 */
-#define BufTop(nptr) (nptr->base + nptr->space_top)
-#define GetNewHeader(nptr) (WThead *)(nptr->base + nptr->space_bottom - sizeof(WThead))
+// #define BufTop(nptr) (nptr->base + nptr->space_top)
 
 // Get the ith header, i starts at 0
 #define GetHeader(nptr, i) (WThead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(WThead))
 
-#define PageOffset(nptr, off) (char *)(nptr->base + off)
+// #define PageOffset(nptr, off) (char *)(nptr->base + off)
 
 // TODO: think whether need to maintain space_bottom
 // The prefix should be cutoff before calling this

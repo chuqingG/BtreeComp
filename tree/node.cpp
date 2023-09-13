@@ -136,23 +136,33 @@ PrefixMetaData &PrefixMetaData::operator=(const PrefixMetaData &old) {
 //     delete prefix;
 // }
 
-DB2Node::DB2Node() {
+NodeDB2::NodeDB2() {
     size = 0;
+    pfx_size = 0;
     prev = nullptr;
     next = nullptr;
-    base = NewPage();
-    memusage = 0;
     ptr_cnt = 0;
-    keys_size = new uint8_t[kNumberBound];
-    std::memset(keys_size, 0, (kNumberBound) * sizeof(uint8_t));
-    keys_offset = new uint16_t[kNumberBound];
-    prefixMetadata.push_back(PrefixMetaData("", 0, 0, 0));
+    base = NewPage();
+    SetEmptyPage(base);
+    pfxbase = new char[DB2_PFX_MAX_SIZE];
+    memset(pfxbase, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
+
+    space_top = 0;
+    pfx_top = 0;
+
+    ptr_cnt = 0;
+    InsertPfxDB2(this, 0, "", 0, 0, 0);
+    // keys_size = new uint8_t[kNumberBound];
+    // std::memset(keys_size, 0, (kNumberBound) * sizeof(uint8_t));
+    // keys_offset = new uint16_t[kNumberBound];
+    // prefixMetadata.push_back(PrefixMetaData("", 0, 0, 0));
 }
 
-// Destructor of DB2Node
-DB2Node::~DB2Node() {
-    delete keys_offset;
-    delete keys_size;
+// Destructor of NodeDB2
+NodeDB2::~NodeDB2() {
+    // delete keys_offset;
+    // delete keys_size;
+    delete pfxbase;
     delete base;
 }
 
@@ -274,9 +284,6 @@ NodeMyISAM::NodeMyISAM() {
 
 // Destructor of NodeMyISAM
 NodeMyISAM::~NodeMyISAM() {
-    // for (NodeMyISAM *childptr : ptrs) {
-    //     delete childptr;
-    // }
     delete base;
 }
 
@@ -328,7 +335,7 @@ void printKeys(Node *node, bool compressed) {
 #endif
 
 #ifdef DUPKEY
-void printKeys_db2(DB2Node *node, bool compressed) {
+void printKeys_db2(NodeDB2 *node, bool compressed) {
     for (uint32_t i = 0; i < node->prefixMetadata.size(); i++) {
         if (compressed) {
             cout << "Prefix " << node->prefixMetadata.at(i).prefix << ": ";
@@ -349,19 +356,20 @@ void printKeys_db2(DB2Node *node, bool compressed) {
     }
 }
 #else
-void printKeys_db2(DB2Node *node, bool compressed) {
-    for (uint32_t i = 0; i < node->prefixMetadata.size(); i++) {
+void printKeys_db2(NodeDB2 *node, bool compressed) {
+    for (uint32_t i = 0; i < node->pfx_size; i++) {
+        DB2pfxhead *pfx = GetHeaderDB2pfx(node, i);
         if (compressed) {
-            cout << "Prefix " << node->prefixMetadata[i].prefix->addr() << ": ";
+            cout << "Prefix " << PfxOffset(node, pfx->pfx_offset) << ": ";
         }
-        for (int l = node->prefixMetadata.at(i).low;
-             l <= node->prefixMetadata.at(i).high; l++) {
+        for (int l = pfx->low; l <= pfx->high; l++) {
             // Loop through rid list to print duplicates
+            DB2head *head = GetHeaderDB2(node, l);
             if (compressed) {
-                cout << GetKey(node, l) << ",";
+                cout << PageOffset(node, head->key_offset) << ",";
             }
             else {
-                cout << node->prefixMetadata[i].prefix->addr() << GetKey(node, l) << ",";
+                cout << PfxOffset(node, pfx->pfx_offset) << PageOffset(node, head->key_offset) << ",";
             }
         }
     }

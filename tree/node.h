@@ -104,19 +104,31 @@ public:
     PrefixMetaData(string p, int l, int h);
 };
 
-class DB2Node {
+class NodeDB2 {
 public:
     bool IS_LEAF;
     vector<Key_c> keys;
     int size;
-    vector<DB2Node *> ptrs;
-    DB2Node *prev; // Prev node pointer
-    DB2Node *next; // Next node pointer
+    vector<NodeDB2 *> ptrs;
+    NodeDB2 *prev; // Prev node pointer
+    NodeDB2 *next; // Next node pointer
     vector<PrefixMetaData> prefixMetadata;
-    DB2Node();
-    ~DB2Node();
+    NodeDB2();
+    ~NodeDB2();
 };
 #else
+struct DB2head {
+    uint16_t key_offset;
+    uint8_t key_len;
+} __attribute__((packed));
+
+struct DB2pfxhead {
+    uint16_t pfx_offset;
+    uint8_t pfx_len;
+    uint8_t low;
+    uint8_t high;
+} __attribute__((packed));
+
 class PrefixMetaData {
 public:
     int low;
@@ -129,22 +141,25 @@ public:
     // ~PrefixMetaData();
 };
 
-class DB2Node {
+class NodeDB2 {
 public:
     bool IS_LEAF;
-    // vector<Key_c> keys;
-    char *base;
     int size;
-    uint16_t *keys_offset;
-    uint8_t *keys_size;
-    int memusage;
-    vector<DB2Node *> ptrs;
+    int pfx_size;
+    char *base;
+    char *pfxbase;
+    uint16_t space_top;
+    uint16_t pfx_top;
+    // uint16_t *keys_offset;
+    // uint8_t *keys_size;
+    // int memusage;
+    vector<NodeDB2 *> ptrs;
     uint8_t ptr_cnt;
-    DB2Node *prev; // Prev node pointer
-    DB2Node *next; // Next node pointer
-    vector<PrefixMetaData> prefixMetadata;
-    DB2Node();
-    ~DB2Node();
+    NodeDB2 *prev; // Prev node pointer
+    NodeDB2 *next; // Next node pointer
+    // vector<PrefixMetaData> prefixMetadata;
+    NodeDB2();
+    ~NodeDB2();
 };
 #endif
 // Key with prefix and suffix encoding
@@ -359,9 +374,9 @@ struct splitReturn_new {
 };
 
 struct splitReturnDB2 {
-    Data *promotekey;
-    DB2Node *left;
-    DB2Node *right;
+    WTitem promotekey;
+    NodeDB2 *left;
+    NodeDB2 *right;
 };
 
 struct splitReturnMyISAM {
@@ -378,7 +393,6 @@ struct splitReturnWT {
 
 struct splitReturnPkB {
     WTitem promotekey;
-    char *keyptr;
     NodePkB *left;
     NodePkB *right;
 };
@@ -389,7 +403,7 @@ struct nodeBounds {
 };
 
 void printKeys(Node *node, bool compressed);
-void printKeys_db2(DB2Node *node, bool compressed);
+void printKeys_db2(NodeDB2 *node, bool compressed);
 void printKeys_myisam(NodeMyISAM *node, bool compressed);
 void printKeys_wt(NodeWT *node, bool compressed);
 void printKeys_pkb(NodePkB *node, bool compressed);

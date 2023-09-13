@@ -38,7 +38,7 @@ closedRange find_closed_range(vector<PrefixMetaData> &prefixmetadatas,
     return closedRange;
 }
 
-int find_prefix_pos(DB2Node *cursor, const char *key, int keylen, bool for_insert_or_nonleaf) {
+int find_prefix_pos(NodeDB2 *cursor, const char *key, int keylen, bool for_insert_or_nonleaf) {
     // vector<PrefixMetaData> prefixes = cursor->prefixMetadata;
     int low = 0;
     int high = cursor->prefixMetadata.size() - 1;
@@ -179,7 +179,7 @@ void merge_prefixes_in_segment(prefixOptimization *result,
     result->prefixes.insert(result->prefixes.begin() + firstpos, newmetadata);
 }
 
-prefixOptimization *prefix_merge(DB2Node *node) {
+prefixOptimization *prefix_merge(NodeDB2 *node) {
     prefixOptimization *result = new prefixOptimization();
     result->memusage = 0;
     memcpy(result->base, node->base, sizeof(char) * MAX_SIZE_IN_BYTES);
@@ -340,7 +340,7 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
     return index + 1;
 }
 
-prefixOptimization *prefix_expand(DB2Node *node) {
+prefixOptimization *prefix_expand(NodeDB2 *node) {
     int nextprefix = 0;
     prefixOptimization *result = new prefixOptimization();
     // vector<Key_c> keysCopy(keys);
@@ -369,7 +369,7 @@ prefixOptimization *prefix_expand(DB2Node *node) {
     return result;
 }
 
-void apply_prefix_optimization(DB2Node *node) {
+void apply_prefix_optimization(NodeDB2 *node) {
     if (node->prefixMetadata.size() == 1) {
         // Only one common prefix, so prefix is the only prefix
         Data *prefix = node->prefixMetadata[0].prefix;

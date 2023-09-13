@@ -9,18 +9,19 @@ enum optimizationType {
     prefixexpand
 };
 
-struct prefixMergeSegment {
-    vector<PrefixMetaData> segment;
-    Data prefix;
-    int cost = INT32_MAX;
-    int firstindex = 0;
+struct closedRange {
+    // vector<PrefixMetaData> prefixMetadatas;
+    // vector<int> positions;
+    int low = 0;
+    int high = -1; // To make sure the uninitialized struct high - low < 0
 };
 
-struct closedRange {
-    vector<PrefixMetaData> prefixMetadatas;
-    // vector<int> positions;
-    int pos_low = 0;
-    int pos_high = -1; // To make sure the uninitialized struct high - low < 0
+struct prefixMergeSegment {
+    // vector<PrefixMetaData> segment;
+    closedRange segment;
+    WTitem prefix;
+    int save = INT32_MIN;
+    int firstindex = 0;
 };
 
 struct db2split {
@@ -71,7 +72,9 @@ closedRange find_closed_range(vector<PrefixMetaData> &prefixmetadatas, const cha
 
 // Cost function is defined based on space requirements for prefix + suffixes
 // Cost must be minimized
-int calculate_prefix_merge_cost(prefixOptimization *result, vector<PrefixMetaData> segment, Data *prefix);
+// int calculate_prefix_merge_cost(prefixOptimization *result, vector<PrefixMetaData> segment, Data *prefix);
+
+int calculate_prefix_merge_save(prefixOptimization *result, prefixMergeSegment *seg, WTitem *prefix);
 
 // Cost of optimization is calculated as size of prefixes + size of suffixes
 // int calculate_cost_of_optimization(prefixOptimization result);

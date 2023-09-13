@@ -8,9 +8,22 @@ BPTreeMyISAM::BPTreeMyISAM(bool non_leaf_compression) {
     non_leaf_comp = non_leaf_compression;
 }
 
+void deletefrom(NodeMyISAM *node) {
+    if (node->IS_LEAF)
+        delete node;
+    else {
+        for (auto child : node->ptrs) {
+            deletefrom(child);
+        }
+        delete node;
+    }
+    return;
+}
+
 // Destructor of BPTreeMyISAM tree
 BPTreeMyISAM::~BPTreeMyISAM() {
-    delete _root;
+    deletefrom(_root);
+    // delete _root;
 }
 
 // Function to get the root NodeMyISAM

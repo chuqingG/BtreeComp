@@ -6,9 +6,21 @@ BPTreePkB::BPTreePkB() {
     max_level = 1;
 }
 
+void deletefrom(NodePkB *node) {
+    if (node->IS_LEAF)
+        delete node;
+    else {
+        for (auto child : node->ptrs) {
+            deletefrom(child);
+        }
+        delete node;
+    }
+    return;
+}
 // Destructor of BPTreePkB tree
 BPTreePkB::~BPTreePkB() {
-    delete _root;
+    deletefrom(_root);
+    // delete _root;
 }
 
 // Function to get the root NodePkB
@@ -295,10 +307,11 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
 
 bool BPTreePkB::check_split_condition(NodePkB *node, int keylen) {
     int currspace = node->space_top + node->size * sizeof(PkBhead);
-    // Update prefix need more space, the newkey
+    // Update prefix need more space, the newkey,
+    // should leave space for current insert and the following split
     int splitcost = keylen + sizeof(PkBhead);
-
-    if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
+    // cout << "cur, split:" << currspace << splitcost << endl;
+    if (currspace + 2 * splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
     else
         return false;
@@ -350,6 +363,9 @@ NodePkB *BPTreePkB::search_leaf_node_for_insert(NodePkB *searchroot, const char 
         else
             pos = result.high;
         offset = result.offset;
+        if (pos >= cursor->ptr_cnt) {
+            cout << "wrong index" << endl;
+        }
         cursor = cursor->ptrs[pos];
     }
     return cursor;
@@ -369,8 +385,8 @@ void BPTreePkB::getSize(NodePkB *cursor, int &numNodes, int &numNonLeaf, int &nu
 
         for (int i = 0; i < cursor->size; i++) {
             PkBhead *head = GetHeaderPkB(cursor, i);
-            currSize += head->key_len + sizeof(head->pfx_len) + head->pk_len;
-            prefixSize += sizeof(head->pfx_len) + head->pk_len;
+            currSize += head->key_len + sizeof(PkBhead);
+            prefixSize += sizeof(head->pfx_len) + head->pk_len + sizeof(head->pfx_len);
         }
         totalKeySize += currSize;
         numKeys += cursor->size;

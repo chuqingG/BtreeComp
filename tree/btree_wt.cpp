@@ -10,9 +10,22 @@ BPTreeWT::BPTreeWT(bool non_leaf_compression,
     suffix_comp = suffix_compression;
 }
 
+void deletefrom(NodeWT *node) {
+    if (node->IS_LEAF)
+        delete node;
+    else {
+        for (auto child : node->ptrs) {
+            deletefrom(child);
+        }
+        delete node;
+    }
+    return;
+}
+
 // Destructor of BPTreeWT tree
 BPTreeWT::~BPTreeWT() {
-    delete _root;
+    deletefrom(_root);
+    // delete _root;
 }
 
 // Function to get the root NodeWT

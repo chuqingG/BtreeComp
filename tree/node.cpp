@@ -280,79 +280,6 @@ NodeMyISAM::~NodeMyISAM() {
     delete base;
 }
 
-#ifdef DUPKEY
-// Constructor of Key when pKB is enabled
-KeyPkB::KeyPkB(int pos, string value, char *ptr, int rid) {
-    offset = pos;
-    if (pos < value.length()) {
-        string substr = value.substr(pos, PKB_LEN);
-        strcpy(partialKey, substr.c_str());
-        pkLength = substr.length();
-    }
-    else {
-        memset(partialKey, 0, sizeof(partialKey));
-        pkLength = 0;
-    }
-    original = ptr;
-    ridList.push_back(to_string(rid));
-}
-
-// Constructor of Key when previous key is being copied
-KeyPkB::KeyPkB(int pos, string value, char *ptr, vector<string> list) {
-    offset = pos;
-    if (pos < value.length()) {
-        string substr = value.substr(pos, PKB_LEN);
-        strcpy(partialKey, substr.c_str());
-        pkLength = substr.length();
-    }
-    else {
-        memset(partialKey, 0, sizeof(partialKey));
-        pkLength = 0;
-    }
-    original = ptr;
-    ridList = list;
-}
-
-// Method to add new rid with same key value
-void KeyPkB::addRecord(int rid) {
-    ridList.push_back(to_string(rid));
-}
-
-int KeyPkB::getSize() {
-    int totalLen = sizeof(offset) + PKB_LEN + sizeof(original);
-    for (int i = 0; i < ridList.size(); i++) {
-        totalLen += ridList.at(i).length();
-    }
-    return totalLen;
-}
-
-void KeyPkB::updateOffset(int newOffset) {
-    offset = newOffset;
-    string str = original;
-    if (newOffset < str.length()) {
-        string substr = str.substr(newOffset, PKB_LEN);
-        strcpy(partialKey, substr.c_str());
-        pkLength = substr.length();
-    }
-    else {
-        memset(partialKey, 0, sizeof(partialKey));
-        pkLength = 0;
-    }
-}
-
-NodePkB::NodePkB() {
-    size = 0;
-    prev = nullptr;
-    next = nullptr;
-}
-
-// Destructor of NodePkB
-NodePkB::~NodePkB() {
-    for (NodePkB *childptr : ptrs) {
-        delete childptr;
-    }
-}
-#else
 NodePkB::NodePkB() {
     size = 0;
     prev = nullptr;
@@ -370,7 +297,6 @@ NodePkB::~NodePkB() {
     // }
     delete base;
 }
-#endif
 
 #ifdef DUPKEY
 void printKeys(Node *node, bool compressed) {
@@ -443,8 +369,6 @@ void printKeys_db2(DB2Node *node, bool compressed) {
 #endif
 
 void printKeys_myisam(NodeMyISAM *node, bool compressed) {
-    // string prev_key = "";
-    // string curr_key = "";
     char *prev_key;
     char *curr_key;
     for (uint32_t i = 0; i < node->size; i++) {
@@ -458,15 +382,12 @@ void printKeys_myisam(NodeMyISAM *node, bool compressed) {
             strncpy(curr_key, prev_key, head->pfx_len);
             strcpy(curr_key + head->pfx_len, PageOffset(node, head->key_offset));
             cout << curr_key << ",";
-            // curr_key = prev_key.substr(0, node->keys.at(i).prefix) + node->keys.at(i).value;
         }
         prev_key = curr_key;
     }
 }
 
 void printKeys_wt(NodeWT *node, bool compressed) {
-    // string prev_key = "";
-    // string curr_key = "";
     char *prev_key;
     char *curr_key;
     for (int i = 0; i < node->size; i++) {
@@ -480,9 +401,7 @@ void printKeys_wt(NodeWT *node, bool compressed) {
             strncpy(curr_key, prev_key, head->pfx_len);
             strcpy(curr_key + head->pfx_len, PageOffset(node, head->key_offset));
             cout << curr_key << ",";
-            // curr_key = prev_key.substr(0, node->keys.at(i).prefix) + node->keys.at(i).value;
         }
-        // cout << curr_key << ",";
 
         prev_key = curr_key;
     }
@@ -496,12 +415,9 @@ void printKeys_pkb(NodePkB *node, bool compressed) {
             cout << unsigned(head->pfx_len) << ":" << head->pk << "("
                  << PageOffset(node, head->key_offset) << ")"
                  << ",";
-            // curr_key = node->keys.at(i).partialKey;
         }
         else {
             cout << PageOffset(node, head->key_offset) << ",";
-            // curr_key = node->keys.at(i).original;
         }
-        // cout << curr_key << ",";
     }
 }

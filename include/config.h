@@ -15,10 +15,10 @@
 
 // Setup
 #define SPLIT_STRATEGY_SPACE
-#define MAX_SIZE_IN_BYTES 160 // 2048
-#define SPLIT_LIMIT 16        // can set to 0 when test fixed-length data
+#define MAX_SIZE_IN_BYTES 2048 // 2048
+#define SPLIT_LIMIT 32         // can set to 0 when test fixed-length data
 #define DEFAULT_DATASET_SIZE 100000
-#define APPROX_KEY_SIZE 16
+#define APPROX_KEY_SIZE 32
 #define MAX_TAIL_COMP_RATIO 16
 #define MAX_HEAD_COMP_RATIO 2
 #define DB2_COMP_RATIO 2

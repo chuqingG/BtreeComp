@@ -747,7 +747,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
             UpdatePfx(node, newpfx);
             // node->prefixMetadata = merge->prefixes;
         }
-
+        // vector<bool> flag(i + 1);
+        // _tree->printTree(_tree->getRoot(), flag, true);
         delete expand;
         delete merge;
     }

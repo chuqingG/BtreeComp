@@ -56,7 +56,13 @@ void BPTreeDB2::insert(char *x) {
 void BPTreeDB2::insert_nonleaf(NodeDB2 *node, NodeDB2 **path,
                                int parentlevel, splitReturnDB2 *childsplit) {
     if (check_split_condition(node, childsplit->promotekey.size)) {
+        cout << "before 1." << endl;
+        vector<bool> flag(40);
+        printTree(node, flag, true);
         apply_prefix_optimization(node);
+        cout << "1." << endl;
+        // vector<bool> flag(40);
+        printTree(node, flag, true);
     }
     if (check_split_condition(node, childsplit->promotekey.size)) {
         NodeDB2 *parent = nullptr;
@@ -95,6 +101,9 @@ void BPTreeDB2::insert_nonleaf(NodeDB2 *node, NodeDB2 **path,
 void BPTreeDB2::insert_leaf(NodeDB2 *leaf, NodeDB2 **path, int path_level, char *key, int keylen) {
     if (check_split_condition(leaf, keylen)) {
         apply_prefix_optimization(leaf);
+        cout << "2." << endl;
+        vector<bool> flag(leaf->size);
+        printTree(leaf, flag, true);
     }
     if (check_split_condition(leaf, keylen)) {
         splitReturnDB2 split = split_leaf(leaf, key, keylen);
@@ -366,11 +375,16 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(NodeDB2 *node, int pos, splitReturnDB2 *
     // string promotekey = childsplit.promotekey;
 
     bool equal = false;
+    cout << "3." << endl;
+    vector<bool> flag_1(40);
+    printTree(node, flag_1, true);
     int insertpos = insert_prefix_and_key(node,
                                           childsplit->promotekey.addr,
                                           childsplit->promotekey.size, equal);
     InsertNode(node, insertpos + 1, childsplit->right);
-
+    cout << "4." << endl;
+    vector<bool> flag_before(40);
+    printTree(node, flag_before, true);
     int split = split_point(node);
 
     DB2head *head_split = GetHeaderDB2(node, split);
@@ -420,8 +434,9 @@ splitReturnDB2 BPTreeDB2::split_leaf(NodeDB2 *node, char *newkey, int keylen) {
     // printTree(node, flag_before, true);
 #ifndef DUPKEY
     insertpos = insert_prefix_and_key(node, newkey, keylen, equal);
-    // vector<bool> flag_after(node->size);
-    // printTree(node, flag_after, true);
+    cout << "5." << endl;
+    vector<bool> flag_after(node->size);
+    printTree(node, flag_after, true);
 #else
     int rid = rand();
     insertpos = find_insert_pos(node, newkey, this->insert_binary, equal);
@@ -446,6 +461,13 @@ splitReturnDB2 BPTreeDB2::split_leaf(NodeDB2 *node, char *newkey, int keylen) {
 
     WTitem splitkey;
     do_split_node(node, right, split, true, splitkey);
+
+    cout << "6. left" << endl;
+    vector<bool> flag_1(node->size);
+    printTree(node, flag_1, true);
+    cout << "6. right" << endl;
+    vector<bool> flag_2(right->size);
+    printTree(right, flag_2, true);
 
     DB2pfxhead *rf_pfx = GetHeaderDB2pfx(right, 0);
     DB2head *rf = GetHeaderDB2(right, 0);

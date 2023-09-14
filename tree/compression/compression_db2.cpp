@@ -644,9 +644,11 @@ void apply_prefix_optimization(NodeDB2 *node) {
         prefixOptimization *expand = prefix_expand(node);
         prefixOptimization *merge = prefix_merge(node);
         // cout << "expand: " << expand->memusage << ", merge: " << merge->memusage << endl;
+        DB2head *head_0 = GetHeaderDB2(node, 0);
+        cout << PageOffset(node, head_0->key_offset) << " ";
         if (expand->space_top <= merge->space_top) {
             // Do prefix_expand
-            // cout << "expand" << endl;
+            cout << "expand" << endl;
             // expand->used = true;
             int new_top = 0, new_pfx_top = 0;
             char *buf = NewPage();
@@ -689,7 +691,7 @@ void apply_prefix_optimization(NodeDB2 *node) {
         }
         else {
             // Do prefix_merge
-            // cout << "merge" << endl;
+            cout << "merge" << endl;
             int new_top = 0, new_pfx_top = 0;
             char *buf = NewPage();
             char *newpfx = new char[DB2_PFX_MAX_SIZE];

@@ -46,6 +46,6 @@ private:
 
     splitReturnDB2 split_nonleaf(NodeDB2 *node, int pos, splitReturnDB2 *childsplit);
     splitReturnDB2 split_leaf(NodeDB2 *node, char *newkey, int newkey_len);
-    void do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool isleaf, WTitem &splitprefix)
+    void do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool isleaf, WTitem &splitprefix);
 };
 #endif

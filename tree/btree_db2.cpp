@@ -214,6 +214,9 @@ void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool 
     int pfx_top_l = 0;
     int pfx_size_l = 0;
 
+    // vector<bool> flag1(node->size);
+    // printTree(node, flag1, true);
+
     for (int i = 0; i < node->pfx_size; i++) {
         DB2pfxhead *pfx_i = GetHeaderDB2pfx(node, i);
         // split occurs within this pfx
@@ -246,6 +249,7 @@ void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool 
 
                 rightindex = rightindex + rsize + 1;
             }
+            // rightindex = rightindex + rsize + 1;
         }
         // to the right
         else if (splitpos <= pfx_i->low) {
@@ -317,6 +321,9 @@ void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool 
     // uint16_t *l_idx = new uint16_t[kNumberBound * DB2_COMP_RATIO];
     // uint8_t *l_size = new uint8_t[kNumberBound * DB2_COMP_RATIO];
     // l_size copy can be omitted, add for simplier codes
+    // vector<bool> flag_after(node->size);
+    // printTree(node, flag_after, true);
+
     CopyToNewPageDB2(node, 0, splitpos, l_base, l_usage);
     // CopyKeyToPage(node, 0, splitpos, l_base, l_usage, l_idx, l_size);
     if (isleaf) {
@@ -355,6 +362,7 @@ void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool 
 splitReturnDB2 BPTreeDB2::split_nonleaf(NodeDB2 *node, int pos, splitReturnDB2 *childsplit) {
     splitReturnDB2 newsplit;
     NodeDB2 *right = new NodeDB2;
+    right->pfx_size = 0;
     // string promotekey = childsplit.promotekey;
 
     bool equal = false;
@@ -405,11 +413,15 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(NodeDB2 *node, int pos, splitReturnDB2 *
 splitReturnDB2 BPTreeDB2::split_leaf(NodeDB2 *node, char *newkey, int keylen) {
     splitReturnDB2 newsplit;
     NodeDB2 *right = new NodeDB2;
+    right->pfx_size = 0;
     int insertpos;
     bool equal = false;
+    // vector<bool> flag_before(node->size);
+    // printTree(node, flag_before, true);
 #ifndef DUPKEY
     insertpos = insert_prefix_and_key(node, newkey, keylen, equal);
-
+    // vector<bool> flag_after(node->size);
+    // printTree(node, flag_after, true);
 #else
     int rid = rand();
     insertpos = find_insert_pos(node, newkey, this->insert_binary, equal);
@@ -459,7 +471,7 @@ bool BPTreeDB2::check_split_condition(NodeDB2 *node, int keylen) {
     int splitcost = keylen + sizeof(DB2head) + 2 * max(keylen, APPROX_KEY_SIZE);
 
     int currspace_pfx = node->pfx_top + node->pfx_size * sizeof(DB2pfxhead);
-    int splitcost_pfx = keylen + sizeof(DB2pfxhead);
+    int splitcost_pfx = sizeof(DB2pfxhead);
 
     if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;

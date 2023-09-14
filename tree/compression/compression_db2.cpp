@@ -481,7 +481,7 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
             // result->prefixes[index + 1].low = lasthigh + 1;
             // shift header
             for (int i = result->pfx_size; i > index + 1; i--) {
-                memcpy(GetPfxInPageDB2(result, i), GetPfxInPageDB2(result, -1), sizeof(DB2pfxhead));
+                memcpy(GetPfxInPageDB2(result, i), GetPfxInPageDB2(result, i - 1), sizeof(DB2pfxhead));
             }
             strncpy(result->pfxbase + result->pfx_top, pfxitem.prefix.addr, pfxitem.prefix.size);
             (result->pfxbase + result->pfx_top)[pfxitem.prefix.size] = '\0';
@@ -644,11 +644,11 @@ void apply_prefix_optimization(NodeDB2 *node) {
         prefixOptimization *expand = prefix_expand(node);
         prefixOptimization *merge = prefix_merge(node);
         // cout << "expand: " << expand->memusage << ", merge: " << merge->memusage << endl;
-        DB2head *head_0 = GetHeaderDB2(node, 0);
-        cout << PageOffset(node, head_0->key_offset) << " ";
+        // DB2head *head_0 = GetHeaderDB2(node, 0);
+        // cout << PageOffset(node, head_0->key_offset) << " ";
         if (expand->space_top <= merge->space_top) {
             // Do prefix_expand
-            cout << "expand" << endl;
+            // cout << "expand" << endl;
             // expand->used = true;
             int new_top = 0, new_pfx_top = 0;
             char *buf = NewPage();
@@ -691,7 +691,7 @@ void apply_prefix_optimization(NodeDB2 *node) {
         }
         else {
             // Do prefix_merge
-            cout << "merge" << endl;
+            // cout << "merge" << endl;
             int new_top = 0, new_pfx_top = 0;
             char *buf = NewPage();
             char *newpfx = new char[DB2_PFX_MAX_SIZE];

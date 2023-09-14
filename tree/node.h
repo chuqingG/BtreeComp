@@ -129,18 +129,6 @@ struct DB2pfxhead {
     uint8_t high;
 } __attribute__((packed));
 
-class PrefixMetaData {
-public:
-    int low;
-    int high;
-    Data *prefix;
-    PrefixMetaData();
-    PrefixMetaData(const char *str, int len, int l, int h);
-    // PrefixMetaData(const PrefixMetaData &p);
-    PrefixMetaData &operator=(const PrefixMetaData &);
-    // ~PrefixMetaData();
-};
-
 class NodeDB2 {
 public:
     bool IS_LEAF;
@@ -150,14 +138,10 @@ public:
     char *pfxbase;
     uint16_t space_top;
     uint16_t pfx_top;
-    // uint16_t *keys_offset;
-    // uint8_t *keys_size;
-    // int memusage;
     vector<NodeDB2 *> ptrs;
     uint8_t ptr_cnt;
     NodeDB2 *prev; // Prev node pointer
     NodeDB2 *next; // Next node pointer
-    // vector<PrefixMetaData> prefixMetadata;
     NodeDB2();
     ~NodeDB2();
 };

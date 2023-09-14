@@ -4,30 +4,16 @@
 #include "../node_inline.h"
 #include "../util.cpp"
 
-enum optimizationType {
-    prefixmerge,
-    prefixexpand
-};
-
 struct closedRange {
-    // vector<PrefixMetaData> prefixMetadatas;
-    // vector<int> positions;
     int low = 0;
     int high = -1; // To make sure the uninitialized struct high - low < 0
 };
 
 struct prefixMergeSegment {
-    // vector<PrefixMetaData> segment;
     closedRange segment;
     WTitem prefix;
     int save = INT32_MIN;
     int firstindex = 0;
-};
-
-struct db2split {
-    vector<PrefixMetaData> leftmetadatas;
-    vector<PrefixMetaData> rightmetadatas;
-    Data *splitprefix;
 };
 
 struct prefixItem {
@@ -45,43 +31,21 @@ public:
     int pfx_size;
     char *base;
     char *pfxbase;
-    bool used;
-    // uint8_t *newsize;
-    // uint16_t *newoffset;
-    // vector<PrefixMetaData> prefixes;
+    // bool used;
 
     prefixOptimization();
     ~prefixOptimization();
 };
-// struct prefixOptimization {
-//     // change to a class
-//     int memusage = 0;
-//     char* base = NewPage();
-//     uint8_t *newsize = new uint8_t[kNumberBound * DB2_COMP_RATIO];
-//     uint16_t *newoffset = new uint16_t[kNumberBound * DB2_COMP_RATIO];
-//     vector<PrefixMetaData> prefixes;
-
-//     ~prefixOptimization(){
-//         delete base;
-//         delete newsize;
-//         delete newoffset;
-//     }
-// };
-
-closedRange find_closed_range(vector<PrefixMetaData> &prefixmetadatas, const char *newprefix, int prefixlen, int p_i_pos);
+closedRange find_closed_range(prefixOptimization *result,
+                              const char *newprefix, int prefixlen, int p_i_pos);
 
 // Cost function is defined based on space requirements for prefix + suffixes
 // Cost must be minimized
-// int calculate_prefix_merge_cost(prefixOptimization *result, vector<PrefixMetaData> segment, Data *prefix);
 
 int calculate_prefix_merge_save(prefixOptimization *result, prefixMergeSegment *seg, WTitem *prefix);
 
 // Cost of optimization is calculated as size of prefixes + size of suffixes
 // int calculate_cost_of_optimization(prefixOptimization result);
-
-// // Find optimization with minimum cost to apply
-// optimizationType find_prefix_optimization_to_apply(prefixOptimization prefixExpandResult,
-//                                                    prefixOptimization prefixMergeResult);
 
 prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, closedRange *closedRange, int k);
 

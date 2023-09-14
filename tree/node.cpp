@@ -108,34 +108,6 @@ Node::~Node() {
 
 //===============Below for DB2===========
 
-PrefixMetaData::PrefixMetaData() {
-    prefix = new Data("", 0);
-    low = 0;
-    high = 0;
-}
-
-PrefixMetaData::PrefixMetaData(const char *str, int len, int l, int h) {
-    prefix = new Data(str, len);
-    low = l;
-    high = h;
-}
-
-// PrefixMetaData::PrefixMetaData(const PrefixMetaData &old) {
-//     // cout << "calling me" << endl;
-//     low = old.low;
-//     high = old.high;
-//     prefix = new Data(old.prefix->addr(), old.prefix->size);
-// }
-PrefixMetaData &PrefixMetaData::operator=(const PrefixMetaData &old) {
-    // cout << "calling pfx copy" << endl;
-    low = old.low;
-    high = old.high;
-    prefix = new Data(old.prefix->addr(), old.prefix->size);
-}
-// PrefixMetaData::~PrefixMetaData() {
-//     delete prefix;
-// }
-
 NodeDB2::NodeDB2() {
     size = 0;
     pfx_size = 0;
@@ -152,16 +124,10 @@ NodeDB2::NodeDB2() {
 
     ptr_cnt = 0;
     InsertPfxDB2(this, 0, "", 0, 0, 0);
-    // keys_size = new uint8_t[kNumberBound];
-    // std::memset(keys_size, 0, (kNumberBound) * sizeof(uint8_t));
-    // keys_offset = new uint16_t[kNumberBound];
-    // prefixMetadata.push_back(PrefixMetaData("", 0, 0, 0));
 }
 
 // Destructor of NodeDB2
 NodeDB2::~NodeDB2() {
-    // delete keys_offset;
-    // delete keys_size;
     delete pfxbase;
     delete base;
 }

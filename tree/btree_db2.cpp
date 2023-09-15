@@ -452,7 +452,7 @@ NodeDB2 *BPTreeDB2::search_leaf_node(NodeDB2 *searchroot, const char *key, int k
         // string_view searchkey = key;
         int pos = -1;
         int metadatapos = find_prefix_pos(cursor, key, keylen, true);
-        if (metadatapos == cursor->pfx_size) {
+        if (unlikely(metadatapos == cursor->pfx_size)) {
             pos = cursor->size;
         }
         else {

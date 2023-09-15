@@ -531,7 +531,7 @@ void suffix_truncate(Item *lastleft, Item *firstright, bool isleaf, Item &result
     // Item separator;
     result.addr = firstright->addr;
     result.newallocated = false;
-    if (isleaf) {
+    if (!isleaf) {
         result.size = firstright->size;
     }
     else {

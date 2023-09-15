@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <cstdio>
+
 #include "node.cpp"
 #include "node_inline.h"
 #include "./compression/compression_db2.cpp"
@@ -9,6 +11,8 @@
 #include "../include/config.h"
 
 using namespace std;
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
 #ifndef __DB2_H__
 #define __DB2_H__

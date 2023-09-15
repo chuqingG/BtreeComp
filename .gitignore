@@ -12,6 +12,7 @@ old_file
 scripts/plots/*
 output
 output_old
+output_nowtsuffix
 moduletest
 screenout
 outputs

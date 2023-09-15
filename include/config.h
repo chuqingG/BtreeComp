@@ -17,7 +17,7 @@
 #define SPLIT_STRATEGY_SPACE
 #define MAX_SIZE_IN_BYTES 512 // 2048
 #define DB2_PFX_MAX_SIZE 128  // 256
-#define SPLIT_LIMIT 32        // suggest to be >= 32 for safety on db2
+#define SPLIT_LIMIT 16        // suggest to be >= 32 for safety on db2
 #define TAIL_SPLIT_WIDTH (1 / 6)
 #define DEFAULT_DATASET_SIZE 100000
 #define APPROX_KEY_SIZE 32

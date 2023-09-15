@@ -15,17 +15,12 @@
 
 // Setup
 #define SPLIT_STRATEGY_SPACE
-#define MAX_SIZE_IN_BYTES 256 // 2048
-#define DB2_PFX_MAX_SIZE 64   // 256
-#define SPLIT_LIMIT 16        // can set to 0 when test fixed-length data
+#define MAX_SIZE_IN_BYTES 2048 // 2048
+#define DB2_PFX_MAX_SIZE 256   // 256
+#define SPLIT_LIMIT 48         // suggest to be >= 32 for safety on db2
 #define TAIL_SPLIT_WIDTH (1 / 6)
 #define DEFAULT_DATASET_SIZE 100000
 #define APPROX_KEY_SIZE 32
-#define MAX_TAIL_COMP_RATIO 16
-#define MAX_HEAD_COMP_RATIO 2
-#define DB2_COMP_RATIO 2
-#define TAIL_COMP_RELAX (MAX_TAIL_COMP_RATIO - 1)
-#define HEAD_COMP_RELAX (MAX_HEAD_COMP_RATIO - 1)
 
 #define PKB_LEN 2
 // Be careful when key length is variable,

@@ -6,9 +6,22 @@ BPTreeDB2::BPTreeDB2() {
     max_level = 1;
 }
 
+void deletefrom(NodeDB2 *node) {
+    if (node->IS_LEAF)
+        delete node;
+    else {
+        for (auto child : node->ptrs) {
+            deletefrom(child);
+        }
+        delete node;
+    }
+    return;
+}
+
 // Destructor of BPTreeDB2 tree
 BPTreeDB2::~BPTreeDB2() {
-    delete _root;
+    deletefrom(_root);
+    // delete _root;
 }
 
 // Function to get the root NodeDB2
@@ -183,7 +196,7 @@ int BPTreeDB2::split_point(NodeDB2 *node) {
     return bestsplit;
 }
 
-void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool isleaf, WTitem &splitprefix) {
+void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool isleaf, Item &splitprefix) {
     int rightindex = 0;
 
     char *l_pfx = new char[DB2_PFX_MAX_SIZE];
@@ -301,13 +314,13 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(NodeDB2 *node, int pos, splitReturnDB2 *
     int split = split_point(node);
 
     DB2head *head_split = GetHeaderDB2(node, split);
-    WTitem splitkey;
+    Item splitkey;
     splitkey.size = head_split->key_len;
     splitkey.addr = new char[splitkey.size + 1];
     splitkey.newallocated = true;
     strcpy(splitkey.addr, PageOffset(node, head_split->key_offset));
 
-    WTitem split_prefix;
+    Item split_prefix;
     do_split_node(node, right, split, false, split_prefix);
 
     vector<NodeDB2 *> leftptrs;
@@ -364,7 +377,7 @@ splitReturnDB2 BPTreeDB2::split_leaf(NodeDB2 *node, char *newkey, int keylen) {
 #endif
     int split = split_point(node);
 
-    WTitem splitkey;
+    Item splitkey;
     do_split_node(node, right, split, true, splitkey);
 
     DB2pfxhead *rf_pfx = GetHeaderDB2pfx(right, 0);
@@ -389,13 +402,15 @@ bool BPTreeDB2::check_split_condition(NodeDB2 *node, int keylen) {
     int currspace = node->space_top + node->size * sizeof(DB2head);
     // copy from myisam
     int splitcost = keylen + sizeof(DB2head) + 2 * max(keylen, APPROX_KEY_SIZE);
-
+    int nextkey = sizeof(DB2head) + keylen;
     int currspace_pfx = node->pfx_top + node->pfx_size * sizeof(DB2pfxhead);
     int splitcost_pfx = sizeof(DB2pfxhead);
-
-    if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
+    int optimcost_pfx = 2 * sizeof(DB2pfxhead); // for safety, prefix expand introduce new pfx segments
+    // cout << "curr:" << currspace << ", cost: " << splitcost << endl;
+    // cout << "currpfx:" << currspace_pfx << ", costpfx: " << splitcost_pfx << endl;
+    if (currspace + splitcost + nextkey >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
-    else if (currspace_pfx + splitcost_pfx >= DB2_PFX_MAX_SIZE - SPLIT_LIMIT)
+    else if (currspace_pfx + splitcost_pfx + optimcost_pfx >= DB2_PFX_MAX_SIZE - SPLIT_LIMIT)
         return true;
     return false;
 }

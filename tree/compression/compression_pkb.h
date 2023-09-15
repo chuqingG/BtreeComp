@@ -24,9 +24,9 @@ struct findNodeResult {
 };
 
 void generate_pkb_key(NodePkB *node, char *newkey, int keylen, int insertpos,
-                      NodePkB **path, int path_level, WTitem &key);
+                      NodePkB **path, int path_level, Item &key);
 
-void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, WTitem &key);
+void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, Item &key);
 
 void update_next_prefix(NodePkB *node, int pos, char *full_newkey, int keylen);
 

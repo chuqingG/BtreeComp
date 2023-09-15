@@ -186,12 +186,12 @@ string get_full_key(NodeWT *node, int slot) {
 
 #else // no wt cache
 
-// WTitem initialize_prefix_compressed_key_copy(NodeWT *node, int ind) {
+// Item initialize_prefix_compressed_key_copy(NodeWT *node, int ind) {
 //     enum {
 //         FORWARD,
 //         BACKWARD
 //     } direction;
-//     WTitem fullkey, orikey;
+//     Item fullkey, orikey;
 
 //     u_int jump_slot_offset = 0;
 //     uint8_t last_prefix = 0;
@@ -332,7 +332,7 @@ string get_full_key(NodeWT *node, int slot) {
 // }
 
 // Store the decompressed key into key
-void get_full_key(NodeWT *node, int idx, WTitem &key) {
+void get_full_key(NodeWT *node, int idx, Item &key) {
     WThead *header = GetHeaderWT(node, idx);
     key.addr = PageOffset(node, header->key_offset);
     key.size = header->key_len;
@@ -364,9 +364,9 @@ void get_full_key(NodeWT *node, int idx, WTitem &key) {
 #endif
 
 // // finish
-// WTitem extract_key(NodeWT *node, int idx, bool non_leaf_comp) {
+// Item extract_key(NodeWT *node, int idx, bool non_leaf_comp) {
 //     // string key = node->keys.at(idx).value;
-//     WTitem key;
+//     Item key;
 //     WThead *header = GetHeaderWT(node, idx);
 //     // char *key = PageOffset(node, header->key_offset);
 //     key.addr = PageOffset(node, header->key_offset);
@@ -527,8 +527,8 @@ void update_next_prefix(NodeWT *node, int pos, char *fullkey_before_pos,
 //     return firstright.substr(0, size);
 // }
 
-void suffix_truncate(WTitem *lastleft, WTitem *firstright, bool isleaf, WTitem &result) {
-    // WTitem separator;
+void suffix_truncate(Item *lastleft, Item *firstright, bool isleaf, Item &result) {
+    // Item separator;
     result.addr = firstright->addr;
     result.newallocated = false;
     if (isleaf) {

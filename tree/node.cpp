@@ -54,12 +54,12 @@ Node::Node() {
     base = NewPage();
     SetEmptyPage(base);
 
-    lowkey = new WTitem(true);
-    highkey = new WTitem(); // this hk will be deallocated automatically
+    lowkey = new Item(true);
+    highkey = new Item(); // this hk will be deallocated automatically
     highkey->addr = new char[9];
     strcpy(highkey->addr, MAXHIGHKEY);
     highkey->newallocated = true;
-    prefix = new WTitem(true);
+    prefix = new Item(true);
 
     prev = nullptr;
     next = nullptr;
@@ -115,7 +115,6 @@ NodeWT::NodeWT() {
     base = NewPage();
     SetEmptyPage(base);
     space_top = 0;
-    space_bottom = MAX_SIZE_IN_BYTES;
 }
 
 // Destructor of NodeWT

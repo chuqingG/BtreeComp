@@ -188,7 +188,7 @@ void BPTreeMyISAM::insert_nonleaf(NodeMyISAM *node, NodeMyISAM **path, int paren
         }
     }
     else {
-        WTitem *promotekey = &(childsplit->promotekey);
+        Item *promotekey = &(childsplit->promotekey);
         int insertpos;
         bool equal = false;
         // int rid = rand();
@@ -200,7 +200,7 @@ void BPTreeMyISAM::insert_nonleaf(NodeMyISAM *node, NodeMyISAM **path, int paren
         }
 
         // Insert the new key
-        WTitem prevkey;
+        Item prevkey;
         if (!this->non_leaf_comp || insertpos == 0) {
             InsertKeyMyISAM(node, insertpos, promotekey->addr, promotekey->size, 0);
             // use key as placeholder of key_before_pos
@@ -245,7 +245,7 @@ void BPTreeMyISAM::insert_leaf(NodeMyISAM *leaf, NodeMyISAM **path, int path_lev
         int insertpos = prefix_insert(leaf, key, keylen, equal);
 
         // Insert the new key
-        WTitem prevkey;
+        Item prevkey;
         if (insertpos == 0) {
             InsertKeyMyISAM(leaf, insertpos, key, keylen, 0);
             // use key as placeholder of key_before_pos
@@ -271,7 +271,7 @@ int BPTreeMyISAM::split_point(NodeMyISAM *node) {
 splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitReturnMyISAM *childsplit) {
     splitReturnMyISAM newsplit;
     NodeMyISAM *right = new NodeMyISAM;
-    WTitem *promotekey = &(childsplit->promotekey);
+    Item *promotekey = &(childsplit->promotekey);
     int insertpos;
 
     bool equal = false;
@@ -285,7 +285,7 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
     }
 
     // insert the new key
-    WTitem prevkey;
+    Item prevkey;
     if (!this->non_leaf_comp || insertpos == 0) {
         InsertKeyMyISAM(node, insertpos, promotekey->addr, promotekey->size, 0);
         // use key as placeholder of key_before_pos
@@ -326,7 +326,7 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
     // 2. Substitute the first key in right part with its full key
     if (this->non_leaf_comp) {
         MyISAMhead *header_rf = GetHeaderMyISAM(node, split + 1);
-        WTitem firstright_fullkey;
+        Item firstright_fullkey;
         get_full_key(node, split + 1, firstright_fullkey);
         strncpy(BufTop(node), firstright_fullkey.addr, firstright_fullkey.size);
         header_rf->key_len = firstright_fullkey.size;
@@ -386,7 +386,7 @@ splitReturnMyISAM BPTreeMyISAM::split_leaf(NodeMyISAM *node, char *newkey, int k
     int insertpos = prefix_insert(node, newkey, keylen, equal);
 
     // insert the new key
-    WTitem prevkey;
+    Item prevkey;
     if (insertpos == 0) {
         InsertKeyMyISAM(node, insertpos, newkey, keylen, 0);
         // use key as placeholder of key_before_pos
@@ -467,7 +467,7 @@ int BPTreeMyISAM::search_insert_pos(NodeMyISAM *cursor, const char *key, int key
                                     int low, int high, bool &equal) {
     while (low <= high) {
         int mid = low + (high - low) / 2;
-        WTitem curkey;
+        Item curkey;
         if (!cursor->IS_LEAF && !this->non_leaf_comp) {
             // non-compressed
             MyISAMhead *header = GetHeaderMyISAM(cursor, mid);

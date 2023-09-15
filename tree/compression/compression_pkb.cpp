@@ -9,7 +9,7 @@ int bt_get_parent_child_pos(NodePkB *parent, NodePkB *node) {
     return -1;
 }
 
-void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, WTitem &key) {
+void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, Item &key) {
     NodePkB *curr = node;
     for (int i = path_level; i >= 0; i--) {
         NodePkB *parent = path[i];
@@ -28,7 +28,7 @@ void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, W
 }
 
 void generate_pkb_key(NodePkB *node, char *newkey, int keylen, int insertpos,
-                      NodePkB **path, int path_level, WTitem &key) {
+                      NodePkB **path, int path_level, Item &key) {
     // string basekey;
     if (insertpos > 0) {
         // go to buffer get the complete key

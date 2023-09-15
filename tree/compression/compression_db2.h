@@ -11,13 +11,13 @@ struct closedRange {
 
 struct prefixMergeSegment {
     closedRange segment;
-    WTitem prefix;
+    Item prefix;
     int save = INT32_MIN;
     int firstindex = 0;
 };
 
 struct prefixItem {
-    WTitem prefix;
+    Item prefix;
     int low = 0;
     int high = 0;
 };
@@ -42,7 +42,7 @@ closedRange find_closed_range(prefixOptimization *result,
 // Cost function is defined based on space requirements for prefix + suffixes
 // Cost must be minimized
 
-int calculate_prefix_merge_save(prefixOptimization *result, prefixMergeSegment *seg, WTitem *prefix);
+int calculate_prefix_merge_save(prefixOptimization *result, prefixMergeSegment *seg, Item *prefix);
 
 // Cost of optimization is calculated as size of prefixes + size of suffixes
 // int calculate_cost_of_optimization(prefixOptimization result);

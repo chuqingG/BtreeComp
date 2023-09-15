@@ -76,7 +76,7 @@ int find_prefix_pos(NodeDB2 *cursor, const char *key, int keylen, bool for_inser
 // Cost function is defined based on space requirements for prefix + suffixes
 // Cost must be minimized
 // No, should be the space saved, and find a maximum
-int calculate_prefix_merge_save(prefixOptimization *result, prefixMergeSegment *seg, WTitem *prefix) {
+int calculate_prefix_merge_save(prefixOptimization *result, prefixMergeSegment *seg, Item *prefix) {
     // 1. first save the prefix header
     int save = sizeof(DB2pfxhead) * (seg->segment.high - seg->segment.low);
 
@@ -95,7 +95,7 @@ prefixMergeSegment find_best_segment_of_size_k(prefixOptimization *result, close
 
     int currsave = 0;
     int firstindex = 0;
-    WTitem currprefix;
+    Item currprefix;
 
     for (int i = range->low; i <= range->high; i++) {
         DB2pfxhead *p_i = GetPfxInPageDB2(result, i);

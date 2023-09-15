@@ -9,9 +9,22 @@ BPTree::BPTree(bool head_compression, bool tail_compression) {
     tail_comp = tail_compression;
 }
 
+void deletefrom(Node *node) {
+    if (node->IS_LEAF)
+        delete node;
+    else {
+        for (auto child : node->ptrs) {
+            deletefrom(child);
+        }
+        delete node;
+    }
+    return;
+}
+
 // Destructor of BPTreePkB tree
 BPTree::~BPTree() {
-    delete _root;
+    deletefrom(_root);
+    // delete _root;
 }
 
 // Function to get the rootNode
@@ -87,7 +100,7 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
         }
     }
     else {
-        WTitem *newkey = &(childsplit->promotekey);
+        Item *newkey = &(childsplit->promotekey);
         int insertpos;
         bool equal = false;
         if (this->head_comp) {
@@ -386,9 +399,9 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     node->ptr_cnt = split + 1;
 
     // set key bound
-    right->highkey = new WTitem(*node->highkey);
-    node->highkey = new WTitem(newsplit.promotekey);
-    right->lowkey = new WTitem(newsplit.promotekey);
+    right->highkey = new Item(*node->highkey);
+    node->highkey = new Item(newsplit.promotekey);
+    right->lowkey = new Item(newsplit.promotekey);
 
     // Set next pointers
     Node *next = node->next;
@@ -513,9 +526,9 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     UpdateBase(node, left_base);
 
     // set key bound
-    right->highkey = new WTitem(*node->highkey);
-    node->highkey = new WTitem(newsplit.promotekey);
-    right->lowkey = new WTitem(newsplit.promotekey);
+    right->highkey = new Item(*node->highkey);
+    node->highkey = new Item(newsplit.promotekey);
+    right->lowkey = new Item(newsplit.promotekey);
 
     // Set next pointers
     Node *next = node->next;

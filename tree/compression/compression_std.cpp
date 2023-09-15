@@ -36,7 +36,7 @@ int tail_compress_length(const char *lastleft, const char *firstright, int len_l
     return prefixlen;
 }
 
-int head_compression_find_prefix_length(WTitem *low, WTitem *high) {
+int head_compression_find_prefix_length(Item *low, Item *high) {
     int prefixlen = get_common_prefix_len(low->addr, high->addr, low->size, high->size);
     if (high->size == prefixlen + 1 && low->size >= prefixlen + 1 && ((high->addr)[prefixlen] - (low->addr)[prefixlen] == 1)) {
         prefixlen++;

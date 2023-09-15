@@ -23,4 +23,3 @@ cmake -DCMAKE_BUILD_TYPE=Release .. && make
 ## TODO
 1. WT - check if locking can be avoided in search
 2. Enforce checks to avoid benchmark without insert
-3. DB2 error happens when inserting values[1]

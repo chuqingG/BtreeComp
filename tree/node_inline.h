@@ -27,102 +27,18 @@
         node->ptr_cnt = num;            \
     }
 
-#define UpdateSize(node, newsize)  \
-    \ 
-{                             \
-        delete node->keys_size;    \
-        node->keys_size = newsize; \
-    }
-
-#define UpdateOffset(node, newoffset)  \
-    {                                  \
-        delete node->keys_offset;      \
-        node->keys_offset = newoffset; \
-    }
-
-#define CopySize(node, newsize)                                           \
-    \ 
-{                                                                    \
-        memcpy(node->keys_size, newsize, sizeof(uint8_t) * kNumberBound); \
-    }
-
-#define CopyOffset(node, newoffset)                                            \
-    {                                                                          \
-        memcpy(node->keys_offset, newoffset, sizeof(uint16_t) * kNumberBound); \
-    }
-
-#define GetKey(nptr, idx) (char *)(nptr->base + nptr->keys_offset[idx])
-
-#define PageTail(nptr) nptr->base + nptr->memusage
-
-#define InsertOffset(nptr, pos, offset)                      \
-    {                                                        \
-        for (int i = nptr->size; i > pos; i--)               \
-            nptr->keys_offset[i] = nptr->keys_offset[i - 1]; \
-        nptr->keys_offset[pos] = (uint16_t)offset;           \
-    }
-
-#define InsertSize(nptr, pos, len)                       \
-    {                                                    \
-        for (int i = nptr->size; i > pos; i--)           \
-            nptr->keys_size[i] = nptr->keys_size[i - 1]; \
-        nptr->keys_size[pos] = (uint8_t)len;             \
-    }
-
-// #define InsertNode(nptr, pos, newnode)         \
-//     {                                          \
-//         for (int i = nptr->size; i > pos; i--) \
-//             nptr->ptrs[i] = nptr->ptrs[i - 1]; \
-//         nptr->ptrs[pos] = newnode;             \
-//         nptr->ptr_cnt += 1; \
-//     }
-// #define InsertSize(nptr, pos, len) \
-//     nptr->keys_size.emplace(nptr->keys_size.begin() + pos, len)
-
 #define InsertNode(nptr, pos, newnode)                         \
     {                                                          \
         nptr->ptrs.emplace(nptr->ptrs.begin() + pos, newnode); \
         nptr->ptr_cnt += 1;                                    \
     }
-
-// Insert k into nptr[pos]
-#define InsertKey(nptr, pos, k, klen)            \
-    {                                            \
-        strcpy(PageTail(nptr), k);               \
-        InsertOffset(nptr, pos, nptr->memusage); \
-        InsertSize(nptr, pos, klen);             \
-        nptr->memusage += klen + 1;              \
-        nptr->size += 1;                         \
-    }
-
-// Copy node->keys[low, high) to Page(base, mem, idx)
-
-#define CopyKeyToPage(node, low, high, base, mem, idx, size) \
-    for (int i = low; i < high; i++) {                       \
-        char *k = GetKey(node, i);                           \
-        int klen = node->keys_size[i];                       \
-        strcpy(base + mem, k);                               \
-        idx[i - (low)] = mem;                                \
-        size[i - (low)] = klen;                              \
-        mem += klen + 1;                                     \
-    }
-
-// #define WriteKeyDB2Page(base, memusage, pos, size, idx, kptr, klen, prefixlen) \
-//     {                                                                          \
-//         strcpy(base + memusage, kptr + prefixlen);                             \
-//         size[pos] = klen - prefixlen;                                          \
-//         idx[pos] = memusage;                                                   \
-//         memusage += size[pos] + 1;                                             \
-//     }
-
-// #define GetKeyDB2ByPtr(resultptr, i) (char *)(resultptr->base + resultptr->newoffset[i])
 /*
 ================For standard==============
 */
-#define UpdatePfxItem(nptr, addr, size, newallo)        \
-    {                                                   \
-        delete nptr->prefix;                            \
-        nptr->prefix = new WTitem(addr, size, newallo); \
+#define UpdatePfxItem(nptr, addr, size, newallo)      \
+    {                                                 \
+        delete nptr->prefix;                          \
+        nptr->prefix = new Item(addr, size, newallo); \
     }
 
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
@@ -241,14 +157,10 @@ inline void CopyToNewPageDB2(NodeDB2 *nptr, int low, int high, char *newbase, ui
 /*
 ===============For WiredTiger=============
 */
-// #define BufTop(nptr) (nptr->base + nptr->space_top)
 
 // Get the ith header, i starts at 0
 #define GetHeaderWT(nptr, i) (WThead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(WThead))
 
-// #define PageOffset(nptr, off) (char *)(nptr->base + off)
-
-// TODO: think whether need to maintain space_bottom
 // The prefix should be cutoff before calling this
 inline void InsertKeyWT(NodeWT *nptr, int pos, const char *k, int klen, int plen) {
     strcpy(BufTop(nptr), k);

@@ -58,10 +58,10 @@ const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
     {"Btree-Head", new BPTreeHeadCompBenchmark()},
     {"Btree-Tail", new BPTreeTailCompBenchmark()},
     {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
-    {"Btree-DB2", new BPTreeDB2Benchmark()},
     {"Btree-WT", new BPTreeWTBenchmark()},
     {"Btree-My", new BPTreeMyISAMBenchmark()},
     {"Btree-PkB", new BPTreePkBBenchmark()},
+    // {"Btree-DB2", new BPTreeDB2Benchmark()},
 };
 
 auto RunBenchmarkIteration(std::vector<char *> values,
@@ -312,7 +312,7 @@ void TreeStatisticBenchmarkResults(
         string file_name = output_path + ".txt";
         myfile.open(file_name, fstream::out | ios::app);
         myfile
-            << "\nname,height,keysize,prefixsize,branchdegree,nodes,nonleafnodes\n";
+            << "\nname\theight\tkeysize\tprefixsize\tbranchdegree\tnodes\tnonleafnodes\n";
     }
 
     for (uint32_t i = 0; i < kIndexStructures.size(); ++i) {
@@ -354,9 +354,9 @@ void TreeStatisticBenchmarkResults(
                   << FormatStatistic(avg_nodes)
                   << FormatStatistic(avg_non_leaf_nodes) << std::endl;
         if (write_to_file) {
-            output_row << name << "," << avg_height << "," << avg_key_size << ","
-                       << avg_prefix_size << "," << avg_branch_degree << ","
-                       << avg_nodes << "," << avg_non_leaf_nodes << std::endl;
+            output_row << name << "\t" << avg_height << "\t" << avg_key_size << "\t"
+                       << avg_prefix_size << "\t" << avg_branch_degree << "\t"
+                       << avg_nodes << "\t" << avg_non_leaf_nodes << std::endl;
             myfile << output_row.str();
         }
 

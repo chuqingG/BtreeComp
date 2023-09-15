@@ -16,39 +16,39 @@ int MAX_NODE_SIZE = 4;
 // Key represented as <key, {rid list}>
 // str representation of rids for easy comparison and prefix compression
 // if other approaches are used
-struct WTitem {
+struct Item {
     char *addr;
     uint8_t size;
     bool newallocated = false;
-    WTitem() {
+    Item() {
         // this works for wt, myisam, pkb and splitkey,
         // temporarily fetch a key
         newallocated = false;
     }
-    WTitem(bool allocated) {
+    Item(bool allocated) {
         // this works for std compression: prefix, l/hkey
         addr = new char[1];
         addr[0] = '\0';
         size = 0;
         newallocated = true;
     }
-    WTitem(WTitem &old) {
+    Item(Item &old) {
         addr = new char[old.size + 1];
         strcpy(addr, old.addr);
         size = old.size;
         newallocated = true;
     }
-    WTitem(char *p, uint8_t l, bool allo) {
+    Item(char *p, uint8_t l, bool allo) {
         addr = p;
         size = l;
         newallocated = allo;
     }
-    ~WTitem() {
+    ~Item() {
         if (newallocated) {
             delete addr;
         }
     }
-    WTitem &operator=(WTitem &old) {
+    Item &operator=(Item &old) {
         addr = old.addr;
         size = old.size;
         newallocated = false;
@@ -76,20 +76,7 @@ public:
 };
 
 // BP-std node
-#ifdef DUPKEY
-class Node {
-public:
-    bool IS_LEAF;
-    vector<Key_c> keys;
-    int size;
-    vector<Node *> ptrs;
-    string prefix;
-    Node *prev; // Prev node pointer
-    Node *next; // Next node pointer
-    Node();
-    ~Node();
-};
-#else
+
 const char MAXHIGHKEY[] = "infinity";
 
 struct Stdhead {
@@ -106,15 +93,14 @@ public:
     vector<Node *> ptrs;
     uint8_t ptr_cnt;
 
-    WTitem *lowkey;
-    WTitem *highkey;
-    WTitem *prefix;
+    Item *lowkey;
+    Item *highkey;
+    Item *prefix;
     Node *prev; // Prev node pointer
     Node *next; // Next node pointer
     Node();
     ~Node();
 };
-#endif
 
 struct DB2head {
     uint16_t key_offset;
@@ -242,7 +228,6 @@ public:
     int size; // Total key number
     char *base;
     uint16_t space_top;
-    uint16_t space_bottom;
 #ifdef WTCACHE
     uint16_t prefixstart; /* Best page prefix starting slot */
     uint16_t prefixstop;  /* Maximum slot to which the best page prefix applies */
@@ -334,31 +319,31 @@ struct splitReturn {
 };
 
 struct splitReturn_new {
-    WTitem promotekey;
+    Item promotekey;
     Node *left;
     Node *right;
 };
 
 struct splitReturnDB2 {
-    WTitem promotekey;
+    Item promotekey;
     NodeDB2 *left;
     NodeDB2 *right;
 };
 
 struct splitReturnMyISAM {
-    WTitem promotekey;
+    Item promotekey;
     NodeMyISAM *left;
     NodeMyISAM *right;
 };
 
 struct splitReturnWT {
-    WTitem promotekey;
+    Item promotekey;
     NodeWT *left;
     NodeWT *right;
 };
 
 struct splitReturnPkB {
-    WTitem promotekey;
+    Item promotekey;
     NodePkB *left;
     NodePkB *right;
 };

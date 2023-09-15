@@ -3,7 +3,7 @@
 #include "../node.cpp"
 // #include "../node_inline.h"
 
-void get_full_key(NodeMyISAM *node, int idx, WTitem &key) {
+void get_full_key(NodeMyISAM *node, int idx, Item &key) {
     enum {
         FORWARD,
         BACKWARD

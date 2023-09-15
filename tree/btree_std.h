@@ -16,7 +16,6 @@ using namespace std;
 // BP tree
 class BPTree {
 public:
-    // Node *root;
     BPTree(bool head_compression = false, bool tail_compression = false);
     ~BPTree();
     void insert(char *);

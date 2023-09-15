@@ -23,20 +23,10 @@ struct TreeStatistics {
     int height = 0;
 };
 
+// Changing key word to char...
 class Benchmark {
 public:
     virtual ~Benchmark() = default;
-    virtual void InitializeStructure() = 0;
-    virtual void DeleteStructure() = 0;
-    virtual void Insert(const std::vector<string> &numbers) = 0;
-    virtual bool Search(const std::vector<string> &numbers) = 0;
-    virtual TreeStatistics CalcStatistics() = 0;
-};
-
-// Changing key word to char...
-class Benchmark_c {
-public:
-    virtual ~Benchmark_c() = default;
     virtual void InitializeStructure() = 0;
     virtual void DeleteStructure() = 0;
     virtual void Insert(const std::vector<char *> &numbers) = 0;
@@ -44,7 +34,7 @@ public:
     virtual TreeStatistics CalcStatistics() = 0;
 };
 
-class BPTreeStdBenchmark : public Benchmark_c {
+class BPTreeStdBenchmark : public Benchmark {
 public:
     ~BPTreeStdBenchmark() override {
         delete _tree;
@@ -62,8 +52,6 @@ public:
     void Insert(const vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); i++) {
             _tree->insert(values[i]);
-            // vector<bool> flag(i + 1);
-            // _tree->printTree(_tree->getRoot(), flag, true);
         }
         // vector<bool> flag(values.size());
         // _tree->printTree(_tree->getRoot(), flag, true);
@@ -108,7 +96,7 @@ public:
     }
 };
 
-class BPTreeDB2Benchmark : public Benchmark_c {
+class BPTreeDB2Benchmark : public Benchmark {
 public:
     ~BPTreeDB2Benchmark() override {
         delete _tree;
@@ -149,7 +137,7 @@ private:
     BPTreeDB2 *_tree;
 };
 
-class BPTreeMyISAMBenchmark : public Benchmark_c {
+class BPTreeMyISAMBenchmark : public Benchmark {
 public:
     ~BPTreeMyISAMBenchmark() override {
         delete _tree;
@@ -190,7 +178,7 @@ private:
     BPTreeMyISAM *_tree;
 };
 
-class BPTreeWTBenchmark : public Benchmark_c {
+class BPTreeWTBenchmark : public Benchmark {
 public:
     ~BPTreeWTBenchmark() override {
         delete _tree;
@@ -231,7 +219,7 @@ private:
     BPTreeWT *_tree;
 };
 
-class BPTreePkBBenchmark : public Benchmark_c {
+class BPTreePkBBenchmark : public Benchmark {
 public:
     ~BPTreePkBBenchmark() override {
         delete _tree;

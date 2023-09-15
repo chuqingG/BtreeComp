@@ -37,8 +37,7 @@ private:
                         splitReturn_new *childsplit);
     int search_insert_pos(Node *cursor, const char *key, int keylen, int low, int high,
                           bool &equal);
-    int search_in_nonleaf(Node *cursor, const char *key, int keylen, int low, int high);
-    int search_in_leaf(Node *cursor, const char *key, int keylen, int low, int high);
+    int search_in_node(Node *cursor, const char *key, int keylen, int low, int high, bool isleaf);
     Node *search_leaf_node(Node *root, const char *key, int keylen);
     Node *search_leaf_node_for_insert(Node *root, const char *key, int keylen,
                                       Node **path, int &path_level);
@@ -52,9 +51,5 @@ private:
     splitReturn_new split_nonleaf(Node *node, int pos,
                                   splitReturn_new *childsplit);
     splitReturn_new split_leaf(Node *node, char *newkey, int newkey_len);
-    // int get_child_pos_in_parent(Node *parent, Node *node);
-
-    // int update_page_prefix(Node *node, char *page, uint16_t *idx, uint8_t *lens,
-    //    int prefixlen, int low, int high);
 };
 #endif

@@ -2,41 +2,6 @@
 #include "node.h"
 #include "node_inline.h"
 
-// Data::Data(const char *s) {
-//     size = strlen(s);
-//     addr_ = new char[size + 1];
-//     strcpy(addr_, s);
-// }
-
-Data::Data(const char *s, int len) {
-    addr_ = new char[len + 1];
-    strncpy(addr_, s, len);
-    addr_[len] = '\0';
-    size = len;
-}
-
-// Data::Data(const Data &old) {
-//     cout << "call copy" << endl;
-//     addr_ = new char[old.size + 1];
-//     strcpy(addr_, old.addr_);
-//     size = old.size;
-// }
-
-Data &Data::operator=(const Data &old) {
-    // cout << "call data copy" << endl;
-    addr_ = new char[old.size + 1];
-    strcpy(addr_, old.addr_);
-    size = old.size;
-}
-
-const char *Data::addr() {
-    return addr_;
-}
-
-Data::~Data() {
-    delete addr_;
-}
-
 // Constructor of key
 Key::Key(string val, int rid) {
     value = val;
@@ -89,20 +54,15 @@ Node::Node() {
     base = NewPage();
     SetEmptyPage(base);
 
-    lowkey = new WTitem();
+    lowkey = new WTitem(true);
     highkey = new WTitem(); // this hk will be deallocated automatically
     highkey->addr = new char[9];
     strcpy(highkey->addr, MAXHIGHKEY);
     highkey->newallocated = true;
-    prefix = new WTitem();
+    prefix = new WTitem(true);
 
     prev = nullptr;
     next = nullptr;
-    // lowkey = new Data("", 0);
-    // highkey = new Data("infinity", 8);
-    // keys_size = new uint8_t[kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
-    // std::memset(keys_size, 0, sizeof(uint8_t) * kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX));
-    // keys_offset = new uint16_t[kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
 }
 
 // Destructor of Node
@@ -143,38 +103,6 @@ NodeDB2::~NodeDB2() {
 ==================For WiredTiger================
 */
 
-#ifdef DUPKEY
-KeyWT::KeyWT(string val, uint8_t p, int rid) {
-    value = val;
-    prefix = p;
-    isinitialized = false;
-    initialized_value = "";
-    ridList.push_back(to_string(rid));
-}
-
-KeyWT::KeyWT(string val, uint8_t p, vector<string> list) {
-    value = val;
-    prefix = p;
-    isinitialized = false;
-    initialized_value = "";
-    ridList = list;
-}
-
-// Method to add new rid with same key value
-void KeyWT::addRecord(int rid) {
-    ridList.push_back(to_string(rid));
-}
-
-// Get size of key
-int KeyWT::getSize() {
-    int totalLen = sizeof(prefix) + value.length();
-    for (int i = 0; i < ridList.size(); i++) {
-        totalLen += ridList.at(i).length();
-    }
-    return totalLen;
-}
-#endif
-
 NodeWT::NodeWT() {
     size = 0;
     prev = nullptr;
@@ -197,53 +125,6 @@ NodeWT::~NodeWT() {
     // }
     delete base;
 }
-
-#ifdef DUPKEY
-KeyMyISAM::KeyMyISAM(string v, int p, int rid) {
-    value = v;
-    setPrefix(p);
-    ridList.push_back(to_string(rid));
-}
-
-KeyMyISAM::KeyMyISAM(string val, int p, vector<string> list) {
-    value = val;
-    setPrefix(p);
-    ridList = list;
-}
-
-// Method to add new rid with same key value
-void KeyMyISAM::addRecord(int rid) {
-    ridList.push_back(to_string(rid));
-}
-
-int KeyMyISAM::getPrefix() {
-    return is1Byte ? prefix[0] : (prefix[1] << 8) | prefix[0];
-}
-
-void KeyMyISAM::setPrefix(int p) {
-    if (p <= 127) {
-        prefix = new u_char[1];
-        prefix[0] = (u_char)(p);
-        is1Byte = true;
-    }
-    // Prefix is 2 bytes
-    else {
-        prefix = new u_char[2];
-        prefix[0] = (u_char)(p);
-        prefix[1] = (u_char)((p >> 8));
-        is1Byte = false;
-    }
-}
-
-int KeyMyISAM::getSize() {
-    int prefixBytes = getPrefix() <= 127 ? 1 : 2;
-    int totalLen = value.length() + prefixBytes;
-    for (int i = 0; i < ridList.size(); i++) {
-        totalLen += ridList.at(i).length();
-    }
-    return totalLen;
-}
-#endif
 
 NodeMyISAM::NodeMyISAM() {
     size = 0;
@@ -272,29 +153,9 @@ NodePkB::NodePkB() {
 
 // Destructor of NodePkB
 NodePkB::~NodePkB() {
-    // for (NodePkB *childptr : ptrs) {
-    //     delete childptr;
-    // }
     delete base;
 }
 
-#ifdef DUPKEY
-void printKeys(Node *node, bool compressed) {
-    string prev_key = "";
-    string curr_key = "";
-    for (uint32_t i = 0; i < node->keys.size(); i++) {
-        // Loop through rid list to print duplicates
-        for (uint32_t j = 0; j < node->keys.at(i).ridList.size(); j++) {
-            if (compressed) {
-                cout << node->keys.at(i).value << ",";
-            }
-            else {
-                cout << node->prefix + node->keys.at(i).value << ",";
-            }
-        }
-    }
-}
-#else
 void printKeys(Node *node, bool compressed) {
     if (compressed && node->prefix->addr)
         cout << node->prefix->addr << ": ";
@@ -308,30 +169,7 @@ void printKeys(Node *node, bool compressed) {
         }
     }
 }
-#endif
 
-#ifdef DUPKEY
-void printKeys_db2(NodeDB2 *node, bool compressed) {
-    for (uint32_t i = 0; i < node->prefixMetadata.size(); i++) {
-        if (compressed) {
-            cout << "Prefix " << node->prefixMetadata.at(i).prefix << ": ";
-        }
-        for (int l = node->prefixMetadata.at(i).low;
-             l <= node->prefixMetadata.at(i).high; l++) {
-            // Loop through rid list to print duplicates
-            for (uint32_t j = 0; j < node->keys.at(i).ridList.size(); j++) {
-                if (compressed) {
-                    cout << node->keys.at(l).value << ",";
-                }
-                else {
-                    cout << node->prefixMetadata.at(i).prefix + node->keys.at(l).value
-                         << ",";
-                }
-            }
-        }
-    }
-}
-#else
 void printKeys_db2(NodeDB2 *node, bool compressed) {
     for (uint32_t i = 0; i < node->pfx_size; i++) {
         DB2pfxhead *pfx = GetHeaderDB2pfx(node, i);
@@ -350,7 +188,6 @@ void printKeys_db2(NodeDB2 *node, bool compressed) {
         }
     }
 }
-#endif
 
 void printKeys_myisam(NodeMyISAM *node, bool compressed) {
     char *prev_key;

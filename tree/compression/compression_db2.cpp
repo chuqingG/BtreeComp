@@ -533,7 +533,6 @@ void apply_prefix_optimization(NodeDB2 *node) {
             // Track their old prefix_idx
             for (int i = 0; i < node->pfx_size; i++) {
                 DB2pfxhead *pfx = GetHeaderDB2pfx(node, i);
-                // auto pfx = node->prefixMetadata[i];
                 for (int j = pfx->low; j <= pfx->high; j++)
                     oldpfx_idx[j] = i;
             }
@@ -543,7 +542,6 @@ void apply_prefix_optimization(NodeDB2 *node) {
                 DB2head *old_i = GetHeaderDB2(node, i);
                 DB2head *merge_i = GetHeaderInPageDB2(merge, i);
                 DB2head *newhead = (DB2head *)(buf + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(DB2head));
-                // Data *oldpfx = node->prefixMetadata[oldpfx_idx[i]].prefix;
                 // a negative offset means extra length
                 int extra_len = merge_i->key_offset < 0 ? (-merge_i->key_offset) : 0;
                 newhead->key_offset = new_top;

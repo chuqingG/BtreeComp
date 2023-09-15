@@ -19,8 +19,14 @@ int MAX_NODE_SIZE = 4;
 struct WTitem {
     char *addr;
     uint8_t size;
-    bool newallocated;
+    bool newallocated = false;
     WTitem() {
+        // this works for wt, myisam, pkb and splitkey,
+        // temporarily fetch a key
+        newallocated = false;
+    }
+    WTitem(bool allocated) {
+        // this works for std compression: prefix, l/hkey
         addr = new char[1];
         addr[0] = '\0';
         size = 0;
@@ -48,24 +54,6 @@ struct WTitem {
         newallocated = false;
         return *this;
     }
-};
-
-class Data {
-public:
-    // const char *ptr;
-    uint8_t size; // Be careful;
-    Data() :
-        addr_(""), size(0){};
-    // Data(const char *str);
-    Data(const char *p, int len);
-    ~Data();
-    // Data(const Data &);
-    Data &operator=(const Data &);
-    const char *addr();
-    // void set(const char *p, int s);
-    // void from_string(string s);
-private:
-    char *addr_;
 };
 
 class Key {
@@ -114,52 +102,20 @@ public:
     bool IS_LEAF;
     int size;
     char *base;
-    // char *pfxbase;
     uint16_t space_top;
-    // vector<uint16_t> keys_offset;
-    // vector<uint8_t> keys_size;
     vector<Node *> ptrs;
     uint8_t ptr_cnt;
-    // uint16_t *keys_offset;
-    // uint8_t *keys_size;
-    // Node **ptrs;
+
     WTitem *lowkey;
     WTitem *highkey;
     WTitem *prefix;
-    // Data *lowkey;
-    // Data *highkey;
-    // Data *prefix;
     Node *prev; // Prev node pointer
     Node *next; // Next node pointer
-    // uint16_t memusage;
     Node();
     ~Node();
 };
 #endif
 
-#ifdef DUPKEY
-class PrefixMetaData {
-public:
-    int low;
-    int high;
-    string prefix;
-    PrefixMetaData();
-    PrefixMetaData(string p, int l, int h);
-};
-
-class NodeDB2 {
-public:
-    bool IS_LEAF;
-    vector<Key_c> keys;
-    int size;
-    vector<NodeDB2 *> ptrs;
-    NodeDB2 *prev; // Prev node pointer
-    NodeDB2 *next; // Next node pointer
-    vector<PrefixMetaData> prefixMetadata;
-    NodeDB2();
-    ~NodeDB2();
-};
-#else
 struct DB2head {
     uint16_t key_offset;
     uint8_t key_len;
@@ -188,7 +144,7 @@ public:
     NodeDB2();
     ~NodeDB2();
 };
-#endif
+
 // Key with prefix and suffix encoding
 // Duplicates represented as <key, {rid list}>
 #ifdef DUPKEY

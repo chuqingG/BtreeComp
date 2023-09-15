@@ -117,6 +117,47 @@
 
 // #define GetKeyDB2ByPtr(resultptr, i) (char *)(resultptr->base + resultptr->newoffset[i])
 /*
+================For standard==============
+*/
+#define UpdatePfxItem(nptr, addr, size, newallo)        \
+    {                                                   \
+        delete nptr->prefix;                            \
+        nptr->prefix = new WTitem(addr, size, newallo); \
+    }
+
+#define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
+
+inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint8_t klen) {
+    strcpy(BufTop(nptr), k);
+    // shift the headers
+    for (int i = nptr->size; i > pos; i--) {
+        memcpy(GetHeaderStd(nptr, i), GetHeaderStd(nptr, i - 1), sizeof(Stdhead));
+    }
+    // Set the new header
+    Stdhead *header = GetHeaderStd(nptr, pos);
+    header->key_offset = nptr->space_top;
+    header->key_len = klen;
+    nptr->space_top += klen + 1;
+    nptr->size += 1;
+}
+
+// with cutoff
+inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint8_t cutoff, uint16_t &top) {
+    for (int i = low; i < high; i++) {
+        int newidx = i - low;
+        Stdhead *oldhead = GetHeaderStd(nptr, i);
+        Stdhead *newhead = (Stdhead *)(newbase + MAX_SIZE_IN_BYTES
+                                       - (newidx + 1) * sizeof(Stdhead));
+        strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
+        newhead->key_len = oldhead->key_len - cutoff;
+        newhead->key_offset = top;
+        top += newhead->key_len + 1;
+        if (newhead->key_len > 32)
+            cout << "wrong update" << endl;
+    }
+}
+
+/*
 ===============For DB2=============
 */
 #define GetKeyDB2(result, off) (char *)(result->base + off)
@@ -158,7 +199,6 @@ inline void InsertKeyDB2(NodeDB2 *nptr, int pos, const char *k, uint8_t klen) {
     DB2head *header = GetHeaderDB2(nptr, pos);
     header->key_offset = nptr->space_top;
     header->key_len = klen;
-    // header->pfx_len = (uint8_t)plen;
     nptr->space_top += klen + 1;
     nptr->size += 1;
 }
@@ -204,7 +244,7 @@ inline void CopyToNewPageDB2(NodeDB2 *nptr, int low, int high, char *newbase, ui
 // #define BufTop(nptr) (nptr->base + nptr->space_top)
 
 // Get the ith header, i starts at 0
-#define GetHeader(nptr, i) (WThead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(WThead))
+#define GetHeaderWT(nptr, i) (WThead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(WThead))
 
 // #define PageOffset(nptr, off) (char *)(nptr->base + off)
 
@@ -214,10 +254,10 @@ inline void InsertKeyWT(NodeWT *nptr, int pos, const char *k, int klen, int plen
     strcpy(BufTop(nptr), k);
     // shift the headers
     for (int i = nptr->size; i > pos; i--) {
-        memcpy(GetHeader(nptr, i), GetHeader(nptr, i - 1), sizeof(WThead));
+        memcpy(GetHeaderWT(nptr, i), GetHeaderWT(nptr, i - 1), sizeof(WThead));
     }
     // Set the new header
-    WThead *header = GetHeader(nptr, pos);
+    WThead *header = GetHeaderWT(nptr, pos);
     header->key_offset = nptr->space_top;
     header->key_len = (uint8_t)klen;
     header->pfx_len = (uint8_t)plen;
@@ -231,7 +271,7 @@ inline void InsertKeyWT(NodeWT *nptr, int pos, const char *k, int klen, int plen
 inline void CopyToNewPageWT(NodeWT *nptr, int low, int high, char *newbase, int &top) {
     for (int i = low; i < high; i++) {
         int newidx = i - low;
-        WThead *oldhead = GetHeader(nptr, i);
+        WThead *oldhead = GetHeaderWT(nptr, i);
         WThead *newhead = (WThead *)(newbase + MAX_SIZE_IN_BYTES
                                      - (newidx + 1) * sizeof(WThead));
         strncpy(newbase + top, PageOffset(nptr, oldhead->key_offset), oldhead->key_len);

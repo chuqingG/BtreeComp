@@ -540,7 +540,7 @@ void BPTreeMyISAM::getSize(NodeMyISAM *cursor, int &numNodes, int &numNonLeaf, i
         int prefixSize = 0;
         for (int i = 0; i < cursor->size; i++) {
             MyISAMhead *header = GetHeaderMyISAM(cursor, i);
-            currSize += header->key_len + sizeof(header->pfx_len);
+            currSize += header->key_len + sizeof(MyISAMhead);
             prefixSize += sizeof(header->pfx_len);
         }
         totalKeySize += currSize;

@@ -16,6 +16,39 @@ int MAX_NODE_SIZE = 4;
 // Key represented as <key, {rid list}>
 // str representation of rids for easy comparison and prefix compression
 // if other approaches are used
+struct WTitem {
+    char *addr;
+    uint8_t size;
+    bool newallocated;
+    WTitem() {
+        addr = new char[1];
+        addr[0] = '\0';
+        size = 0;
+        newallocated = true;
+    }
+    WTitem(WTitem &old) {
+        addr = new char[old.size + 1];
+        strcpy(addr, old.addr);
+        size = old.size;
+        newallocated = true;
+    }
+    WTitem(char *p, uint8_t l, bool allo) {
+        addr = p;
+        size = l;
+        newallocated = allo;
+    }
+    ~WTitem() {
+        if (newallocated) {
+            delete addr;
+        }
+    }
+    WTitem &operator=(WTitem &old) {
+        addr = old.addr;
+        size = old.size;
+        newallocated = false;
+        return *this;
+    }
+};
 
 class Data {
 public:
@@ -71,25 +104,35 @@ public:
 #else
 const char MAXHIGHKEY[] = "infinity";
 
+struct Stdhead {
+    uint16_t key_offset;
+    uint8_t key_len;
+} __attribute__((packed));
+
 class Node {
 public:
     bool IS_LEAF;
     int size;
+    char *base;
+    // char *pfxbase;
+    uint16_t space_top;
     // vector<uint16_t> keys_offset;
     // vector<uint8_t> keys_size;
     vector<Node *> ptrs;
-    uint16_t *keys_offset;
-    uint8_t *keys_size;
-    // Node **ptrs;
     uint8_t ptr_cnt;
-    Data *lowkey;
-    Data *highkey;
-    Data *prefix;
+    // uint16_t *keys_offset;
+    // uint8_t *keys_size;
+    // Node **ptrs;
+    WTitem *lowkey;
+    WTitem *highkey;
+    WTitem *prefix;
+    // Data *lowkey;
+    // Data *highkey;
+    // Data *prefix;
     Node *prev; // Prev node pointer
     Node *next; // Next node pointer
-    uint16_t memusage;
-    char *base;
-    Node(bool head, bool tail);
+    // uint16_t memusage;
+    Node();
     ~Node();
 };
 #endif
@@ -236,23 +279,6 @@ struct WThead {
 } __attribute__((packed));
 #endif
 
-struct WTitem {
-    char *addr;
-    uint8_t size;
-    bool newallocated = false;
-    ~WTitem() {
-        if (newallocated) {
-            delete addr;
-        }
-    }
-    WTitem &operator=(WTitem &old) {
-        addr = old.addr;
-        size = old.size;
-        newallocated = false;
-        return *this;
-    }
-};
-
 #ifndef DUPKEY
 class NodeWT {
 public:
@@ -352,7 +378,7 @@ struct splitReturn {
 };
 
 struct splitReturn_new {
-    Data *promotekey;
+    WTitem promotekey;
     Node *left;
     Node *right;
 };

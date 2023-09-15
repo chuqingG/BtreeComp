@@ -221,7 +221,7 @@ string get_full_key(NodeWT *node, int slot) {
 
 //     overflow_retry:
 
-//         header = GetHeader(node, rip);
+//         header = GetHeaderWT(node, rip);
 //         orikey.addr = PageOffset(node, header->key_offset);
 //         orikey.size = header->key_len;
 //         key_prefix = header->pfx_len;
@@ -256,7 +256,7 @@ string get_full_key(NodeWT *node, int slot) {
 //              * value), and it can't have a prefix-compression value, it's a root key which is never
 //              * prefix-compressed.
 //              */
-//             header = GetHeader(node, node->prefixstart);
+//             header = GetHeaderWT(node, node->prefixstart);
 //             ;
 //             char* newbuf = new char[orikey.size + key_prefix + 1];
 //             strncpy(newbuf, PageOffset(node, header->key_offset), key_prefix);
@@ -333,7 +333,7 @@ string get_full_key(NodeWT *node, int slot) {
 
 // Store the decompressed key into key
 void get_full_key(NodeWT *node, int idx, WTitem &key) {
-    WThead *header = GetHeader(node, idx);
+    WThead *header = GetHeaderWT(node, idx);
     key.addr = PageOffset(node, header->key_offset);
     key.size = header->key_len;
     int pfx_len = header->pfx_len;
@@ -347,7 +347,7 @@ void get_full_key(NodeWT *node, int idx, WTitem &key) {
     // means we need [0:pfx_need - 1] bytes of the prefix, stop when pfx_need == -1
     int prefix_need = pfx_len;
     for (int i = idx - 1; prefix_need > 0 && i >= 0; i--) {
-        WThead *head_i = GetHeader(node, i);
+        WThead *head_i = GetHeaderWT(node, i);
         if (head_i->pfx_len < prefix_need) {
             strncpy(decomp_key + head_i->pfx_len,
                     PageOffset(node, head_i->key_offset), prefix_need - head_i->pfx_len);
@@ -367,7 +367,7 @@ void get_full_key(NodeWT *node, int idx, WTitem &key) {
 // WTitem extract_key(NodeWT *node, int idx, bool non_leaf_comp) {
 //     // string key = node->keys.at(idx).value;
 //     WTitem key;
-//     WThead *header = GetHeader(node, idx);
+//     WThead *header = GetHeaderWT(node, idx);
 //     // char *key = PageOffset(node, header->key_offset);
 //     key.addr = PageOffset(node, header->key_offset);
 //     key.size = header->key_len;
@@ -398,14 +398,14 @@ void get_full_key(NodeWT *node, int idx, WTitem &key) {
 void populate_prefix_backward(NodeWT *node, int pos, char *fullkey_before_pos, int keylen) {
     if (node->size == 0)
         return;
-    WThead *header = GetHeader(node, pos);
+    WThead *header = GetHeaderWT(node, pos);
 
     uint8_t prev_pfx = header->pfx_len;
     char *prev_fullkey = fullkey_before_pos;
     int prev_len = keylen;
 
     for (int i = pos + 1; i < node->size; i++) {
-        header = GetHeader(node, i);
+        header = GetHeaderWT(node, i);
         int cur_len = header->pfx_len + header->key_len;
 
         char *fullkey = new char[cur_len + 1];
@@ -438,7 +438,7 @@ void update_next_prefix(NodeWT *node, int pos, char *fullkey_before_pos,
     // if newkey is the last one
     if (node->size <= 1 || pos + 1 == node->size)
         return;
-    WThead *header = GetHeader(node, pos + 1);
+    WThead *header = GetHeaderWT(node, pos + 1);
 
     int cur_len = header->pfx_len + header->key_len;
 

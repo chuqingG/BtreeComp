@@ -82,27 +82,34 @@ void Key_c::update_value(string str) {
 }
 
 // Constructor of Node
-Node::Node(bool head_comp, bool tail_comp) {
+Node::Node() {
     size = 0;
-    prefix = new Data("", 0);
+    ptr_cnt = 0;
+    space_top = 0;
     base = NewPage();
-    memusage = 0;
+    SetEmptyPage(base);
+
+    lowkey = new WTitem();
+    highkey = new WTitem(); // this hk will be deallocated automatically
+    highkey->addr = new char[9];
+    strcpy(highkey->addr, MAXHIGHKEY);
+    highkey->newallocated = true;
+    prefix = new WTitem();
+
     prev = nullptr;
     next = nullptr;
-    lowkey = new Data("", 0);
-    highkey = new Data("infinity", 8);
-    ptr_cnt = 0;
-
-    keys_size = new uint8_t[kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
-    std::memset(keys_size, 0, sizeof(uint8_t) * kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX));
-    keys_offset = new uint16_t[kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
+    // lowkey = new Data("", 0);
+    // highkey = new Data("infinity", 8);
+    // keys_size = new uint8_t[kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
+    // std::memset(keys_size, 0, sizeof(uint8_t) * kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX));
+    // keys_offset = new uint16_t[kNumberBound * (1 + head_comp * HEAD_COMP_RELAX + tail_comp * TAIL_COMP_RELAX)];
 }
 
 // Destructor of Node
 Node::~Node() {
-    // delete ptrs;
-    delete keys_offset;
-    delete keys_size;
+    delete lowkey;
+    delete highkey;
+    delete prefix;
     delete base;
 }
 
@@ -289,12 +296,15 @@ void printKeys(Node *node, bool compressed) {
 }
 #else
 void printKeys(Node *node, bool compressed) {
+    if (compressed && node->prefix->addr)
+        cout << node->prefix->addr << ": ";
     for (uint32_t i = 0; i < node->size; i++) {
-        if (compressed) {
-            cout << GetKey(node, i) << ",";
+        Stdhead *head = GetHeaderStd(node, i);
+        if (compressed && node->prefix->addr) {
+            cout << PageOffset(node, head->key_offset) << ",";
         }
         else {
-            cout << node->prefix->addr() << GetKey(node, i) << ",";
+            cout << node->prefix->addr << PageOffset(node, head->key_offset) << ",";
         }
     }
 }
@@ -365,7 +375,7 @@ void printKeys_wt(NodeWT *node, bool compressed) {
     char *prev_key;
     char *curr_key;
     for (int i = 0; i < node->size; i++) {
-        WThead *head = GetHeader(node, i);
+        WThead *head = GetHeaderWT(node, i);
         if (compressed || head->pfx_len == 0 || i == 0) {
             curr_key = PageOffset(node, head->key_offset);
             cout << unsigned(head->pfx_len) << ":" << curr_key << ",";

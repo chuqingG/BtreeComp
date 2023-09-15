@@ -210,7 +210,7 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT *chil
         get_full_key(node, split, newsplit.promotekey);
     }
     else {
-        WThead *header_split = GetHeader(node, split);
+        WThead *header_split = GetHeaderWT(node, split);
         newsplit.promotekey.addr = PageOffset(node, header_split->key_offset);
         newsplit.promotekey.size = header_split->key_len;
     }
@@ -223,7 +223,7 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT *chil
 
     // 2. Substitute the first key in right part with its full key
     if (this->non_leaf_comp) {
-        WThead *header_rf = GetHeader(node, split + 1);
+        WThead *header_rf = GetHeaderWT(node, split + 1);
         WTitem firstright_fullkey;
         get_full_key(node, split + 1, firstright_fullkey);
         strncpy(BufTop(node), firstright_fullkey.addr, firstright_fullkey.size);
@@ -324,7 +324,7 @@ splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     newsplit.promotekey.newallocated = true;
 
     // 2. Substitute the first key in right part with its full key
-    WThead *header_rf = GetHeader(node, split);
+    WThead *header_rf = GetHeaderWT(node, split);
     strncpy(BufTop(node), firstright_fullkey.addr, firstright_fullkey.size);
     header_rf->key_len = firstright_fullkey.size;
     header_rf->pfx_len = 0;
@@ -381,7 +381,7 @@ int BPTreeWT::search_insert_pos(NodeWT *cursor, const char *key, int keylen,
         WTitem curkey;
         if (!cursor->IS_LEAF && !this->non_leaf_comp) {
             // non-compressed
-            WThead *header = GetHeader(cursor, mid);
+            WThead *header = GetHeaderWT(cursor, mid);
             curkey.addr = PageOffset(cursor, header->key_offset);
             curkey.size = header->key_len;
         }
@@ -493,8 +493,8 @@ void BPTreeWT::getSize(NodeWT *cursor, int &numNodeWTs, int &numNonLeaf, int &nu
         int currSize = 0;
         int prefixSize = 0;
         for (int i = 0; i < cursor->size; i++) {
-            WThead *header = GetHeader(cursor, i);
-            currSize += header->key_len + sizeof(header->pfx_len);
+            WThead *header = GetHeaderWT(cursor, i);
+            currSize += header->key_len + sizeof(WThead);
             prefixSize += sizeof(header->pfx_len);
         }
         totalKeyWTSize += currSize;

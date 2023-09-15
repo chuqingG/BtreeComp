@@ -30,7 +30,7 @@ public:
     int pfx_top;
     int pfx_size;
     char *base;
-    char *pfxbase;
+    // char *pfxbase;
     // bool used;
 
     prefixOptimization();

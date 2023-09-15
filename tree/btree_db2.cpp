@@ -54,7 +54,7 @@ void BPTreeDB2::insert(char *x) {
 #else
         InsertKeyDB2(_root, 0, x, keylen);
 #endif
-        _root->IS_LEAF = true;
+        // _root->IS_LEAF = true;
         return;
     }
     NodeDB2 *search_path[max_level];
@@ -105,6 +105,9 @@ void BPTreeDB2::insert_nonleaf(NodeDB2 *node, NodeDB2 **path,
 void BPTreeDB2::insert_leaf(NodeDB2 *leaf, NodeDB2 **path, int path_level, char *key, int keylen) {
     if (check_split_condition(leaf, keylen)) {
         apply_prefix_optimization(leaf);
+        // vector<bool> flag(20);
+        // printTree(getRoot(), flag, true);
+        // cout << "---------------------------" << endl;
     }
     if (check_split_condition(leaf, keylen)) {
         splitReturnDB2 split = split_leaf(leaf, key, keylen);
@@ -199,8 +202,13 @@ int BPTreeDB2::split_point(NodeDB2 *node) {
 void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool isleaf, Item &splitprefix) {
     int rightindex = 0;
 
-    char *l_pfx = new char[DB2_PFX_MAX_SIZE];
-    memset(l_pfx, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
+    char *l_base = NewPageDB2();
+    SetEmptyPageDB2(l_base);
+
+    uint16_t l_usage = 0;
+
+    // char *l_pfx = new char[DB2_PFX_MAX_SIZE];
+    // memset(l_pfx, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
     int pfx_top_l = 0;
     int pfx_size_l = 0;
 
@@ -213,8 +221,8 @@ void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool 
 
             if (splitpos != pfx_i->low) {
                 // Copy the prefix, set the new header
-                strcpy(l_pfx + pfx_top_l, PfxOffset(node, pfx_i->pfx_offset));
-                DB2pfxhead *header = (DB2pfxhead *)(l_pfx + DB2_PFX_MAX_SIZE
+                strcpy(l_base + MAX_SIZE_IN_BYTES + pfx_top_l, PfxOffset(node, pfx_i->pfx_offset));
+                DB2pfxhead *header = (DB2pfxhead *)(l_base + MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE
                                                     - (pfx_size_l + 1) * sizeof(DB2pfxhead));
                 header->low = pfx_i->low;
                 header->high = splitpos - 1;
@@ -244,8 +252,8 @@ void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool 
         }
         // to the left
         else {
-            strcpy(l_pfx + pfx_top_l, PfxOffset(node, pfx_i->pfx_offset));
-            DB2pfxhead *header = (DB2pfxhead *)(l_pfx + DB2_PFX_MAX_SIZE
+            strcpy(l_base + MAX_SIZE_IN_BYTES + pfx_top_l, PfxOffset(node, pfx_i->pfx_offset));
+            DB2pfxhead *header = (DB2pfxhead *)(l_base + MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE
                                                 - (pfx_size_l + 1) * sizeof(DB2pfxhead));
 
             memcpy(header, pfx_i, sizeof(DB2pfxhead));
@@ -262,16 +270,11 @@ void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool 
     splitprefix.newallocated = true;
 
     // update the prefix area of node
-    UpdatePfx(node, l_pfx);
+    // UpdatePfx(node, l_pfx);
     node->pfx_size = pfx_size_l;
     node->pfx_top = pfx_top_l;
 
     // Split the keys to the new page
-
-    char *l_base = NewPage();
-    SetEmptyPage(l_base);
-
-    uint16_t l_usage = 0;
 
     CopyToNewPageDB2(node, 0, splitpos, l_base, l_usage);
     // CopyKeyToPage(node, 0, splitpos, l_base, l_usage, l_idx, l_size);
@@ -446,7 +449,7 @@ NodeDB2 *BPTreeDB2::search_leaf_node(NodeDB2 *searchroot, const char *key, int k
     bool equal = false;
     // Till we reach leaf node
     while (!cursor->IS_LEAF) {
-        string_view searchkey = key;
+        // string_view searchkey = key;
         int pos = -1;
         int metadatapos = find_prefix_pos(cursor, key, keylen, true);
         if (metadatapos == cursor->pfx_size) {
@@ -455,12 +458,11 @@ NodeDB2 *BPTreeDB2::search_leaf_node(NodeDB2 *searchroot, const char *key, int k
         else {
             DB2pfxhead *pfxhead = GetHeaderDB2pfx(cursor, metadatapos);
 
-            int prefixcmp = strncmp(key, PfxOffset(cursor, pfxhead->pfx_offset), pfxhead->pfx_len);
+            int prefixcmp = memcmp(key, PfxOffset(cursor, pfxhead->pfx_offset), sizeof(char) * pfxhead->pfx_len);
             if (prefixcmp != 0) {
                 pos = prefixcmp > 0 ? pfxhead->high + 1 : pfxhead->low;
             }
             else {
-                // searchkey = key.substr(prefix.length());
                 pos = search_insert_pos(cursor, key + pfxhead->pfx_len, keylen - pfxhead->pfx_len,
                                         pfxhead->low, pfxhead->high, equal);
             }

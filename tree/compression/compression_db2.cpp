@@ -5,16 +5,16 @@ prefixOptimization::prefixOptimization() {
     space_top = 0;
     pfx_top = 0;
     pfx_size = 0;
-    base = NewPage();
-    SetEmptyPage(base);
-    pfxbase = new char[DB2_PFX_MAX_SIZE];
-    memset(pfxbase, 0, DB2_PFX_MAX_SIZE);
+    base = NewPageDB2();
+    SetEmptyPageDB2(base);
+    // pfxbase = new char[DB2_PFX_MAX_SIZE];
+    // memset(pfxbase, 0, DB2_PFX_MAX_SIZE);
     // used = false;
 }
 
 prefixOptimization::~prefixOptimization() {
     delete base;
-    delete pfxbase;
+    // delete pfxbase;
 }
 
 closedRange find_closed_range(prefixOptimization *result,
@@ -43,7 +43,7 @@ int find_prefix_pos(NodeDB2 *cursor, const char *key, int keylen, bool for_inser
         int cur = low + (high - low) / 2;
         DB2pfxhead *pfx = GetHeaderDB2pfx(cursor, cur);
 
-        int prefixcmp = strncmp(key, PfxOffset(cursor, pfx->pfx_offset), pfx->pfx_len);
+        int prefixcmp = memcmp(key, PfxOffset(cursor, pfx->pfx_offset), sizeof(char) * pfx->pfx_len);
         int cmp = prefixcmp;
         if (prefixcmp == 0) {
             DB2head *h_low = GetHeaderDB2(cursor, pfx->low);
@@ -51,8 +51,8 @@ int find_prefix_pos(NodeDB2 *cursor, const char *key, int keylen, bool for_inser
 
             keylen -= pfx->pfx_len;
             const char *key_cutoff = key + pfx->pfx_len;
-            int lowcmp = strncmp(key_cutoff, PageOffset(cursor, h_low->key_offset), keylen);
-            int highcmp = strncmp(key_cutoff, PageOffset(cursor, h_high->key_offset), keylen);
+            int lowcmp = memcmp(key_cutoff, PageOffset(cursor, h_low->key_offset), sizeof(char) * keylen);
+            int highcmp = memcmp(key_cutoff, PageOffset(cursor, h_high->key_offset), sizeof(char) * keylen);
             cmp = (lowcmp >= 0) ^ (highcmp <= 0) ? lowcmp : 0;
         }
         if (cmp == 0)
@@ -68,7 +68,7 @@ int find_prefix_pos(NodeDB2 *cursor, const char *key, int keylen, bool for_inser
     int prevcmp = -1;
     if (high >= 0 && high < cursor->pfx_size) {
         DB2pfxhead *prev_pfx = GetHeaderDB2pfx(cursor, high);
-        prevcmp = strncmp(key, PfxOffset(cursor, prev_pfx->pfx_offset), prev_pfx->pfx_len);
+        prevcmp = memcmp(key, PfxOffset(cursor, prev_pfx->pfx_offset), sizeof(char) * prev_pfx->pfx_len);
     }
     return prevcmp == 0 ? high : high + 1;
 }
@@ -187,8 +187,8 @@ void merge_prefixes_in_segment(prefixOptimization *result,
 prefixOptimization *prefix_merge(NodeDB2 *node) {
     prefixOptimization *result = new prefixOptimization();
 
-    memcpy(result->base, node->base, sizeof(char) * MAX_SIZE_IN_BYTES);
-    memcpy(result->pfxbase, node->pfxbase, sizeof(char) * DB2_PFX_MAX_SIZE);
+    memcpy(result->base, node->base, sizeof(char) * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE));
+    // memcpy(result->pfxbase, node->pfxbase, sizeof(char) * DB2_PFX_MAX_SIZE);
     result->pfx_size = node->pfx_size;
 
     int nextindex = 1;
@@ -305,8 +305,8 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
         if (firstlow == pfx_i->low && lasthigh == pfx_i_1->high) {
             // cover all keys in p[i] and p[i+1]
             // update pfx_head[i]
-            strncpy(result->pfxbase + result->pfx_top, pfxitem.prefix.addr, pfxitem.prefix.size);
-            (result->pfxbase + result->pfx_top)[pfxitem.prefix.size] = '\0';
+            strncpy(result->base + MAX_SIZE_IN_BYTES + result->pfx_top, pfxitem.prefix.addr, pfxitem.prefix.size);
+            (result->base + MAX_SIZE_IN_BYTES + result->pfx_top)[pfxitem.prefix.size] = '\0';
             pfx_i->pfx_offset = result->pfx_top;
             pfx_i->pfx_len = pfxitem.prefix.size;
             pfx_i->low = pfxitem.low;
@@ -324,8 +324,8 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
             // cover all keys in p[i+1]
             pfx_i->high = firstlow - 1;
             // update pfx_head[i]
-            strncpy(result->pfxbase + result->pfx_top, pfxitem.prefix.addr, pfxitem.prefix.size);
-            (result->pfxbase + result->pfx_top)[pfxitem.prefix.size] = '\0';
+            strncpy(result->base + MAX_SIZE_IN_BYTES + result->pfx_top, pfxitem.prefix.addr, pfxitem.prefix.size);
+            (result->base + MAX_SIZE_IN_BYTES + result->pfx_top)[pfxitem.prefix.size] = '\0';
             pfx_i_1->pfx_offset = result->pfx_top;
             pfx_i_1->pfx_len = pfxitem.prefix.size;
             pfx_i_1->low = pfxitem.low;
@@ -336,8 +336,8 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
         else if (firstlow == pfx_i->low && lasthigh < pfx_i_1->high) {
             // cover all keys in p[i]
             // update pfx_head[i]
-            strncpy(result->pfxbase + result->pfx_top, pfxitem.prefix.addr, pfxitem.prefix.size);
-            (result->pfxbase + result->pfx_top)[pfxitem.prefix.size] = '\0';
+            strncpy(result->base + MAX_SIZE_IN_BYTES + result->pfx_top, pfxitem.prefix.addr, pfxitem.prefix.size);
+            (result->base + MAX_SIZE_IN_BYTES + result->pfx_top)[pfxitem.prefix.size] = '\0';
             pfx_i->pfx_offset = result->pfx_top;
             pfx_i->pfx_len = pfxitem.prefix.size;
             pfx_i->low = pfxitem.low;
@@ -354,8 +354,8 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
             for (int i = result->pfx_size; i > index + 1; i--) {
                 memcpy(GetPfxInPageDB2(result, i), GetPfxInPageDB2(result, i - 1), sizeof(DB2pfxhead));
             }
-            strncpy(result->pfxbase + result->pfx_top, pfxitem.prefix.addr, pfxitem.prefix.size);
-            (result->pfxbase + result->pfx_top)[pfxitem.prefix.size] = '\0';
+            strncpy(result->base + MAX_SIZE_IN_BYTES + result->pfx_top, pfxitem.prefix.addr, pfxitem.prefix.size);
+            (result->base + MAX_SIZE_IN_BYTES + result->pfx_top)[pfxitem.prefix.size] = '\0';
             pfx_i_1->pfx_offset = result->pfx_top;
             pfx_i_1->pfx_len = pfxitem.prefix.size;
             pfx_i_1->low = pfxitem.low;
@@ -375,8 +375,8 @@ prefixOptimization *prefix_expand(NodeDB2 *node) {
     int nextprefix = 0;
     prefixOptimization *result = new prefixOptimization();
 
-    memcpy(result->base, node->base, sizeof(char) * MAX_SIZE_IN_BYTES);
-    memcpy(result->pfxbase, node->pfxbase, sizeof(char) * DB2_PFX_MAX_SIZE);
+    memcpy(result->base, node->base, sizeof(char) * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE));
+    // memcpy(result->pfxbase, node->pfxbase, sizeof(char) * DB2_PFX_MAX_SIZE);
     result->pfx_size = node->pfx_size;
     // copy pfx_top, because the prefix can be extended in prefix expand
     result->pfx_top = node->pfx_top;
@@ -405,10 +405,10 @@ void apply_prefix_optimization(NodeDB2 *node) {
         DB2pfxhead *pfxhead = GetHeaderDB2pfx(node, 0);
 
         // vector<Key_c> newkeys;
-        char *newbase = NewPage();
-        char *newpfxbase = new char[DB2_PFX_MAX_SIZE];
-        SetEmptyPage(newbase);
-        memset(newpfxbase, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
+        char *newbase = NewPageDB2();
+        // char *newpfxbase = new char[DB2_PFX_MAX_SIZE];
+        SetEmptyPageDB2(newbase);
+        // memset(newpfxbase, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
         int memusage = 0, pfx_top = 0;
         int pfx_size = 0;
 
@@ -458,7 +458,7 @@ void apply_prefix_optimization(NodeDB2 *node) {
                 pfxitem.high++;
             }
             else {
-                WritePfxDB2Page(newpfxbase, pfx_top, pfxitem, pfx_size);
+                WritePfxDB2Page(newbase, pfx_top, pfxitem, pfx_size);
 
                 pfxitem.prefix.addr = PfxOffset(node, pfxhead->pfx_offset);
                 pfxitem.prefix.size = pfxhead->pfx_len;
@@ -474,12 +474,12 @@ void apply_prefix_optimization(NodeDB2 *node) {
             WriteKeyDB2Page(newbase, memusage, node->size - 1,
                             PageOffset(node, head_last->key_offset), head_last->key_len, 0);
         }
-        WritePfxDB2Page(newpfxbase, pfx_top, pfxitem, pfx_size);
+        WritePfxDB2Page(newbase, pfx_top, pfxitem, pfx_size);
 
         node->space_top = memusage;
         node->pfx_top = pfx_top;
         node->pfx_size = pfx_size;
-        UpdatePfx(node, newpfxbase);
+        // UpdatePfx(node, newpfxbase);
         UpdateBase(node, newbase);
     }
     else {
@@ -489,10 +489,10 @@ void apply_prefix_optimization(NodeDB2 *node) {
             // Do prefix_expand
             // cout << "expand" << endl;
             int new_top = 0, new_pfx_top = 0;
-            char *buf = NewPage();
-            char *newpfx = new char[DB2_PFX_MAX_SIZE];
-            memset(newpfx, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
-            SetEmptyPage(buf);
+            char *buf = NewPageDB2();
+            // char *newpfx = new char[DB2_PFX_MAX_SIZE];
+            // memset(newpfx, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
+            SetEmptyPageDB2(buf);
 
             // Update the key metadata
             for (int i = 0; i < node->size; i++) {
@@ -506,8 +506,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
             // Update the prefix metadata
             for (int i = 0; i < expand->pfx_size; i++) {
                 DB2pfxhead *p_i = GetPfxInPageDB2(expand, i);
-                DB2pfxhead *newhead = (DB2pfxhead *)(newpfx + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead));
-                strcpy(newpfx + new_pfx_top, GetPfxDB2(expand, p_i->pfx_offset));
+                DB2pfxhead *newhead = (DB2pfxhead *)(buf + MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead));
+                strcpy(buf + MAX_SIZE_IN_BYTES + new_pfx_top, GetPfxDB2(expand, p_i->pfx_offset));
                 newhead->low = p_i->low;
                 newhead->high = p_i->high;
                 newhead->pfx_len = p_i->pfx_len;
@@ -518,16 +518,16 @@ void apply_prefix_optimization(NodeDB2 *node) {
             node->pfx_size = expand->pfx_size;
             node->space_top = new_top;
             UpdateBase(node, buf);
-            UpdatePfx(node, newpfx);
+            // UpdatePfx(node, newpfx);
         }
         else {
             // Do prefix_merge
             // cout << "merge" << endl;
             int new_top = 0, new_pfx_top = 0;
-            char *buf = NewPage();
-            char *newpfx = new char[DB2_PFX_MAX_SIZE];
-            memset(newpfx, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
-            SetEmptyPage(buf);
+            char *buf = NewPageDB2();
+            // char *newpfx = new char[DB2_PFX_MAX_SIZE];
+            // memset(newpfx, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
+            SetEmptyPageDB2(buf);
 
             uint8_t oldpfx_idx[node->size];
             // Track their old prefix_idx
@@ -553,8 +553,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
             // Update the prefix metadata
             for (int i = 0; i < merge->pfx_size; i++) {
                 DB2pfxhead *p_i = GetPfxInPageDB2(merge, i);
-                DB2pfxhead *newhead = (DB2pfxhead *)(newpfx + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead));
-                strcpy(newpfx + new_pfx_top, GetPfxDB2(expand, p_i->pfx_offset));
+                DB2pfxhead *newhead = (DB2pfxhead *)(buf + MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead));
+                strcpy(buf + MAX_SIZE_IN_BYTES + new_pfx_top, GetPfxDB2(expand, p_i->pfx_offset));
                 memcpy(newhead, p_i, sizeof(DB2pfxhead));
                 newhead->pfx_offset = new_pfx_top;
                 new_pfx_top += p_i->pfx_len + 1;
@@ -564,7 +564,7 @@ void apply_prefix_optimization(NodeDB2 *node) {
             UpdateBase(node, buf);
             node->pfx_size = merge->pfx_size;
             node->pfx_top = new_pfx_top;
-            UpdatePfx(node, newpfx);
+            // UpdatePfx(node, newpfx);
         }
         delete expand;
         delete merge;

@@ -120,7 +120,7 @@ public:
     int size;
     int pfx_size;
     char *base;
-    char *pfxbase;
+    // char *pfxbase;
     uint16_t space_top;
     uint16_t pfx_top;
     vector<NodeDB2 *> ptrs;

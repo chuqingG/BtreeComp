@@ -81,11 +81,11 @@ NodeDB2::NodeDB2() {
     prev = nullptr;
     next = nullptr;
     ptr_cnt = 0;
-    base = NewPage();
-    SetEmptyPage(base);
-    pfxbase = new char[DB2_PFX_MAX_SIZE];
-    memset(pfxbase, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
-
+    base = NewPageDB2();
+    SetEmptyPageDB2(base);
+    // pfxbase = new char[DB2_PFX_MAX_SIZE];
+    // memset(pfxbase, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
+    IS_LEAF = true;
     space_top = 0;
     pfx_top = 0;
 
@@ -95,7 +95,7 @@ NodeDB2::NodeDB2() {
 
 // Destructor of NodeDB2
 NodeDB2::~NodeDB2() {
-    delete pfxbase;
+    // delete pfxbase;
     delete base;
 }
 

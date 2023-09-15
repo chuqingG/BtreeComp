@@ -14,10 +14,15 @@
         node->base = newbase;     \
     }
 
-#define UpdatePfx(node, newpfx) \
-    {                           \
-        delete node->pfxbase;   \
-        node->pfxbase = newpfx; \
+// #define UpdatePfx(node, newpfx) \
+//     {                           \
+//         delete node->pfxbase;   \
+//         node->pfxbase = newpfx; \
+//     }
+#define UpdatePfx(node, newpfx)                                            \
+    {                                                                      \
+        strncpy(node->base + MAX_SIZE_IN_BYTES, newpfx, DB2_PFX_MAX_SIZE); \
+        delete newpfx;                                                     \
     }
 
 #define UpdatePtrs(node, newptrs, num)  \
@@ -68,26 +73,29 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint8
         newhead->key_len = oldhead->key_len - cutoff;
         newhead->key_offset = top;
         top += newhead->key_len + 1;
-        if (newhead->key_len > 32)
-            cout << "wrong update" << endl;
+        // if (newhead->key_len > 32)
+        //     cout << "wrong update" << endl;
     }
 }
 
 /*
 ===============For DB2=============
 */
-#define GetKeyDB2(result, off) (char *)(result->base + off)
-#define GetPfxDB2(result, off) (char *)(result->pfxbase + off)
-#define GetHeaderInPageDB2(result, i) (DB2head *)(result->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(DB2head))
-#define GetPfxInPageDB2(result, i) (DB2pfxhead *)(result->pfxbase + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead))
+#define NewPageDB2() (char *)malloc((MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE) * sizeof(char))
+#define SetEmptyPageDB2(p) memset(p, 0, sizeof(char) * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE))
 
-#define PfxTop(nptr) (nptr->pfxbase + nptr->pfx_top)
+#define GetKeyDB2(result, off) (char *)(result->base + off)
+#define GetPfxDB2(result, off) (char *)(result->base + MAX_SIZE_IN_BYTES + off)
+#define GetHeaderInPageDB2(result, i) (DB2head *)(result->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(DB2head))
+#define GetPfxInPageDB2(result, i) (DB2pfxhead *)(result->base + (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE) - (i + 1) * sizeof(DB2pfxhead))
+
+#define PfxTop(nptr) (nptr->base + MAX_SIZE_IN_BYTES + nptr->pfx_top)
 
 #define GetHeaderDB2(nptr, i) (DB2head *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(DB2head))
 
-#define GetHeaderDB2pfx(nptr, i) (DB2pfxhead *)(nptr->pfxbase + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead))
+#define GetHeaderDB2pfx(nptr, i) (DB2pfxhead *)(nptr->base + MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead))
 
-#define PfxOffset(node, off) (char *)(node->pfxbase + off)
+#define PfxOffset(node, off) (char *)(node->base + MAX_SIZE_IN_BYTES + off)
 
 inline void InsertPfxDB2(NodeDB2 *nptr, int pos, const char *p, uint8_t plen, uint8_t low, uint8_t high) {
     strcpy(PfxTop(nptr), p);
@@ -143,16 +151,17 @@ inline void CopyToNewPageDB2(NodeDB2 *nptr, int low, int high, char *newbase, ui
     }
 
 // Only write to the end of prefix page
-#define WritePfxDB2Page(pfxbase, pfxtop, pfxitem, pfxsize)                                                  \
-    {                                                                                                       \
-        strcpy(pfxbase + pfxtop, pfxitem.prefix.addr);                                                      \
-        DB2pfxhead *head = (DB2pfxhead *)(pfxbase + DB2_PFX_MAX_SIZE - (pfxsize + 1) * sizeof(DB2pfxhead)); \
-        head->pfx_offset = pfx_top;                                                                         \
-        head->pfx_len = pfxitem.prefix.size;                                                                \
-        head->low = pfxitem.low;                                                                            \
-        head->high = pfxitem.high;                                                                          \
-        pfxtop += pfxitem.prefix.size + 1;                                                                  \
-        pfxsize++;                                                                                          \
+// the input pfxbase mush be based on node->base + max_size_in_byte
+#define WritePfxDB2Page(base, pfxtop, pfxitem, pfxsize)                                                                      \
+    {                                                                                                                        \
+        strcpy(base + MAX_SIZE_IN_BYTES + pfxtop, pfxitem.prefix.addr);                                                      \
+        DB2pfxhead *head = (DB2pfxhead *)(base + MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE - (pfxsize + 1) * sizeof(DB2pfxhead)); \
+        head->pfx_offset = pfx_top;                                                                                          \
+        head->pfx_len = pfxitem.prefix.size;                                                                                 \
+        head->low = pfxitem.low;                                                                                             \
+        head->high = pfxitem.high;                                                                                           \
+        pfxtop += pfxitem.prefix.size + 1;                                                                                   \
+        pfxsize++;                                                                                                           \
     }
 /*
 ===============For WiredTiger=============

@@ -14,7 +14,7 @@ int prefix_compression_min = 1;
 uint8_t compute_prefix_wt(string prev_key, string key);
 uint8_t compute_prefix_wt(string prev_key, string key, uint8_t prev_pfx);
 // string initialize_prefix_compressed_key(NodeWT *node, int ind);
-Item get_full_key(NodeWT *node, int slot);
+void get_full_key(NodeWT *node, int slot, Item &key);
 // Item extract_key(NodeWT *node, int ind, bool non_leaf);
 // void build_page_prefixes(NodeWT *node, int pos, string key_at_pos);
 // void record_page_prefix_group(NodeWT *node);

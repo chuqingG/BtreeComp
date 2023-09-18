@@ -186,7 +186,8 @@ string get_full_key(NodeWT *node, int slot) {
 
 #else // no wt cache
 
-void scan_to_get_full_key_new(NodeWT *node, int ind, Item &key) {
+#ifdef WT_OPTIM
+void scan_to_get_full_key(NodeWT *node, int ind, Item &key) {
     enum {
         FORWARD,
         BACKWARD
@@ -297,7 +298,7 @@ void scan_to_get_full_key_new(NodeWT *node, int ind, Item &key) {
     return;
 }
 
-void get_full_key_new(NodeWT *node, int idx, Item &key) {
+void get_full_key(NodeWT *node, int idx, Item &key) {
     WThead *header = GetHeaderWT(node, idx);
     key.addr = PageOffset(node, header->key_offset);
     key.size = header->key_len;
@@ -318,11 +319,11 @@ void get_full_key_new(NodeWT *node, int idx, Item &key) {
         // cout << newbuf << endl;
     }
     else {
-        scan_to_get_full_key_new(node, idx, key);
+        scan_to_get_full_key(node, idx, key);
     }
     return;
 }
-
+#else
 // Store the decompressed key into key
 void get_full_key(NodeWT *node, int idx, Item &key) {
     WThead *header = GetHeaderWT(node, idx);
@@ -354,6 +355,8 @@ void get_full_key(NodeWT *node, int idx, Item &key) {
     return;
 }
 #endif
+
+#endif // end if wt cache
 
 // // finish
 // Item extract_key(NodeWT *node, int idx, bool non_leaf_comp) {

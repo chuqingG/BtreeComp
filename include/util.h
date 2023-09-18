@@ -84,19 +84,24 @@ void read_dataset(vector<string> &values, string filename, int max_number = -1) 
     in.close();
 }
 
-int read_dataset_char(vector<char *> &values, string filename, int max_number = -1) {
+int read_dataset_char(vector<char *> &values, string filename, int max_keylen, int max_number = -1) {
     cout << "----- Processing file ----- " << filename << endl;
     std::ifstream in(filename);
     int max_length = 0;
     int counter = 0;
     if (max_number < 0)
         max_number = INT_MAX;
+    if (max_keylen == 0)
+        max_keylen = INT_MAX;
     while (counter < max_number) {
         string str;
         std::getline(in, str);
         int len = str.size();
-        char *cptr = new char[len + 1];
-        strcpy(cptr, str.data());
+        int real_len = min(len, max_keylen);
+        char *cptr = new char[real_len + 1];
+        // strcpy(cptr, str.data());
+        strncpy(cptr, str.data(), real_len);
+        cptr[real_len] = '\0';
 
         if (len > 0) {
             values.push_back(cptr);
@@ -190,7 +195,7 @@ inline std::string FormatStatistic(const double n) {
     return s.str();
 }
 
-string generate_output_path(char *dataset, int number, int iter, int thread_num) {
+string generate_output_path(char *dataset, int number, int iter, int thread_num, int keylen) {
     // thread=0 for single thread, thread=1 for single thread with lock
     string res;
     char temp[64];
@@ -215,10 +220,10 @@ string generate_output_path(char *dataset, int number, int iter, int thread_num)
             out[20] = '\0';
         }
 
-        sprintf(temp, "../output/%s_%d_i%d_t%d_ns%d", out, number, iter, thread_num, MAX_SIZE_IN_BYTES);
+        sprintf(temp, "../output/%s_%d_i%d_t%d_ns%d_kl%d", out, number, iter, thread_num, MAX_SIZE_IN_BYTES, keylen);
     }
     else {
-        sprintf(temp, "../output/default_%d_i%d_t%d_ns%d", number, iter, thread_num, MAX_SIZE_IN_BYTES);
+        sprintf(temp, "../output/default_%d_i%d_t%d_ns%d_kl%d", number, iter, thread_num, MAX_SIZE_IN_BYTES, keylen);
     }
     res = temp;
     return res;

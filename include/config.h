@@ -9,6 +9,7 @@
 #define CHARALL
 #define SINGLE_DEBUG
 #define VERBOSE_PRINT // enable to write some intermediate results to output file (if set -o)
+// #define WT_OPTIM   // enable for prefixstart
 // #define WTCACHE
 // #define DUPKEY
 // #define TOFIX  // enable to fix some skipped problem
@@ -20,7 +21,7 @@
 #define SPLIT_LIMIT 16        // suggest to be >= 32 for safety on db2
 #define TAIL_SPLIT_WIDTH (1 / 6)
 #define DEFAULT_DATASET_SIZE 100000
-#define APPROX_KEY_SIZE 32
+#define APPROX_KEY_SIZE 64
 
 #define PKB_LEN 2
 // Be careful when key length is variable,

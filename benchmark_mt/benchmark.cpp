@@ -368,10 +368,11 @@ void RunBenchmark() {
         int max_data_length;
         if (key_numbers) {
             // cutoff on the whole dataset
-            max_data_length = read_dataset_char(allvalues, dataset_file_name, key_numbers);
+            // TODO: add keylen here
+            max_data_length = read_dataset_char(allvalues, dataset_file_name, 0, key_numbers);
         }
         else {
-            max_data_length = read_dataset_char(allvalues, dataset_file_name);
+            max_data_length = read_dataset_char(allvalues, dataset_file_name, 0);
             key_numbers = allvalues.size();
         }
 #ifdef THREAD_DEBUG
@@ -482,7 +483,7 @@ int main(int argc, char *argv[]) {
     if (output_file_arg != nullptr) {
         const string output_path_str{output_file_arg};
         if (output_path_str == "auto") {
-            output_path = generate_output_path(datasets_arg, key_numbers, iterations, thread_num);
+            output_path = generate_output_path(datasets_arg, key_numbers, iterations, thread_num, 0); // 0 is place holder
         }
         else {
             output_path = output_path_str;

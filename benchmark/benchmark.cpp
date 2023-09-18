@@ -40,6 +40,7 @@ string dataset_file_name = "";
 string output_path = "";
 bool write_to_file = false;
 int column_num = 0;
+uint16_t max_keylen = 0;
 
 const std::map<BenchmarkTypes, std::string> benchmarkStrMap{
     {BenchmarkTypes::INSERT, "insert"},
@@ -54,14 +55,14 @@ const std::map<std::string, BenchmarkTypes> strBenchmarksMap{
     {"backward", BenchmarkTypes::BACKWARDSCAN}};
 
 const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
-    // {"Btree-Std", new BPTreeStdBenchmark()},
-    // {"Btree-Head", new BPTreeHeadCompBenchmark()},
-    // {"Btree-Tail", new BPTreeTailCompBenchmark()},
-    // {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
+    {"Btree-Std", new BPTreeStdBenchmark()},
+    {"Btree-Head", new BPTreeHeadCompBenchmark()},
+    {"Btree-Tail", new BPTreeTailCompBenchmark()},
+    {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
     {"Btree-WT", new BPTreeWTBenchmark()},
-    // {"Btree-My", new BPTreeMyISAMBenchmark()},
-    // {"Btree-PkB", new BPTreePkBBenchmark()},
-    // {"Btree-DB2", new BPTreeDB2Benchmark()},
+    {"Btree-My", new BPTreeMyISAMBenchmark()},
+    {"Btree-PkB", new BPTreePkBBenchmark()},
+    {"Btree-DB2", new BPTreeDB2Benchmark()},
 };
 
 auto RunBenchmarkIteration(std::vector<char *> values,
@@ -397,10 +398,10 @@ void RunBenchmark() {
         if (key_numbers) {
             // cutoff on the whole dataset
             max_data_length =
-                read_dataset_char(allvalues, dataset_file_name, key_numbers);
+                read_dataset_char(allvalues, dataset_file_name, max_keylen, key_numbers);
         }
         else {
-            max_data_length = read_dataset_char(allvalues, dataset_file_name);
+            max_data_length = read_dataset_char(allvalues, dataset_file_name, max_keylen);
             key_numbers = allvalues.size();
         }
 #ifdef SINGLE_DEBUG
@@ -459,6 +460,7 @@ int main(int argc, char *argv[]) {
     char *iterations_arg = GetCmdArg(argv, argv + argc, "-i");
     char *datasets_arg = GetCmdArg(argv, argv + argc, "-d");
     char *output_file_arg = GetCmdArg(argv, argv + argc, "-o");
+    char *keylen_arg = GetCmdArg(argv, argv + argc, "-l");
 
     if (benchmark_arg == nullptr || (datasets_arg == nullptr && size_arg == nullptr)) {
         perror("invalid args");
@@ -470,6 +472,11 @@ int main(int argc, char *argv[]) {
     if (size_arg != nullptr) {
         const string size_str{size_arg};
         key_numbers = std::stoul(size_str);
+    }
+
+    if (keylen_arg != nullptr) {
+        const string keylen_str{keylen_arg};
+        max_keylen = std::stoul(keylen_str);
     }
 
     if (iterations_arg != nullptr) {
@@ -497,7 +504,7 @@ int main(int argc, char *argv[]) {
         const string output_path_str{output_file_arg};
         if (output_path_str == "auto") {
             output_path =
-                generate_output_path(datasets_arg, key_numbers, iterations, 0);
+                generate_output_path(datasets_arg, key_numbers, iterations, 0, max_keylen);
         }
         else {
             output_path = output_path_str;

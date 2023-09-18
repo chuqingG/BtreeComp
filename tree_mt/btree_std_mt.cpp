@@ -599,7 +599,7 @@ Node *BPTreeMT::search_leaf_node(Node *searchroot, const char *key, int keylen) 
 
     Node *cursor = searchroot;
 
-    // cursor->lock(READ);
+    cursor->lock(READ);
     // Till we reach leaf node
     while (!cursor->IS_LEAF) {
         int pos;
@@ -612,8 +612,8 @@ Node *BPTreeMT::search_leaf_node(Node *searchroot, const char *key, int keylen) 
         }
 
         Node *nextptr = cursor->ptrs[pos];
-        // cursor->unlock(READ);
-        // nextptr->lock(READ);
+        cursor->unlock(READ);
+        nextptr->lock(READ);
         cursor = nextptr;
     }
     return cursor;

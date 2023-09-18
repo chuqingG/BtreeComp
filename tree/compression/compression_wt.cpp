@@ -186,150 +186,142 @@ string get_full_key(NodeWT *node, int slot) {
 
 #else // no wt cache
 
-// Item initialize_prefix_compressed_key_copy(NodeWT *node, int ind) {
-//     enum {
-//         FORWARD,
-//         BACKWARD
-//     } direction;
-//     Item fullkey, orikey;
+void scan_to_get_full_key_new(NodeWT *node, int ind, Item &key) {
+    enum {
+        FORWARD,
+        BACKWARD
+    } direction;
+    u_int jump_slot_offset = 0;
+    uint8_t last_prefix = 0;
+    uint8_t key_prefix = 0;
+    char *group_key;
+    uint8_t group_len;
+    char *key_data;
+    uint8_t key_len;
 
-//     u_int jump_slot_offset = 0;
-//     uint8_t last_prefix = 0;
-//     uint8_t key_prefix = 0;
-//     char* key_data;
-//     // string group_key;
-//     bool isinitialized;
+    direction = BACKWARD;
+    u_int slot_offset;
+    u_int rip = ind;
+    u_int jump_rip = 0;
 
-//     direction = BACKWARD;
-//     u_int slot_offset;
-//     u_int rip = ind;
-//     u_int jump_rip = 0;
+    // string keyb;
 
-//     // string keyb;
-//     WThead *header;
+    for (slot_offset = 0;;) {
+        if (0) {
+        switch_and_jump:
+            /* Switching to a forward roll. */
+            direction = FORWARD;
 
-//     for (slot_offset = 0;;) {
-//         if (0) {
-//         switch_and_jump:
-//             /* Switching to a forward roll. */
-//             direction = FORWARD;
+            /* Skip list of keys with compatible prefixes. */
+            rip = jump_rip;
+            slot_offset = jump_slot_offset;
+        }
 
-//             /* Skip list of keys with compatible prefixes. */
-//             rip = jump_rip;
-//             slot_offset = jump_slot_offset;
-//         }
+    overflow_retry:
+        // key_prefix = node->keys.at(rip).prefix;
+        // key_data = node->keys.at(rip).value;
+        WThead *head_rip = GetHeaderWT(node, rip);
+        key_prefix = head_rip->pfx_len;
+        key_data = PageOffset(node, head_rip->key_offset);
+        key_len = head_rip->key_len;
 
-//     overflow_retry:
+        if (key_prefix == 0) {
+            // keyb = key_data;
+            key.addr = key_data;
+            key.size = key_len;
+        }
+        else
+            goto prefix_continue;
 
-//         header = GetHeaderWT(node, rip);
-//         orikey.addr = PageOffset(node, header->key_offset);
-//         orikey.size = header->key_len;
-//         key_prefix = header->pfx_len;
-//         // key_prefix = node->keys.at(rip).prefix;
-//         // key_data = node->keys.at(rip).value;
+        if (slot_offset == 0) {
+            return;
+        }
+        goto switch_and_jump;
 
-//         // We remove initialized value here, so just do it
-//         if (key_prefix == 0) {
-//             fullkey = orikey;
-//             // keyb = key_data;
-//         }
-//         else
-//             goto prefix_continue;
-//         if (slot_offset == 0)
-//             return (fullkey);
-//         goto switch_and_jump;
+    prefix_continue:
+        if (rip > node->prefixstart && rip <= node->prefixstop) {
+            WThead *h_group = GetHeaderWT(node, node->prefixstart);
+            char *newbuf = new char[key_prefix + key_len + 1];
+            strncpy(newbuf, PageOffset(node, h_group->key_offset), key_prefix);
+            strcpy(newbuf + key_prefix, key_data);
+            key.addr = newbuf;
+            key.size = key_prefix + key_len;
+            key.newallocated = true;
+            // group_key = node->keys.at(node->prefixstart).value;
+            // string prefixstr = group_key.substr(0, key_prefix);
+            // keyb = prefixstr + key_data;
+            if (slot_offset == 0)
+                return;
+            goto switch_and_jump;
+        }
 
-//     prefix_continue:
-//         /*
-//          * Proceed with a prefix-compressed key.
-//          *
-//          * Prefix compression means we don't yet have a key, but there's a special case: if the key
-//          * is part of the group of compressed key prefixes we saved when reading the page into
-//          * memory, we can build a key for this slot. Otherwise we have to keep rolling forward or
-//          * backward.
-//          */
-//         if (rip > node->prefixstart && rip <= node->prefixstop) {
-//             /*
-//              * Get the root key's information (the row-store key can change underfoot; explicitly
-//              * take a copy). Ignore the root key's size and prefix information because it must be
-//              * large enough (else the current key couldn't have been prefix-compressed based on its
-//              * value), and it can't have a prefix-compression value, it's a root key which is never
-//              * prefix-compressed.
-//              */
-//             header = GetHeaderWT(node, node->prefixstart);
-//             ;
-//             char* newbuf = new char[orikey.size + key_prefix + 1];
-//             strncpy(newbuf, PageOffset(node, header->key_offset), key_prefix);
-//             strcpy(newbuf + key_prefix, orikey.addr);
-//             fullkey.addr = newbuf;
-//             fullkey.size = key_prefix + orikey.size;
-//             fullkey.newallocated = true;
+        if (direction == BACKWARD) {
+            if (slot_offset == 0)
+                last_prefix = key_prefix;
+            if (slot_offset == 0 || last_prefix > key_prefix) {
+                jump_rip = rip;
+                jump_slot_offset = slot_offset;
+                last_prefix = key_prefix;
+            }
+        }
 
-//             // group_key = node->keys.at(node->prefixstart).value;
-//             // string prefixstr = group_key.substr(0, key_prefix);
-//             // keyb = prefixstr + key_data;
+        if (direction == FORWARD) {
+            char *newbuf = new char[key_prefix + key_len + 1];
+            strncpy(newbuf, key.addr, key_prefix);
+            strcpy(newbuf + key_prefix, key_data);
+            key.addr = newbuf;
+            key.size = key_prefix + key_len;
+            key.newallocated = true;
+            // keyb = keyb.substr(0, key_prefix) + key_data;
+            if (slot_offset == 0)
+                break;
+        }
 
-//             /* If this is the key we originally wanted, we don't care if we're rolling forward
-//              * or backward, it's what we want.
-//              * The key doesn't need to be instantiated, just return.
-//              */
-//             if (slot_offset == 0)
-//                 return (fullkey);
-//             goto switch_and_jump;
-//         }
-//         /*
-//          * 5: an on-page reference to a key that's prefix compressed.
-//          * If rolling backward, keep looking for something we can use.
-//          * If rolling forward, build the full key and keep rolling forward.
-//          */
-//         if (direction == BACKWARD) {
-//             /*
-//              * If there's a set of keys with identical prefixes, we don't want to instantiate each
-//              * one, the prefixes are all the same.
-//              *
-//              * As we roll backward through the page, track the last time the prefix decreased in
-//              * size, so we can start with that key during our roll-forward. For a page populated
-//              * with a single key prefix, we'll be able to instantiate the key we want as soon as we
-//              * find a key without a prefix.
-//              */
+    next:
+        switch (direction) {
+        case BACKWARD:
+            --rip;
+            ++slot_offset;
+            break;
+        case FORWARD:
+            ++rip;
+            --slot_offset;
+            break;
+        }
+    }
 
-//             // if (slot_offset == 0)
-//             //     last_prefix = key_prefix;
+    // Initialize the key
+    // node->keys.at(ind).isinitialized = true;
+    // node->keys.at(ind).initialized_value = keyb;
+    // return keyb;
+    return;
+}
 
-//             // The first key, or the one prefix_len shrinks
-//             if (slot_offset == 0 || last_prefix > key_prefix) {
-//                 jump_rip = rip;
-//                 jump_slot_offset = slot_offset;
-//                 last_prefix = key_prefix;
-//             }
-//         }
+void get_full_key_new(NodeWT *node, int idx, Item &key) {
+    WThead *header = GetHeaderWT(node, idx);
+    key.addr = PageOffset(node, header->key_offset);
+    key.size = header->key_len;
+    int pfx_len = header->pfx_len;
 
-//         if (direction == FORWARD) {
-
-//             keyb = keyb.substr(0, key_prefix) + key_data;
-
-//             if (slot_offset == 0)
-//                 break;
-//         }
-
-//     next:
-//         switch (direction) {
-//         case BACKWARD:
-//             --rip;
-//             ++slot_offset;
-//             break;
-//         case FORWARD:
-//             ++rip;
-//             --slot_offset;
-//             break;
-//         }
-//     }
-
-//     // Initialize the key
-//     node->keys.at(ind).isinitialized = true;
-//     node->keys.at(ind).initialized_value = keyb;
-//     return keyb;
-// }
+    if (key.size != 0 && pfx_len == 0) { // no prefix
+        return;
+    }
+    if (key.size != 0 && node->prefixstart < idx && idx <= node->prefixstop) {
+        WThead *h_group = GetHeaderWT(node, node->prefixstart);
+        char *newbuf = new char[pfx_len + key.size + 1];
+        strncpy(newbuf, PageOffset(node, h_group->key_offset), pfx_len);
+        strcpy(newbuf + pfx_len, key.addr);
+        key.addr = newbuf;
+        key.size += pfx_len;
+        key.newallocated = true;
+        // cout << "(" << unsigned(node->prefixstart) << "," << unsigned(node->prefixstop) << "):" << idx << endl;
+        // cout << newbuf << endl;
+    }
+    else {
+        scan_to_get_full_key_new(node, idx, key);
+    }
+    return;
+}
 
 // Store the decompressed key into key
 void get_full_key(NodeWT *node, int idx, Item &key) {
@@ -470,47 +462,49 @@ void update_next_prefix(NodeWT *node, int pos, char *fullkey_before_pos,
 }
 
 // inmem_row_leaf
-// void record_page_prefix_group(NodeWT *node) {
-//     uint32_t best_prefix_count, best_prefix_start, best_prefix_stop;
-//     uint32_t last_slot, prefix_count, prefix_start, prefix_stop, slot;
-//     uint8_t smallest_prefix;
+void record_page_prefix_group(NodeWT *node) {
+    uint32_t best_prefix_count, best_prefix_start, best_prefix_stop;
+    uint32_t last_slot, prefix_count, prefix_start, prefix_stop, slot;
+    uint8_t smallest_prefix;
 
-//     best_prefix_count = prefix_count = 0;
-//     smallest_prefix = 0;
-//     prefix_start = prefix_stop = 0;
-//     last_slot = 0;
-//     best_prefix_start = best_prefix_stop = 0;
+    best_prefix_count = prefix_count = 0;
+    smallest_prefix = 0;
+    prefix_start = prefix_stop = 0;
+    last_slot = 0;
+    best_prefix_start = best_prefix_stop = 0;
 
-//     for (int slot = 0; slot < node->keys.size(); slot++) {
-//         int prefix = node->keys.at(slot).prefix;
-//         if (prefix == 0) {
-//             /* If the last prefix group was the best, track it. */
-//             if (prefix_count > best_prefix_count) {
-//                 best_prefix_start = prefix_start;
-//                 best_prefix_stop = prefix_stop;
-//                 best_prefix_count = prefix_count;
-//             }
-//             prefix_count = 0;
-//             prefix_start = slot;
-//         }
-//         else {
-//             /* Check for starting or continuing a prefix group. */
-//             if (prefix_count == 0 || (last_slot == slot - 1 && prefix <= smallest_prefix)) {
-//                 smallest_prefix = prefix;
-//                 last_slot = prefix_stop = slot;
-//                 ++prefix_count;
-//             }
-//         }
-//     }
+    for (int slot = 0; slot < node->size; slot++) {
+        WThead *h_slot = GetHeaderWT(node, slot);
+        int prefix = h_slot->pfx_len;
+        // int prefix = node->keys.at(slot).prefix;
+        if (prefix == 0) {
+            /* If the last prefix group was the best, track it. */
+            if (prefix_count > best_prefix_count) {
+                best_prefix_start = prefix_start;
+                best_prefix_stop = prefix_stop;
+                best_prefix_count = prefix_count;
+            }
+            prefix_count = 0;
+            prefix_start = slot;
+        }
+        else {
+            /* Check for starting or continuing a prefix group. */
+            if (prefix_count == 0 || (last_slot == slot - 1 && prefix <= smallest_prefix)) {
+                smallest_prefix = prefix;
+                last_slot = prefix_stop = slot;
+                ++prefix_count;
+            }
+        }
+    }
 
-//     /* If the last prefix group was the best, track it. Save the best prefix group for the page. */
-//     if (prefix_count > best_prefix_count) {
-//         best_prefix_start = prefix_start;
-//         best_prefix_stop = prefix_stop;
-//     }
-//     node->prefixstart = best_prefix_start;
-//     node->prefixstop = best_prefix_stop;
-// }
+    /* If the last prefix group was the best, track it. Save the best prefix group for the page. */
+    if (prefix_count > best_prefix_count) {
+        best_prefix_start = prefix_start;
+        best_prefix_stop = prefix_stop;
+    }
+    node->prefixstart = best_prefix_start;
+    node->prefixstop = best_prefix_stop;
+}
 
 // string promote_key(NodeWT *node, string lastleft, string firstright) {
 //     if (!node->IS_LEAF)

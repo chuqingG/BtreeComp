@@ -200,6 +200,7 @@ public:
             _tree->insert(values[i]);
             // vector<bool> flag(i + 1);
             // _tree->printTree(_tree->getRoot(), flag, true);
+            // _tree->printTree(_tree->getRoot(), flag, false);
         }
         // vector<bool> flag(values.size() * 1.25);
         // _tree->printTree(_tree->getRoot(), flag, true);

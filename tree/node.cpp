@@ -109,10 +109,10 @@ NodeWT::NodeWT() {
     prev = nullptr;
     next = nullptr;
     ptr_cnt = 0;
-#ifdef WTCACHE
+
     prefixstart = 0;
     prefixstop = 0;
-#endif
+
     base = NewPage();
     SetEmptyPage(base);
     space_top = 0;

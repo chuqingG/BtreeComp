@@ -133,34 +133,7 @@ public:
 
 // Key with prefix and suffix encoding
 // Duplicates represented as <key, {rid list}>
-#ifdef DUPKEY
-class KeyMyISAM {
-public:
-    string value;
-    vector<string> ridList;
-    // Using a uchar equivalent from the MyISAM source code
-    u_char *prefix;
-    bool is1Byte;
-    KeyMyISAM(string value, int prefix, int rid);
-    KeyMyISAM(string value, int prefix, vector<string> ridList);
-    int getPrefix();
-    void setPrefix(int prefix);
-    void addRecord(int rid);
-    int getSize();
-};
 
-class NodeMyISAM {
-public:
-    bool IS_LEAF;
-    vector<KeyMyISAM> keys;
-    int size;
-    vector<NodeMyISAM *> ptrs;
-    NodeMyISAM *prev; // Prev node pointer
-    NodeMyISAM *next; // Next node pointer
-    NodeMyISAM();
-    ~NodeMyISAM();
-};
-#else
 struct MyISAMhead {
     uint16_t key_offset;
     uint8_t key_len;
@@ -185,23 +158,6 @@ public:
     NodeMyISAM();
     ~NodeMyISAM();
 };
-#endif
-
-#ifdef DUPKEY
-// Duplicates represented as <key, {rid list}>
-class KeyWT {
-public:
-    string value;
-    vector<string> ridList;
-    uint8_t prefix;
-    bool isinitialized;
-    string initialized_value;
-    KeyWT(string value, uint8_t prefix, int rid);
-    KeyWT(string value, uint8_t prefix, vector<string> ridList);
-    void addRecord(int rid);
-    int getSize();
-};
-#endif
 
 // with no duplicate key
 #ifdef WTCACHE
@@ -228,10 +184,10 @@ public:
     int size; // Total key number
     char *base;
     uint16_t space_top;
-#ifdef WTCACHE
-    uint16_t prefixstart; /* Best page prefix starting slot */
-    uint16_t prefixstop;  /* Maximum slot to which the best page prefix applies */
-#endif
+
+    uint8_t prefixstart; /* Best page prefix starting slot */
+    uint8_t prefixstop;  /* Maximum slot to which the best page prefix applies */
+
     vector<NodeWT *> ptrs;
     NodeWT *prev; // Prev node pointer
     NodeWT *next; // Next node pointer

@@ -140,29 +140,6 @@ void BPTreeDB2::insert_leaf(NodeDB2 *leaf, NodeDB2 **path, int path_level, char 
         bool equal = false;
         // The key was concated inside it
         insertpos = insert_prefix_and_key(leaf, key, keylen, equal);
-#ifndef DUPKEY
-        // Nothing needed
-#else
-        vector<Key_c> allkeys;
-        int rid = rand();
-        if (equal) {
-            allkeys = leaf->keys;
-            allkeys.at(insertpos - 1).addRecord(rid);
-        }
-        else {
-            for (int i = 0; i < insertpos; i++) {
-                allkeys.push_back(leaf->keys.at(i));
-            }
-            allkeys.push_back(Key_c(string_to_char(key), rid));
-            for (int i = insertpos; i < leaf->size; i++) {
-                allkeys.push_back(leaf->keys.at(i));
-            }
-        }
-        leaf->keys = allkeys;
-        if (!equal) {
-            leaf->size = leaf->size + 1;
-        }
-#endif
     }
 }
 
@@ -170,7 +147,6 @@ int BPTreeDB2::insert_prefix_and_key(NodeDB2 *node, const char *key, int keylen,
     // Find a pos, then insert into it
     int pfx_pos = find_prefix_pos(node, key, keylen, true);
     int insertpos;
-    // cout << "insert pfx pos:" << pfx_pos << endl;
     if (pfx_pos == node->pfx_size) {
         // need to add new prefix
         insertpos = node->size;
@@ -181,28 +157,21 @@ int BPTreeDB2::insert_prefix_and_key(NodeDB2 *node, const char *key, int keylen,
         if (strncmp(key, PfxOffset(node, pfxhead->pfx_offset), pfxhead->pfx_len) == 0) {
             insertpos = search_insert_pos(node, key + pfxhead->pfx_len, keylen - pfxhead->pfx_len,
                                           pfxhead->low, pfxhead->high, equal);
-            if (!equal)
-                pfxhead->high += 1;
+            pfxhead->high += 1;
         }
         else {
-            // cout << "I'm here" << endl;
             insertpos = pfxhead->low;
             InsertPfxDB2(node, pfx_pos, "", 0, insertpos, insertpos);
-            // pfxhead->low++;
-            // pfxhead->high++;
         }
-        if (!equal) {
-            for (uint32_t i = pfx_pos + 1; i < node->pfx_size; i++) {
-                DB2pfxhead *head_i = GetHeaderDB2pfx(node, i);
-                head_i->low += 1;
-                head_i->high += 1;
-            }
+        for (uint32_t i = pfx_pos + 1; i < node->pfx_size; i++) {
+            DB2pfxhead *head_i = GetHeaderDB2pfx(node, i);
+            head_i->low += 1;
+            head_i->high += 1;
         }
     }
-    if (!equal) {
-        DB2pfxhead *head = GetHeaderDB2pfx(node, pfx_pos);
-        InsertKeyDB2(node, insertpos, key + head->pfx_len, keylen - head->pfx_len);
-    }
+    DB2pfxhead *head = GetHeaderDB2pfx(node, pfx_pos);
+    InsertKeyDB2(node, insertpos, key + head->pfx_len, keylen - head->pfx_len);
+
     return insertpos;
 }
 
@@ -219,8 +188,6 @@ void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool 
 
     uint16_t l_usage = 0;
 
-    // char *l_pfx = new char[DB2_PFX_MAX_SIZE];
-    // memset(l_pfx, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
     int pfx_top_l = 0;
     int pfx_size_l = 0;
 
@@ -282,7 +249,6 @@ void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool 
     splitprefix.newallocated = true;
 
     // update the prefix area of node
-    // UpdatePfx(node, l_pfx);
     node->pfx_size = pfx_size_l;
     node->pfx_top = pfx_top_l;
 
@@ -335,9 +301,6 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(NodeDB2 *node, int pos, splitReturnDB2 *
     splitkey.newallocated = true;
     strcpy(splitkey.addr, PageOffset(node, head_split->key_offset));
 
-    // cout << "326: " << node->space_top << " " << node->size * sizeof(DB2head) << endl;
-    // cout << "327: " << node->pfx_top << " " << node->pfx_size * sizeof(DB2pfxhead) << endl;
-
     Item split_prefix;
     do_split_node(node, right, split, false, split_prefix);
 
@@ -355,7 +318,6 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(NodeDB2 *node, int pos, splitReturnDB2 *
     strncpy(split_decomp, split_prefix.addr, split_prefix.size);
     strcpy(split_decomp + split_prefix.size, splitkey.addr);
 
-    // newsplit.promotekey = new Data(split_decomp, split_len);
     newsplit.promotekey.addr = split_decomp;
     newsplit.promotekey.size = split_len;
     newsplit.promotekey.newallocated = true;
@@ -371,15 +333,8 @@ splitReturnDB2 BPTreeDB2::split_leaf(NodeDB2 *node, char *newkey, int keylen) {
     right->pfx_size = 0;
     int insertpos;
     bool equal = false;
-    // vector<bool> flag(node->size + 1);
-    // printTree(node, flag, true);
-    // cout << "-------------before insert---------------" << endl;
+
     insertpos = insert_prefix_and_key(node, newkey, keylen, equal);
-    // vector<bool> flag(node->size + 1);
-    // printTree(node, flag, true);
-    // cout << "-------------after insert---------------" << endl;
-    // cout << "381: " << node->space_top << " " << node->size * sizeof(DB2head) << endl;
-    // cout << node->pfx_top << " " << node->pfx_size * sizeof(DB2pfxhead) << endl;
     int split = split_point(node);
 
     Item splitkey;

@@ -59,6 +59,7 @@ Node::Node() {
     highkey->addr = new char[9];
     strcpy(highkey->addr, MAXHIGHKEY);
     highkey->newallocated = true;
+    highkey->size = 8;
     prefix = new Item(true);
 
     prev = nullptr;

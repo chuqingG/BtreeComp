@@ -48,70 +48,69 @@ public:
     }
 };
 
-class BPTreeStdBenchmark : public Benchmark {
+// Changing key word to char...
+class Benchmark_c {
+public:
+    virtual ~Benchmark_c() = default;
+    virtual void InitializeStructure(int thread_num, int col = 1) = 0;
+    virtual void DeleteStructure() = 0;
+    virtual void Insert(const std::vector<char *> &numbers) = 0;
+    virtual bool Search(const std::vector<char *> &numbers) = 0;
+    virtual TreeStatistics CalcStatistics() = 0;
+    int threadPoolSize = 16;
+    int column_num = 1;
+    void set_thread(int n) {
+        threadPoolSize = n;
+    }
+};
+
+class BPTreeStdBenchmark : public Benchmark_c {
 public:
     ~BPTreeStdBenchmark() override {
-        delete tree_;
+        delete _tree;
     }
 
     void InitializeStructure(int thread_num, int col = 1) override {
-#ifdef MULTICOL_COMPRESSION
-        tree_ = new BPTreeMT(col);
-#else
-        tree_ = new BPTreeMT();
-#endif
+        _tree = new BPTreeMT();
         this->set_thread(thread_num);
     }
 
     void DeleteStructure() override {
-        delete tree_;
-        tree_ = nullptr;
+        delete _tree;
+        _tree = nullptr;
     }
 
     void Insert(const vector<char *> &values) override {
-#ifndef MYDEBUG
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] { tree_->insert(values.at(i)); });
+            boost::asio::post(pool, [&, i] {
+                _tree->insert(values.at(i));
+                // vector<bool> flag(i + 1);
+                // _tree->printTree(_tree->getRoot(), flag, true);
+            });
         }
         // Wait for all tasks to be completed
         pool.wait();
         // vector<bool> flag(values.size());
-        // tree_->printTree(tree_->getRoot(), flag, true);
-#else
-        for (uint32_t i = 0; i < values.size(); ++i)
-            tree_->insert(values.at(i));
-            // vector<bool> flag(values.size());
-            // tree_->printTree(tree_->getRoot(), flag, true);
-#endif
+        // tree_->printTree(tree_->getRoot(), flag, true)
     }
 
     bool Search(const std::vector<char *> &values) override {
-#ifndef MYDEBUG
         // create a thread pool with threadPoolSize threads
         boost::asio::thread_pool pool(threadPoolSize);
         atomic<int> non_successful_searches(0);
         for (uint32_t i = 0; i < values.size(); ++i) {
             boost::asio::post(pool, [&, i] {
-                if (tree_->search(values.at(i)) == -1) {
-                    cout << "Failed for " << values.at(i) << endl;
+                if (_tree->search(values.at(i)) == -1) {
+                    // cout << "Failed for " << values.at(i) << endl;
                     non_successful_searches += 1;
                 }
             });
         }
         pool.wait();
         return non_successful_searches == 0;
-#else
-        int non_successful_searches(0);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            if (tree_->search(values.at(i)) == -1) {
-                cout << "Failed for " << values.at(i) << endl;
-                non_successful_searches += 1;
-            }
-        }
-        return non_successful_searches == 0;
-#endif
+
 #ifdef MYDEBUG
         // boost::asio::thread_pool pool(threadPoolSize);
         atomic<int> non_successful_searches(0);
@@ -135,8 +134,8 @@ public:
 
     TreeStatistics CalcStatistics() override {
         TreeStatistics statistics;
-        statistics.height = tree_->getHeight(tree_->getRoot());
-        tree_->getSize(tree_->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
+        statistics.height = _tree->getHeight(_tree->getRoot());
+        _tree->getSize(_tree->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
         cout << "Height of tree " << statistics.height << endl;
         cout << "Num nodes " << statistics.numNodes << endl;
         cout << "Num non-leaf nodes " << statistics.nonLeafNodes << endl;
@@ -147,236 +146,32 @@ public:
         return statistics;
     }
 
-private:
-    BPTreeMT *tree_;
+protected:
+    BPTreeMT *_tree;
 };
 
-class BPTreeHeadCompBenchmark : public Benchmark {
+class BPTreeHeadCompBenchmark : public BPTreeStdBenchmark {
 public:
-    ~BPTreeHeadCompBenchmark() override {
-        delete tree_;
-    }
-
     void InitializeStructure(int thread_num, int col = 1) override {
-#ifdef MULTICOL_COMPRESSION
-        tree_ = new BPTreeMT(col, true, false);
-#else
-        tree_ = new BPTreeMT(true, false);
-#endif
+        _tree = new BPTreeMT(true, false);
         this->set_thread(thread_num);
     }
-
-    void DeleteStructure() override {
-        delete tree_;
-        tree_ = nullptr;
-    }
-
-    void Insert(const vector<char *> &values) override {
-#ifndef MYDEBUG
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] { tree_->insert(values.at(i)); });
-        }
-        // Wait for all tasks to be completed
-        pool.wait();
-        // std::cout << "=========head==============" << std::endl;
-        // vector<bool> flag(values.size());
-        // tree_->printTree(tree_->getRoot(), flag);
-#else
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            tree_->insert(values.at(i));
-            // vector<bool> flag(i+1);
-            // tree_->printTree(tree_->getRoot(), flag, true);
-        }
-        // vector<bool> flag(values.size());
-        std::cout << "=====TREE====" << std::endl;
-        // tree_->printTree(tree_->getRoot(), flag);
-#endif
-    }
-
-    bool Search(const std::vector<char *> &values) override {
-#ifndef MYDEBUG
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_searches(0);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                if (tree_->search(values.at(i)) == -1) {
-                    cout << "Failed for " << values.at(i) << endl;
-                    non_successful_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-#else
-        atomic<int> non_successful_searches(0);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            if (tree_->search(values.at(i)) == -1) {
-                // cout << "Failed for " << values.at(i) << endl;
-                non_successful_searches += 1;
-            }
-        }
-        std::cout << "Errors count: " << non_successful_searches << std::endl;
-#endif
-        return non_successful_searches == 0;
-    }
-
-    TreeStatistics CalcStatistics() override {
-        TreeStatistics statistics;
-        statistics.height = tree_->getHeight(tree_->getRoot());
-        tree_->getSize(tree_->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
-        cout << "Height of tree " << statistics.height << endl;
-        cout << "Num nodes " << statistics.numNodes << endl;
-        cout << "Num non-leaf nodes " << statistics.nonLeafNodes << endl;
-        cout << "Num keys " << statistics.numKeys << endl;
-        cout << "Avg key size based on keys " << statistics.totalKeySize / (double)statistics.numKeys << endl;
-        cout << "Avg prefix size " << statistics.totalPrefixSize / (double)statistics.numKeys << endl;
-        cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
-        return statistics;
-    }
-
-private:
-    BPTreeMT *tree_;
 };
 
-class BPTreeTailCompBenchmark : public Benchmark {
+class BPTreeTailCompBenchmark : public BPTreeStdBenchmark {
 public:
-    ~BPTreeTailCompBenchmark() override {
-        delete tree_;
-    }
-
     void InitializeStructure(int thread_num, int col = 1) override {
-#ifdef MULTICOL_COMPRESSION
-        tree_ = new BPTreeMT(col, false, true);
-#else
-        tree_ = new BPTreeMT(false, true);
-#endif
+        _tree = new BPTreeMT(false, true);
         this->set_thread(thread_num);
     }
-
-    void DeleteStructure() override {
-        delete tree_;
-        tree_ = nullptr;
-    }
-
-    void Insert(const vector<char *> &values) override {
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] { tree_->insert(values.at(i)); });
-        }
-        // Wait for all tasks to be completed
-        pool.wait();
-        // std::cout << "=========tail==============" << std::endl;
-        // vector<bool> flag(values.size());
-        // tree_->printTree(tree_->getRoot(), flag, true);
-    }
-
-    bool Search(const std::vector<char *> &values) override {
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_searches(0);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                if (tree_->search(values.at(i)) == -1) {
-                    cout << "Failed for " << values.at(i) << endl;
-                    non_successful_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_searches == 0;
-    }
-
-
-    TreeStatistics CalcStatistics() override {
-        TreeStatistics statistics;
-        statistics.height = tree_->getHeight(tree_->getRoot());
-        tree_->getSize(tree_->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
-        cout << "Height of tree " << statistics.height << endl;
-        cout << "Num nodes " << statistics.numNodes << endl;
-        cout << "Num non-leaf nodes " << statistics.nonLeafNodes << endl;
-        cout << "Num keys " << statistics.numKeys << endl;
-        cout << "Avg key size based on keys " << statistics.totalKeySize / (double)statistics.numKeys << endl;
-        cout << "Avg prefix size " << statistics.totalPrefixSize / (double)statistics.numKeys << endl;
-        cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
-        return statistics;
-    }
-
-private:
-    BPTreeMT *tree_;
 };
 
-class BPTreeHeadTailCompBenchmark : public Benchmark {
+class BPTreeHeadTailCompBenchmark : public BPTreeStdBenchmark {
 public:
-    ~BPTreeHeadTailCompBenchmark() override {
-        delete tree_;
-    }
-
     void InitializeStructure(int thread_num, int col = 1) override {
-#ifdef MULTICOL_COMPRESSION
-        tree_ = new BPTreeMT(col, true, true);
-#else
-        tree_ = new BPTreeMT(true, true);
-#endif
+        _tree = new BPTreeMT(true, true);
         this->set_thread(thread_num);
     }
-
-    void DeleteStructure() override {
-        delete tree_;
-        tree_ = nullptr;
-    }
-
-    void Insert(const vector<char *> &values) override {
-#ifndef MYDEBUG
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] { tree_->insert(values.at(i)); });
-        }
-        // Wait for all tasks to be completed
-        pool.wait();
-#else
-        for (uint32_t i = 0; i < values.size(); ++i)
-            tree_->insert(values.at(i));
-        vector<bool> flag(values.size());
-        tree_->printTree(tree_->getRoot(), flag, true);
-#endif
-    }
-
-    bool Search(const std::vector<char *> &values) override {
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_searches(0);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                if (tree_->search(values.at(i)) == -1) {
-                    cout << "Failed for " << values.at(i) << endl;
-                    non_successful_searches += 1;
-                }
-            });
-        }
-        pool.wait();
-        return non_successful_searches == 0;
-    }
-
-    TreeStatistics CalcStatistics() override {
-        TreeStatistics statistics;
-        statistics.height = tree_->getHeight(tree_->getRoot());
-        tree_->getSize(tree_->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
-        cout << "Height of tree " << statistics.height << endl;
-        cout << "Num nodes " << statistics.numNodes << endl;
-        cout << "Num non-leaf nodes " << statistics.nonLeafNodes << endl;
-        cout << "Num keys " << statistics.numKeys << endl;
-        cout << "Avg key size based on keys " << statistics.totalKeySize / (double)statistics.numKeys << endl;
-        cout << "Avg prefix size " << statistics.totalPrefixSize / (double)statistics.numKeys << endl;
-        cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
-        return statistics;
-    }
-
-private:
-    BPTreeMT *tree_;
 };
 
 #ifndef CHARALL

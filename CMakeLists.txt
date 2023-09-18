@@ -25,10 +25,10 @@ set(CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE}   -fvisibility=default")
 set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} -fvisibility=default")
 
 add_subdirectory(tree)
-# add_subdirectory(tree_mt)
+add_subdirectory(tree_mt)
 
 add_executable("Benchmark" "benchmark/benchmark.cpp")
-# add_executable("BenchmarkMT" "benchmark_mt/benchmark.cpp")
+add_executable("BenchmarkMT" "benchmark_mt/benchmark.cpp")
 
 target_link_libraries("Benchmark" btree)
-# target_link_libraries("BenchmarkMT" btree_mt)
+target_link_libraries("BenchmarkMT" btree_mt)

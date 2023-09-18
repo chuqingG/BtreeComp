@@ -183,33 +183,7 @@ void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int
         else {
             insertpos = search_insert_pos(leaf, key, keylen, 0, leaf->size - 1, equal);
         }
-#ifdef DUPKEY
-        vector<Key_c> allkeys;
-        int rid = rand();
-        if (equal) {
-            allkeys = leaf->keys;
-            allkeys.at(insertpos - 1).addRecord(rid);
-        }
-        else {
-            for (int i = 0; i < insertpos; i++) {
-                allkeys.push_back(leaf->keys.at(i));
-            }
 
-            char *key_ptr = new char[strlen(key) + 1];
-            if (this->head_comp) {
-                strcpy(key_ptr, key + leaf->prefix.length());
-            }
-            else {
-                strcpy(key_ptr, key);
-            }
-
-            allkeys.push_back(Key_c(key_ptr, rid));
-            for (int i = insertpos; i < leaf->size; i++) {
-                allkeys.push_back(leaf->keys.at(i));
-            }
-        }
-        leaf->keys = allkeys;
-#else
         // always insert no matter equal or not
         if (this->head_comp) {
             char *key_comp = key + leaf->prefix->size;
@@ -218,8 +192,6 @@ void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int
         else {
             InsertKeyStd(leaf, insertpos, key, keylen);
         }
-
-#endif
     }
 }
 
@@ -431,17 +403,12 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     }
 
     // insert the new key into the page for split
-    if (!equal) {
-        if (this->head_comp) {
-            char *key_comp = newkey + node->prefix->size;
-            InsertKeyStd(node, insertpos, key_comp, newkey_len - node->prefix->size);
-        }
-        else {
-            InsertKeyStd(node, insertpos, newkey, newkey_len);
-        }
+    if (this->head_comp) {
+        char *key_comp = newkey + node->prefix->size;
+        InsertKeyStd(node, insertpos, key_comp, newkey_len - node->prefix->size);
     }
     else {
-        // just skip
+        InsertKeyStd(node, insertpos, newkey, newkey_len);
     }
 
     int split = split_point(node);

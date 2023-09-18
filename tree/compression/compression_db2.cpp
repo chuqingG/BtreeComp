@@ -417,8 +417,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
 
         int prevprefix_len = 0;
         bool uninitialized = true;
-
-        for (uint32_t i = 1; i < node->size; i++) {
+        uint32_t i;
+        for (i = 1; i < node->size; i++) {
             // the curprefix doesn't include the original prefix
             DB2head *head_i = GetHeaderDB2(node, i);
             DB2head *head_prev = GetHeaderDB2(node, i - 1);
@@ -449,30 +449,44 @@ void apply_prefix_optimization(NodeDB2 *node) {
             }
             // TODO: After search is right, can change this to >=
             // This cannot be simply change to >= and cut prevprefix_len , may optimize later
-            else if (curprefix_len == prevprefix_len) {
+            else if (curprefix_len >= prevprefix_len) {
                 // Add to the current prefix
 
                 WriteKeyDB2Page(newbase, memusage, i,
                                 PageOffset(node, head_i->key_offset),
-                                head_i->key_len, curprefix_len);
+                                head_i->key_len, prevprefix_len);
                 pfxitem.high++;
             }
             else {
                 WritePfxDB2Page(newbase, pfx_top, pfxitem, pfx_size);
 
-                pfxitem.prefix.addr = PfxOffset(node, pfxhead->pfx_offset);
-                pfxitem.prefix.size = pfxhead->pfx_len;
-                pfxitem.prefix.newallocated = false;
+                // pfxitem.prefix.addr = PfxOffset(node, pfxhead->pfx_offset);
+                // pfxitem.prefix.size = pfxhead->pfx_len;
+                // pfxitem.prefix.newallocated = false;
                 pfxitem.low = i;
                 pfxitem.high = i;
                 uninitialized = true;
+                if (pfx_top + node->pfx_top + (2 + pfx_size) * sizeof(DB2pfxhead) >= DB2_PFX_MAX_SIZE - SPLIT_LIMIT) {
+                    break;
+                }
             }
         }
         if (uninitialized) {
             // The last key hasn't been added, and it doesn't have prefix
-            DB2head *head_last = GetHeaderDB2(node, node->size - 1);
-            WriteKeyDB2Page(newbase, memusage, node->size - 1,
-                            PageOffset(node, head_last->key_offset), head_last->key_len, 0);
+            // Or the prefix space is not enough, simply put these keys : [i,node.size)
+            pfxitem.prefix.addr = PfxOffset(node, pfxhead->pfx_offset);
+            pfxitem.prefix.size = pfxhead->pfx_len;
+            pfxitem.prefix.newallocated = false;
+            // pfxitem.low = i;
+            pfxitem.high = node->size - 1;
+            for (int j = pfxitem.low; j < node->size; j++) {
+                DB2head *head_j = GetHeaderDB2(node, j);
+                WriteKeyDB2Page(newbase, memusage, j,
+                                PageOffset(node, head_j->key_offset), head_j->key_len, 0);
+            }
+            // DB2head *head_last = GetHeaderDB2(node, node->size - 1);
+            // WriteKeyDB2Page(newbase, memusage, node->size - 1,
+            //                 PageOffset(node, head_last->key_offset), head_last->key_len, 0);
         }
         WritePfxDB2Page(newbase, pfx_top, pfxitem, pfx_size);
 
@@ -480,6 +494,7 @@ void apply_prefix_optimization(NodeDB2 *node) {
         node->pfx_top = pfx_top;
         node->pfx_size = pfx_size;
         // UpdatePfx(node, newpfxbase);
+
         UpdateBase(node, newbase);
     }
     else {

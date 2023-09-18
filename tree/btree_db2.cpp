@@ -104,10 +104,19 @@ void BPTreeDB2::insert_nonleaf(NodeDB2 *node, NodeDB2 **path,
 
 void BPTreeDB2::insert_leaf(NodeDB2 *leaf, NodeDB2 **path, int path_level, char *key, int keylen) {
     if (check_split_condition(leaf, keylen)) {
+        // int s = leaf->pfx_size;
+        // if (s == 1) {
+        //     cout << "-------------before update---------------" << endl;
+        //     vector<bool> flag(leaf->size + 1);
+        //     printTree(leaf, flag, true);
+        // }
+
         apply_prefix_optimization(leaf);
-        // vector<bool> flag(20);
-        // printTree(getRoot(), flag, true);
-        // cout << "---------------------------" << endl;
+        // if (s == 1) {
+        //     cout << "-------------after update---------------" << endl;
+        //     vector<bool> flag(leaf->size + 1);
+        //     printTree(leaf, flag, true);
+        // }
     }
     if (check_split_condition(leaf, keylen)) {
         splitReturnDB2 split = split_leaf(leaf, key, keylen);
@@ -161,7 +170,7 @@ int BPTreeDB2::insert_prefix_and_key(NodeDB2 *node, const char *key, int keylen,
     // Find a pos, then insert into it
     int pfx_pos = find_prefix_pos(node, key, keylen, true);
     int insertpos;
-
+    // cout << "insert pfx pos:" << pfx_pos << endl;
     if (pfx_pos == node->pfx_size) {
         // need to add new prefix
         insertpos = node->size;
@@ -176,8 +185,11 @@ int BPTreeDB2::insert_prefix_and_key(NodeDB2 *node, const char *key, int keylen,
                 pfxhead->high += 1;
         }
         else {
+            // cout << "I'm here" << endl;
             insertpos = pfxhead->low;
             InsertPfxDB2(node, pfx_pos, "", 0, insertpos, insertpos);
+            // pfxhead->low++;
+            // pfxhead->high++;
         }
         if (!equal) {
             for (uint32_t i = pfx_pos + 1; i < node->pfx_size; i++) {
@@ -323,6 +335,9 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(NodeDB2 *node, int pos, splitReturnDB2 *
     splitkey.newallocated = true;
     strcpy(splitkey.addr, PageOffset(node, head_split->key_offset));
 
+    // cout << "326: " << node->space_top << " " << node->size * sizeof(DB2head) << endl;
+    // cout << "327: " << node->pfx_top << " " << node->pfx_size * sizeof(DB2pfxhead) << endl;
+
     Item split_prefix;
     do_split_node(node, right, split, false, split_prefix);
 
@@ -356,28 +371,15 @@ splitReturnDB2 BPTreeDB2::split_leaf(NodeDB2 *node, char *newkey, int keylen) {
     right->pfx_size = 0;
     int insertpos;
     bool equal = false;
-#ifndef DUPKEY
+    // vector<bool> flag(node->size + 1);
+    // printTree(node, flag, true);
+    // cout << "-------------before insert---------------" << endl;
     insertpos = insert_prefix_and_key(node, newkey, keylen, equal);
-#else
-    int rid = rand();
-    insertpos = find_insert_pos(node, newkey, this->insert_binary, equal);
-
-    vector<Key_c> allkeys;
-
-    if (equal) {
-        allkeys = node->keys;
-        allkeys.at(insertpos - 1).addRecord(rid);
-    }
-    else {
-        for (int i = 0; i < insertpos; i++) {
-            allkeys.push_back(node->keys.at(i));
-        }
-        allkeys.push_back(Key_c(newkey, rid));
-        for (int i = insertpos; i < node->size; i++) {
-            allkeys.push_back(node->keys.at(i));
-        }
-    }
-#endif
+    // vector<bool> flag(node->size + 1);
+    // printTree(node, flag, true);
+    // cout << "-------------after insert---------------" << endl;
+    // cout << "381: " << node->space_top << " " << node->size * sizeof(DB2head) << endl;
+    // cout << node->pfx_top << " " << node->pfx_size * sizeof(DB2pfxhead) << endl;
     int split = split_point(node);
 
     Item splitkey;
@@ -407,7 +409,7 @@ bool BPTreeDB2::check_split_condition(NodeDB2 *node, int keylen) {
     int splitcost = keylen + sizeof(DB2head) + 2 * max(keylen, APPROX_KEY_SIZE);
     int nextkey = sizeof(DB2head) + keylen;
     int currspace_pfx = node->pfx_top + node->pfx_size * sizeof(DB2pfxhead);
-    int splitcost_pfx = sizeof(DB2pfxhead);
+    int splitcost_pfx = sizeof(DB2pfxhead);     // must leave space for next split
     int optimcost_pfx = 2 * sizeof(DB2pfxhead); // for safety, prefix expand introduce new pfx segments
     // cout << "curr:" << currspace << ", cost: " << splitcost << endl;
     // cout << "currpfx:" << currspace_pfx << ", costpfx: " << splitcost_pfx << endl;

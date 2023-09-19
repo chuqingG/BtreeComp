@@ -33,6 +33,8 @@ NodeDB2 *BPTreeDB2::getRoot() {
 // in B+ Tree
 int BPTreeDB2::search(const char *key) {
     int keylen = strlen(key);
+    if (char_cmp_new(key, "34430789", keylen, 8) == 0)
+        cout << "here" << endl;
     NodeDB2 *leaf = search_leaf_node(_root, key, keylen);
     if (leaf == nullptr)
         return -1;
@@ -104,19 +106,7 @@ void BPTreeDB2::insert_nonleaf(NodeDB2 *node, NodeDB2 **path,
 
 void BPTreeDB2::insert_leaf(NodeDB2 *leaf, NodeDB2 **path, int path_level, char *key, int keylen) {
     if (check_split_condition(leaf, keylen)) {
-        // int s = leaf->pfx_size;
-        // if (s == 1) {
-        //     cout << "-------------before update---------------" << endl;
-        //     vector<bool> flag(leaf->size + 1);
-        //     printTree(leaf, flag, true);
-        // }
-
         apply_prefix_optimization(leaf);
-        // if (s == 1) {
-        //     cout << "-------------after update---------------" << endl;
-        //     vector<bool> flag(leaf->size + 1);
-        //     printTree(leaf, flag, true);
-        // }
     }
     if (check_split_condition(leaf, keylen)) {
         splitReturnDB2 split = split_leaf(leaf, key, keylen);

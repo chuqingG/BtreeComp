@@ -39,16 +39,16 @@ int find_prefix_pos(NodeDB2 *cursor, const char *key, int keylen, bool for_inser
         int cur = low + (high - low) / 2;
         DB2pfxhead *pfx = GetHeaderDB2pfx(cursor, cur);
 
-        int prefixcmp = memcmp(key, PfxOffset(cursor, pfx->pfx_offset), sizeof(char) * pfx->pfx_len);
+        int prefixcmp = strncmp(key, PfxOffset(cursor, pfx->pfx_offset), pfx->pfx_len);
         int cmp = prefixcmp;
         if (prefixcmp == 0) {
             DB2head *h_low = GetHeaderDB2(cursor, pfx->low);
             DB2head *h_high = GetHeaderDB2(cursor, pfx->high);
 
-            keylen -= pfx->pfx_len;
+            int cut_keylen = keylen - pfx->pfx_len;
             const char *key_cutoff = key + pfx->pfx_len;
-            int lowcmp = memcmp(key_cutoff, PageOffset(cursor, h_low->key_offset), sizeof(char) * keylen);
-            int highcmp = memcmp(key_cutoff, PageOffset(cursor, h_high->key_offset), sizeof(char) * keylen);
+            int lowcmp = memcmp(key_cutoff, PageOffset(cursor, h_low->key_offset), sizeof(char) * cut_keylen);
+            int highcmp = memcmp(key_cutoff, PageOffset(cursor, h_high->key_offset), sizeof(char) * cut_keylen);
             cmp = (lowcmp >= 0) ^ (highcmp <= 0) ? lowcmp : 0;
         }
         if (cmp == 0)

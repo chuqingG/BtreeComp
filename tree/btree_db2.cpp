@@ -351,13 +351,12 @@ bool BPTreeDB2::check_split_condition(NodeDB2 *node, int keylen) {
     // Just simplify, may need to consider the prefix size
     int currspace = node->space_top + node->size * sizeof(DB2head);
     // copy from myisam
-    int splitcost = keylen + sizeof(DB2head) + 2 * max(keylen, APPROX_KEY_SIZE);
+    int splitcost = keylen + sizeof(DB2head);
     int nextkey = sizeof(DB2head) + keylen;
     int currspace_pfx = node->pfx_top + node->pfx_size * sizeof(DB2pfxhead);
     int splitcost_pfx = sizeof(DB2pfxhead);     // must leave space for next split
     int optimcost_pfx = 2 * sizeof(DB2pfxhead); // for safety, prefix expand introduce new pfx segments
-    // cout << "curr:" << currspace << ", cost: " << splitcost << endl;
-    // cout << "currpfx:" << currspace_pfx << ", costpfx: " << splitcost_pfx << endl;
+
     if (currspace + splitcost + nextkey >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
     else if (currspace_pfx + splitcost_pfx + optimcost_pfx >= DB2_PFX_MAX_SIZE - SPLIT_LIMIT)

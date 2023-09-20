@@ -121,10 +121,18 @@ public:
         // _tree->printTree(_tree->getRoot(), flag, true);
     }
 
+    // bool Search(const std::vector<char *> &values) override {
+    //     for (uint32_t i = 0; i < values.size(); ++i)
+    //         if (_tree->search(values.at(i)) == -1)
+    //             return false;
+    //     return true;
+    // }
     bool Search(const std::vector<char *> &values) override {
+        int count = 0;
         for (uint32_t i = 0; i < values.size(); ++i)
             if (_tree->search(values.at(i)) == -1)
-                return false;
+                count++;
+        cout << "count:" << count << endl;
         return true;
     }
 
@@ -247,10 +255,18 @@ public:
         }
     }
 
+    // bool Search(const std::vector<char *> &values) override {
+    //     for (uint32_t i = 0; i < values.size(); ++i)
+    //         if (_tree->search(values.at(i)) == -1)
+    //             return false;
+    //     return true;
+    // }
     bool Search(const std::vector<char *> &values) override {
+        int count = 0;
         for (uint32_t i = 0; i < values.size(); ++i)
             if (_tree->search(values.at(i)) == -1)
-                return false;
+                count++;
+        cout << "count:" << count << endl;
         return true;
     }
 

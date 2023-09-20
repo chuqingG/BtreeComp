@@ -3,6 +3,7 @@
 .clang-format
 build
 builddebug
+buildnew
 benchmark/test*
 tree/insert.h
 tree/search.h

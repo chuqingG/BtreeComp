@@ -20,6 +20,7 @@ public:
     ~BPTree();
     void insert(char *);
     int search(const char *);
+    int searchRange(const char *min, const char *max);
     void getSize(Node *, int &, int &, int &, int &, unsigned long &, int &);
     int getHeight(Node *);
     Node *getRoot();
@@ -40,13 +41,10 @@ private:
     Node *search_leaf_node(Node *root, const char *key, int keylen);
     Node *search_leaf_node_for_insert(Node *root, const char *key, int keylen,
                                       Node **path, int &path_level);
-#ifdef DUPKEY
-    bool check_split_condition(Node *node);
-    int split_point(vector<Key_c> allkeys);
-#else
+
     bool check_split_condition(Node *node, int keylen);
     int split_point(Node *node);
-#endif
+
     splitReturn_new split_nonleaf(Node *node, int pos,
                                   splitReturn_new *childsplit);
     splitReturn_new split_leaf(Node *node, char *newkey, int newkey_len);

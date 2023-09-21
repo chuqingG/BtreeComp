@@ -130,27 +130,25 @@ map<string, int> convert_to_freq_map(vector<string> sorted_arr) {
     return freq_map;
 }
 
-map<string, int> convert_to_freq_map_char(vector<char *> sorted_arr) {
-    map<string, int> freq_map;
-    for (auto &element : sorted_arr) {
-        freq_map[string(element)]++;
+map<const char *, int> convert_to_freq_map_char(vector<const char *> sorted_arr) {
+    map<const char *, int> freq_map;
+    for (auto element : sorted_arr) {
+        freq_map[element]++;
     }
     return freq_map;
 }
 
-vector<string> get_map_keys(map<string, int> map) {
-    vector<string> keys;
+vector<const char *> get_map_keys(map<const char *, int> map) {
+    vector<const char *> keys;
     for (auto &element : map) {
         keys.push_back(element.first);
+        cout << element.first << ",";
     }
+    cout << endl;
     return keys;
 }
 
-int get_map_values_in_range(map<string, int> map, string min, string max) {
-    vector<string> keys;
-    for (auto &element : map) {
-        keys.push_back(element.first);
-    }
+int get_map_values_in_range(map<const char *, int> map, const char *min, const char *max) {
     auto lower = map.lower_bound(min);
     auto upper = map.upper_bound(max);
     int sum = 0;

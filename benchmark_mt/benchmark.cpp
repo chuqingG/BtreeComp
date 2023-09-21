@@ -81,7 +81,7 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
 #endif
 
     // construct elements for range and backward if needed
-    map<string, int> values_freq_map;
+    map<const char *, int> values_freq_map;
     std::vector<int> minIndxs(100);
 
     std::vector<BenchmarkTypes> tofind{BenchmarkTypes::RANGE, BenchmarkTypes::BACKWARDSCAN};
@@ -91,7 +91,8 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
 
     if (founded != benchmarks.end()) {
         // Concatenate both values and values warmup for sorted list to perform range query
-        vector<char *> sorted_values = values;
+        vector<const char *> sorted_values;
+        sorted_values.insert(sorted_values.end(), values.begin(), values.end());
         sorted_values.insert(sorted_values.end(), values_warmup.begin(), values_warmup.end());
         sort(sorted_values.begin(), sorted_values.end());
         values_freq_map = convert_to_freq_map_char(sorted_values);

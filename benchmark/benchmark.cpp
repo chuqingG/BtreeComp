@@ -55,14 +55,22 @@ const std::map<std::string, BenchmarkTypes> strBenchmarksMap{
     {"backward", BenchmarkTypes::BACKWARDSCAN}};
 
 const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
-    // {"Btree-Std", new BPTreeStdBenchmark()},
+    {"Btree-Std", new BPTreeStdBenchmark()},
     // {"Btree-Head", new BPTreeHeadCompBenchmark()},
     // {"Btree-Tail", new BPTreeTailCompBenchmark()},
     // {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
     // {"Btree-WT", new BPTreeWTBenchmark()},
     // {"Btree-My", new BPTreeMyISAMBenchmark()},
     // {"Btree-PkB", new BPTreePkBBenchmark()},
-    {"Btree-DB2", new BPTreeDB2Benchmark()},
+    // {"Btree-DB2", new BPTreeDB2Benchmark()},
+};
+
+bool vector_cmp(const char *p1, const char *p2) {
+    int len1 = strlen(p1);
+    int len2 = strlen(p2);
+    int cmp = char_cmp_new(p1, p2, len1, len2);
+    cout << p1 << ", " << p2 << ": " << (cmp < 0) << endl;
+    return (cmp < 0);
 };
 
 auto RunBenchmarkIteration(std::vector<char *> values,
@@ -72,7 +80,7 @@ auto RunBenchmarkIteration(std::vector<char *> values,
         kIndexStructures.size());
     std::vector<TreeStatistics> structure_statistics(kIndexStructures.size());
 
-    map<string, int> values_freq_map;
+    map<const char *, int> values_freq_map;
     std::vector<int> minIndxs(100);
 
     std::vector<BenchmarkTypes> tofind{BenchmarkTypes::RANGE,
@@ -83,10 +91,26 @@ auto RunBenchmarkIteration(std::vector<char *> values,
     if (founded != benchmarks.end()) {
         // Concatenate both values and values warmup for sorted list to perform
         // range query
-        vector<char *> sorted_values = values;
+
+        vector<const char *> sorted_values;
+        // for(auto s:values)
+        //     sorted_values.
+        sorted_values.insert(sorted_values.end(), values.begin(),
+                             values.end());
         sorted_values.insert(sorted_values.end(), values_warmup.begin(),
                              values_warmup.end());
+        for (auto s : sorted_values)
+            cout << s << ", ";
+        cout << "=========" << endl;
+        std::sort(sorted_values.begin(), sorted_values.end(), [](const char *lhs, const char *rhs) {
+            int llen = strlen(lhs);
+            int rlen = strlen(rhs);
+            return char_cmp_new(lhs, rhs, llen, rlen) < 0;
+        });
         sort(sorted_values.begin(), sorted_values.end());
+        for (auto s : sorted_values)
+            cout << s << ", ";
+        cout << "=========" << endl;
         values_freq_map = convert_to_freq_map_char(sorted_values);
         // Initialize min indexes for range benchmark
         for (int i = 0; i < minIndxs.size(); i++) {
@@ -118,7 +142,7 @@ auto RunBenchmarkIteration(std::vector<char *> values,
 
         for (BenchmarkTypes benchmark : benchmarks) {
             switch (benchmark) {
-            case BenchmarkTypes::INSERT:
+            case BenchmarkTypes::INSERT: {
                 t1 = std::chrono::system_clock::now();
                 structure->Insert(values);
                 time_spent = static_cast<double>(
@@ -131,23 +155,41 @@ auto RunBenchmarkIteration(std::vector<char *> values,
                      << "Finish" << endl;
 #endif
                 break;
-            case BenchmarkTypes::SEARCH:
+            }
+            case BenchmarkTypes::SEARCH: {
                 t1 = std::chrono::system_clock::now();
                 // TODO(chuqing): more accurate correctness check, e.g. generate new
                 // search set
-                auto noerror = structure->Search(values);
+                bool noerror_s = structure->Search(values);
                 time_spent = static_cast<double>(
                                  std::chrono::duration_cast<std::chrono::nanoseconds>(
                                      std::chrono::system_clock::now() - t1)
                                      .count())
                              / 1e9;
-                if (noerror)
+                if (noerror_s)
                     cout << name << "\t:"
                          << "No errors happen during search" << endl;
                 else
                     cout << name << "\t:"
                          << "Errors happen during search" << endl;
                 break;
+            }
+            case BenchmarkTypes::RANGE: {
+                t1 = std::chrono::system_clock::now();
+                bool noerror_sr = structure->SearchRange(values_freq_map, minIndxs);
+                time_spent = static_cast<double>(
+                                 std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                     std::chrono::system_clock::now() - t1)
+                                     .count())
+                             / 1e9;
+                if (noerror_sr)
+                    cout << name << "\t:"
+                         << "No errors happen during search range" << endl;
+                else
+                    cout << name << "\t:"
+                         << "Errors happen during search range" << endl;
+                break;
+            }
             }
             structure_times[i].insert({benchmark, time_spent});
 #ifdef VERBOSE_PRINT

@@ -31,6 +31,8 @@ public:
     virtual void DeleteStructure() = 0;
     virtual void Insert(const std::vector<char *> &numbers) = 0;
     virtual bool Search(const std::vector<char *> &numbers) = 0;
+    virtual bool SearchRange(const std::map<const char *, int> &valuesFreq,
+                             const std::vector<int> &minIdxs) = 0;
     virtual TreeStatistics CalcStatistics() = 0;
 };
 
@@ -61,6 +63,25 @@ public:
         for (uint32_t i = 0; i < values.size(); i++)
             if (_tree->search(values.at(i)) == -1)
                 return false;
+        return true;
+    }
+
+    bool SearchRange(const std::map<const char *, int> &valuesFreq,
+                     const std::vector<int> &minIdxs) override {
+        int range_size = valuesFreq.size() / 3;
+        vector<const char *> keys = get_map_keys(valuesFreq);
+        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
+            const char *min = keys.at(minIdxs[i]);
+            const char *max = keys.at(minIdxs[i] + range_size);
+            cout << "search: [" << min << ", " << max << "]" << endl;
+            int entries = _tree->searchRange(min, max);
+            int expected = get_map_values_in_range(valuesFreq, min, max);
+            if (entries != expected) {
+                cout << "Failure number of entries " << entries << " , expected "
+                     << expected << endl;
+                return false;
+            }
+        }
         return true;
     }
 
@@ -136,6 +157,11 @@ public:
         return true;
     }
 
+    bool SearchRange(const std::map<const char *, int> &valuesFreq,
+                     const std::vector<int> &minIdxs) override {
+        return true;
+    }
+
     TreeStatistics CalcStatistics() override {
         TreeStatistics statistics;
         statistics.height = _tree->getHeight(_tree->getRoot());
@@ -174,6 +200,11 @@ public:
         for (uint32_t i = 0; i < values.size(); ++i)
             if (_tree->search(values[i]) == -1)
                 return false;
+        return true;
+    }
+
+    bool SearchRange(const std::map<const char *, int> &valuesFreq,
+                     const std::vector<int> &minIdxs) override {
         return true;
     }
 
@@ -218,6 +249,11 @@ public:
         for (uint32_t i = 0; i < values.size(); ++i)
             if (_tree->search(values[i]) == -1)
                 return false;
+        return true;
+    }
+
+    bool SearchRange(const std::map<const char *, int> &valuesFreq,
+                     const std::vector<int> &minIdxs) override {
         return true;
     }
 
@@ -267,6 +303,11 @@ public:
             if (_tree->search(values.at(i)) == -1)
                 count++;
         cout << "count:" << count << endl;
+        return true;
+    }
+
+    bool SearchRange(const std::map<const char *, int> &valuesFreq,
+                     const std::vector<int> &minIdxs) override {
         return true;
     }
 

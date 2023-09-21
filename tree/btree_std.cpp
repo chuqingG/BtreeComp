@@ -24,7 +24,6 @@ void deletefrom(Node *node) {
 // Destructor of BPTreePkB tree
 BPTree::~BPTree() {
     deletefrom(_root);
-    // delete _root;
 }
 
 // Function to get the rootNode
@@ -48,17 +47,85 @@ int BPTree::search(const char *key) {
     }
 }
 
+// Function to peform range query on B+Tree
+int BPTree::searchRange(const char *kmin, const char *kmax) {
+    int min_len = strlen(kmin);
+    int max_len = strlen(kmax);
+
+    Node *leaf = search_leaf_node(_root, kmin, min_len);
+    if (leaf == nullptr)
+        return 0;
+    // if (this->head_comp)
+    //     min = min.substr(leaf->prefix.length());
+    // int pos = search_binary(leaf, min, 0, leaf->size - 1);
+    int pos;
+    if (this->head_comp) {
+        pos = search_in_node(leaf, kmin + leaf->prefix->size, min_len - leaf->prefix->size,
+                             0, leaf->size - 1, true);
+    }
+    else {
+        pos = search_in_node(leaf, kmin, min_len, 0, leaf->size - 1, true);
+    }
+    int entries = 0;
+    // Keep searching till value > max or we reach end of tree
+    while (leaf != nullptr) {
+        // each while loop for a leaf, instead of a pos
+        // then only compare the prefix once
+        if (leaf == nullptr)
+            break;
+        if (!pos) {
+            // max key not in this leaf
+            int lastcmp = char_cmp_new(leaf->highkey->addr, kmax,
+                                       leaf->highkey->size, max_len);
+            if (lastcmp >= 0) {
+                entries += leaf->size;
+                leaf = leaf->next;
+                continue;
+            }
+            // don't need to compare prefix separately,
+            // the remain bytes are enough
+        }
+        // If the search reaches here, it means the next
+
+        // if (pos == leaf->size) {
+        //     pos = 0;
+        //     leaf = leaf->next;
+        //     if (leaf == nullptr) {
+        //         break;
+        //     }
+        // }
+        Stdhead *head_pos = GetHeaderStd(leaf, pos);
+        int cmp;
+        if (this->head_comp) {
+            cmp = char_cmp_new(PageOffset(leaf, head_pos->key_offset) + leaf->prefix->size,
+                               kmax, head_pos->key_len - leaf->prefix->size, max_len);
+        }
+        else {
+            cmp = char_cmp_new(PageOffset(leaf, head_pos->key_offset), kmax,
+                               head_pos->key_len, max_len);
+        }
+        // string leafkey = leaf->keys.at(pos).value;
+
+        // if (this->head_comp) {
+        //     leafkey = leaf->prefix + leafkey;
+        // }
+        // if (lex_compare(leafkey, max) > 0) {
+        //     break;
+        // }
+        if (cmp > 0)
+            break;
+        entries++;
+        // entries += leaf->keys.at(pos).ridList.size();
+        pos++;
+    }
+    return entries;
+}
+
 void BPTree::insert(char *x) {
     int keylen = strlen(x);
     if (_root == nullptr) {
         _root = new Node();
-#ifdef DUPKEY
-        int rid = rand();
-        _root->keys.push_back(Key_c(x, rid));
-        _root->size = 1;
-#else
         InsertKeyStd(_root, 0, x, keylen);
-#endif
         _root->IS_LEAF = true;
         return;
     }
@@ -80,10 +147,7 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
             split_nonleaf(node, parentlevel, childsplit);
         if (node == _root) {
             Node *newRoot = new Node();
-#ifdef DUPKEY
-            int rid = rand();
-            newRoot->keys.push_back(Key_c(string_to_char(currsplit.promotekey), rid));
-#endif
+
             InsertNode(newRoot, 0, currsplit.left);
             InsertKeyStd(newRoot, 0, currsplit.promotekey.addr, currsplit.promotekey.size);
             InsertNode(newRoot, 1, currsplit.right);
@@ -111,27 +175,6 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
         else {
             insertpos = search_insert_pos(node, newkey->addr, newkey->size, 0, node->size - 1, equal);
         }
-#ifdef DUPKEY
-        int rid = rand();
-        vector<Key_c> allkeys;
-        for (int i = 0; i < insertpos; i++) {
-            allkeys.push_back(node->keys.at(i));
-        }
-        char *newkey_ptr;
-        if (head_comp) {
-            newkey_ptr = new char[promotekey.size() - node->prefix.length() + 1];
-            strcpy(newkey_ptr, promotekey.data() + node->prefix.length());
-        }
-        else {
-            newkey_ptr = new char[promotekey.size() + 1];
-            strcpy(newkey_ptr, promotekey.data());
-        }
-        allkeys.push_back(Key_c(newkey_ptr, rid));
-
-        for (int i = insertpos; i < node->size; i++) {
-            allkeys.push_back(node->keys.at(i));
-        }
-#else
         // Insert promotekey into node->keys[insertpos]
         if (this->head_comp) {
             InsertKeyStd(node, insertpos, newkey->addr + node->prefix->size,
@@ -143,7 +186,6 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
 
         // Insert the new childsplit.right into node->ptrs[insertpos + 1]
         InsertNode(node, insertpos + 1, childsplit->right);
-#endif
     }
 }
 

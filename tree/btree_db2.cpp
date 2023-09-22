@@ -62,11 +62,6 @@ int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
         else {
             DB2pfxhead *pfx = GetHeaderDB2pfx(leaf, metadatapos);
             pos = search_in_leaf(leaf, kmin + pfx->pfx_len, min_len - pfx->pfx_len, pfx->low, pfx->high);
-            // PrefixMetaData currentMetadata = leaf->prefixMetadata.at(metadatapos);
-            // string prefix = currentMetadata.prefix;
-            // string compressed_key = min.substr(prefix.length());
-            // pos = search_binary(leaf, compressed_key, currentMetadata.low,
-            //                     currentMetadata.high);
         }
     }
     int entries = 0;
@@ -85,6 +80,14 @@ int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
         if (pfxcmp > 0)
             break;
         else if (pfxcmp < 0) {
+            // Decompress all keys in this prefix
+            for (int i = pos; i <= pfx->high; i++) {
+                DB2head *head_i = GetHeaderDB2(leaf, i);
+                char *decomp_key = new char[pfx->pfx_len + head_i->key_len + 1];
+                strncpy(decomp_key, PfxOffset(leaf, pfx->pfx_offset), pfx->pfx_len);
+                strcpy(decomp_key + pfx->pfx_len, PageOffset(leaf, head_i->key_offset));
+                delete decomp_key;
+            }
             entries += pfx->high - pos + 1;
             metadatapos++;
             pos = pfx->high + 1;
@@ -97,6 +100,10 @@ int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
                              head_i->key_len, max_len - pfx->pfx_len)
                 > 0)
                 break;
+            char *decomp_key = new char[pfx->pfx_len + head_i->key_len + 1];
+            strncpy(decomp_key, PfxOffset(leaf, pfx->pfx_offset), pfx->pfx_len);
+            strcpy(decomp_key + pfx->pfx_len, PageOffset(leaf, head_i->key_offset));
+            delete decomp_key;
             entries++;
         }
         if (i <= pfx->high)

@@ -78,6 +78,14 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
             int lastcmp = char_cmp_new(leaf->highkey->addr, kmax,
                                        leaf->highkey->size, max_len);
             if (lastcmp <= 0) {
+                // Decompress all the keys within the node
+                for (int i = 0; i < leaf->size; i++) {
+                    Stdhead *head_i = GetHeaderStd(leaf, i);
+                    char *decomp_key = new char[leaf->prefix->size + head_i->key_len + 1];
+                    strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
+                    strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_i->key_offset));
+                    delete decomp_key;
+                }
                 entries += leaf->size - pos;
                 leaf = leaf->next;
                 pos = 0;
@@ -92,15 +100,21 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
         Stdhead *head_pos = GetHeaderStd(leaf, pos);
         int cmp;
         if (this->head_comp) {
-            cmp = char_cmp_new(PageOffset(leaf, head_pos->key_offset),
-                               kmax + leaf->prefix->size, head_pos->key_len, max_len - leaf->prefix->size);
+            if (char_cmp_new(PageOffset(leaf, head_pos->key_offset),
+                             kmax + leaf->prefix->size, head_pos->key_len, max_len - leaf->prefix->size)
+                > 0)
+                break;
+            char *decomp_key = new char[leaf->prefix->size + head_pos->key_len + 1];
+            strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
+            strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_pos->key_offset));
+            delete decomp_key;
         }
         else {
-            cmp = char_cmp_new(PageOffset(leaf, head_pos->key_offset), kmax,
-                               head_pos->key_len, max_len);
+            if (char_cmp_new(PageOffset(leaf, head_pos->key_offset), kmax,
+                             head_pos->key_len, max_len)
+                > 0)
+                break;
         }
-        if (cmp > 0)
-            break;
         entries++;
         pos++;
     }

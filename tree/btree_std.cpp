@@ -73,7 +73,7 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
         // then only compare the prefix once
         if (leaf == nullptr)
             break;
-        if (!pos) {
+        if (!pos && leaf->highkey->size) {
             // max key not in this leaf
             int lastcmp = char_cmp_new(leaf->highkey->addr, kmax,
                                        leaf->highkey->size, max_len);
@@ -359,7 +359,8 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
         CopyToNewPageStd(node, 0, split, left_base,
                          leftprefix_len - node->prefix->size, left_top);
 
-        if (strcmp(node->highkey->addr, MAXHIGHKEY) != 0) {
+        // if (strcmp(node->highkey->addr, MAXHIGHKEY) != 0) {
+        if (node->highkey->size != 0) {
             CopyToNewPageStd(node, split + 1, node->size, right->base,
                              rightprefix_len - node->prefix->size, right->space_top);
 

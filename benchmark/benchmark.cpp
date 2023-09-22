@@ -65,14 +65,6 @@ const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
     // {"Btree-DB2", new BPTreeDB2Benchmark()},
 };
 
-bool vector_cmp(const char *p1, const char *p2) {
-    int len1 = strlen(p1);
-    int len2 = strlen(p2);
-    int cmp = char_cmp_new(p1, p2, len1, len2);
-    cout << p1 << ", " << p2 << ": " << (cmp < 0) << endl;
-    return (cmp < 0);
-};
-
 auto RunBenchmarkIteration(std::vector<char *> values,
                            std::vector<char *> values_warmup) {
     // List of time spent for each benchmark
@@ -80,7 +72,8 @@ auto RunBenchmarkIteration(std::vector<char *> values,
         kIndexStructures.size());
     std::vector<TreeStatistics> structure_statistics(kIndexStructures.size());
 
-    map<const char *, int> values_freq_map;
+    vector<char *> sorted_values;
+    map<char *, int, mapcmp> values_freq_map;
     std::vector<int> minIndxs(100);
 
     std::vector<BenchmarkTypes> tofind{BenchmarkTypes::RANGE,
@@ -92,29 +85,32 @@ auto RunBenchmarkIteration(std::vector<char *> values,
         // Concatenate both values and values warmup for sorted list to perform
         // range query
 
-        vector<const char *> sorted_values;
+        // vector<const char *> sorted_values;
         // for(auto s:values)
         //     sorted_values.
         sorted_values.insert(sorted_values.end(), values.begin(),
                              values.end());
         sorted_values.insert(sorted_values.end(), values_warmup.begin(),
                              values_warmup.end());
-        for (auto s : sorted_values)
-            cout << s << ", ";
-        cout << "=========" << endl;
+        // for (auto s : sorted_values)
+        //     cout << s << ", ";
+        // cout << "=========" << endl;
         std::sort(sorted_values.begin(), sorted_values.end(), [](const char *lhs, const char *rhs) {
             int llen = strlen(lhs);
             int rlen = strlen(rhs);
             return char_cmp_new(lhs, rhs, llen, rlen) < 0;
         });
-        sort(sorted_values.begin(), sorted_values.end());
+        // sort(sorted_values.begin(), sorted_values.end());
         for (auto s : sorted_values)
             cout << s << ", ";
         cout << "=========" << endl;
-        values_freq_map = convert_to_freq_map_char(sorted_values);
+        // values_freq_map = convert_to_freq_map_char(sorted_values);
+        // for (auto s : values_freq_map)
+        //     cout << s.first << ", ";
+        // cout << "=========" << endl;
         // Initialize min indexes for range benchmark
         for (int i = 0; i < minIndxs.size(); i++) {
-            minIndxs[i] = rand() % values_freq_map.size() / 2;
+            minIndxs[i] = rand() % sorted_values.size() / 2;
         }
     }
 
@@ -176,7 +172,7 @@ auto RunBenchmarkIteration(std::vector<char *> values,
             }
             case BenchmarkTypes::RANGE: {
                 t1 = std::chrono::system_clock::now();
-                bool noerror_sr = structure->SearchRange(values_freq_map, minIndxs);
+                bool noerror_sr = structure->SearchRange(sorted_values, minIndxs);
                 time_spent = static_cast<double>(
                                  std::chrono::duration_cast<std::chrono::nanoseconds>(
                                      std::chrono::system_clock::now() - t1)

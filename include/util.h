@@ -12,6 +12,28 @@
 #include "config.h"
 using namespace std;
 
+int char_cmp_map(const char *a, const char *b, int alen, int blen) {
+    // 1 : a > b
+    // const size_t min_len = (alen < blen) ? alen : blen;
+    int cmp_len = min(alen, blen);
+    // int idx = *matchp;
+    for (int idx = 0; idx < cmp_len; ++idx) {
+        int cmp = a[idx] - b[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    /* Contents are equal up to the smallest length. */
+    return (alen - blen);
+}
+
+struct mapcmp {
+    bool operator()(const char *lhs, const char *rhs) const {
+        int len_l = strlen(lhs);
+        int len_r = strlen(rhs);
+        return char_cmp_map(lhs, rhs, len_l, len_r) < 0;
+    }
+};
+
 string convert_to_16_bytes(string key) {
     if (key.length() < 16)
         return key + string(16 - key.length(), '0');
@@ -130,16 +152,19 @@ map<string, int> convert_to_freq_map(vector<string> sorted_arr) {
     return freq_map;
 }
 
-map<const char *, int> convert_to_freq_map_char(vector<const char *> sorted_arr) {
-    map<const char *, int> freq_map;
-    for (auto element : sorted_arr) {
+map<char *, int, mapcmp> convert_to_freq_map_char(vector<char *> values, vector<char *> values_warmup) {
+    map<char *, int, mapcmp> freq_map;
+    for (auto element : values) {
+        freq_map[element]++;
+    }
+    for (auto element : values_warmup) {
         freq_map[element]++;
     }
     return freq_map;
 }
 
-vector<const char *> get_map_keys(map<const char *, int> map) {
-    vector<const char *> keys;
+vector<char *> get_map_keys(map<char *, int, mapcmp> map) {
+    vector<char *> keys;
     for (auto &element : map) {
         keys.push_back(element.first);
         cout << element.first << ",";
@@ -148,14 +173,26 @@ vector<const char *> get_map_keys(map<const char *, int> map) {
     return keys;
 }
 
-int get_map_values_in_range(map<const char *, int> map, const char *min, const char *max) {
-    auto lower = map.lower_bound(min);
-    auto upper = map.upper_bound(max);
-    int sum = 0;
-    for (auto it = lower; it != upper; ++it) {
-        sum += it->second;
+// int get_map_values_in_range(map<char *, int, mapcmp> map, char *min, char *max) {
+//     auto lower = map.lower_bound(min);
+//     auto upper = map.upper_bound(max);
+//     int sum = 0;
+//     for (auto it = lower; it != upper; ++it) {
+//         sum += it->second;
+//     }
+//     return sum;
+// }
+
+int count_range(vector<char *> &sorted, int idx, int num) {
+    char *last = sorted[idx + num];
+    int last_l = strlen(last);
+    int count = num;
+    while (idx + count < sorted.size()) {
+        if (char_cmp_map(last, sorted[idx + count], last_l, strlen(sorted[idx + count])))
+            break;
+        count++;
     }
-    return sum;
+    return count;
 }
 
 inline char *GetCmdArg(char **begin, char **end, const std::string &arg) {

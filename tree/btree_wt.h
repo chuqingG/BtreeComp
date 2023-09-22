@@ -16,6 +16,7 @@ public:
     ~BPTreeWT();
     int search(const char *);
     void insert(char *);
+    int searchRange(const char *min, const char *max);
     void getSize(NodeWT *, int &, int &, int &, int &, unsigned long &, int &);
     int getHeight(NodeWT *);
     NodeWT *getRoot();

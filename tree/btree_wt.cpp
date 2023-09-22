@@ -44,6 +44,67 @@ int BPTreeWT::search(const char *key) {
     return search_in_leaf(leaf, key, keylen, 0, leaf->size - 1, skiplow);
 }
 
+int BPTreeWT::searchRange(const char *kmin, const char *kmax) {
+    int min_len = strlen(kmin);
+    int max_len = strlen(kmax);
+    // vector<NodeWT *> parents;
+    uint8_t skiplow = 0;
+    NodeWT *leaf = search_leaf_node(_root, kmin, min_len, skiplow);
+    if (leaf == nullptr)
+        return 0;
+    int pos = search_in_leaf(leaf, kmin, min_len, 0, leaf->size - 1, skiplow);
+    if (pos == -1)
+        return 0;
+    int entries = 0;
+    // string prevkey = min;
+    Item prevkey, curkey;
+    WThead *head_pos = GetHeaderWT(leaf, pos);
+    // prevkey.addr = PageOffset(leaf, head_pos->key_offset);
+    prevkey.addr = new char[min_len + 1];
+    strcpy(prevkey.addr, kmin);
+    prevkey.size = min_len;
+    prevkey.newallocated = true;
+    // Keep searching till value > max or we reach end of tree
+    while (leaf != nullptr) {
+        if (pos == leaf->size) {
+            pos = 0;
+            leaf = leaf->next;
+            if (leaf == nullptr)
+                break;
+            WThead *head_first = GetHeaderWT(leaf, 0);
+            prevkey.addr = PageOffset(leaf, head_first->key_offset);
+            prevkey.size = head_first->key_len;
+            continue;
+        }
+
+        // int pfxcmp = char_cmp_new(prevkey.addr, kmax, )
+        WThead *h_pos = GetHeaderWT(leaf, pos);
+        curkey.size = h_pos->pfx_len + h_pos->key_len;
+        curkey.addr = new char[curkey.size + 1];
+        curkey.newallocated = true;
+
+        // build current key
+        strncpy(curkey.addr, prevkey.addr, h_pos->pfx_len);
+        strcpy(curkey.addr + h_pos->pfx_len, PageOffset(leaf, h_pos->key_offset));
+        if (char_cmp_new(curkey.addr, kmax, curkey.size, max_len) > 0)
+            break;
+        // string leafkey = prevkey.substr(0, leaf->keys.at(pos).prefix) + leaf->keys.at(pos).value;
+        // if (lex_compare(leafkey, max) > 0) {
+        //     break;
+        // }
+        // prevkey = leafkey;
+        // entries += leaf->keys.at(pos).ridList.size();
+        // delete the previous allocated memory
+        if (pos)
+            delete prevkey.addr;
+        prevkey = curkey;
+        // prevkey.newallocated = true;
+        entries++;
+        pos++;
+    }
+    return entries;
+}
+
 void BPTreeWT::insert(char *x) {
     int keylen = strlen(x);
     if (_root == nullptr) {

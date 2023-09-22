@@ -68,8 +68,6 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
     while (leaf != nullptr) {
         // each while loop for a leaf, instead of a pos
         // then only compare the prefix once
-        if (leaf == nullptr)
-            break;
         if (pos >= leaf->size) {
             leaf = leaf->next;
             pos = 0;

@@ -41,6 +41,7 @@ string output_path = "";
 bool write_to_file = false;
 int column_num = 0;
 uint16_t max_keylen = 0;
+int range_num = 100; // Default value
 
 const std::map<BenchmarkTypes, std::string> benchmarkStrMap{
     {BenchmarkTypes::INSERT, "insert"},
@@ -73,8 +74,7 @@ auto RunBenchmarkIteration(std::vector<char *> values,
     std::vector<TreeStatistics> structure_statistics(kIndexStructures.size());
 
     vector<char *> sorted_values;
-    map<char *, int, mapcmp> values_freq_map;
-    std::vector<int> minIndxs(100);
+    std::vector<int> minIndxs(range_num);
 
     std::vector<BenchmarkTypes> tofind{BenchmarkTypes::RANGE,
                                        BenchmarkTypes::BACKWARDSCAN};
@@ -83,32 +83,18 @@ auto RunBenchmarkIteration(std::vector<char *> values,
 
     if (founded != benchmarks.end()) {
         // Concatenate both values and values warmup for sorted list to perform
-        // range query
 
-        // vector<const char *> sorted_values;
-        // for(auto s:values)
-        //     sorted_values.
         sorted_values.insert(sorted_values.end(), values.begin(),
                              values.end());
         sorted_values.insert(sorted_values.end(), values_warmup.begin(),
                              values_warmup.end());
-        // for (auto s : sorted_values)
-        //     cout << s << ", ";
-        // cout << "=========" << endl;
+
         std::sort(sorted_values.begin(), sorted_values.end(), [](const char *lhs, const char *rhs) {
             int llen = strlen(lhs);
             int rlen = strlen(rhs);
             return char_cmp_new(lhs, rhs, llen, rlen) < 0;
         });
-        // sort(sorted_values.begin(), sorted_values.end());
-        for (auto s : sorted_values)
-            cout << s << ", ";
-        cout << "=========" << endl;
-        // values_freq_map = convert_to_freq_map_char(sorted_values);
-        // for (auto s : values_freq_map)
-        //     cout << s.first << ", ";
-        // cout << "=========" << endl;
-        // Initialize min indexes for range benchmark
+
         for (int i = 0; i < minIndxs.size(); i++) {
             minIndxs[i] = rand() % sorted_values.size() / 2;
         }
@@ -307,9 +293,18 @@ void PerformanceBenchmarkResults(
                 times.size() % 2 == 1 ? times[times.size() / 2] : (times[times.size() / 2] + times[times.size() / 2 + 1]) / 2.0;
 
             std::cout << name << "\t";
+            double avg_ops, med_ops;
 
-            const double avg_ops = key_numbers / avg / 1e6;
-            const double med_ops = key_numbers / med / 1e6;
+            if (benchmark == BenchmarkTypes::RANGE) {
+                avg_ops = range_num / avg / 1e6;
+                med_ops = range_num / avg / 1e6;
+            }
+            else {
+                avg_ops = key_numbers / avg / 1e6;
+                med_ops = key_numbers / avg / 1e6;
+            }
+            // double avg_ops = name == "range" ? range_num / avg / 1e6 : key_numbers / avg / 1e6;
+            // double med_ops = name == "range" ? range_num / avg / 1e6 : key_numbers / avg / 1e6;
 
             std::cout << "|" << FormatTime(min, true) << FormatTime(max, true)
                       << FormatTime(avg, true) << FormatTime(med, true)
@@ -499,6 +494,7 @@ int main(int argc, char *argv[]) {
     char *datasets_arg = GetCmdArg(argv, argv + argc, "-d");
     char *output_file_arg = GetCmdArg(argv, argv + argc, "-o");
     char *keylen_arg = GetCmdArg(argv, argv + argc, "-l");
+    char *range_arg = GetCmdArg(argv, argv + argc, "-r");
 
     if (benchmark_arg == nullptr || (datasets_arg == nullptr && size_arg == nullptr)) {
         perror("invalid args");
@@ -515,6 +511,11 @@ int main(int argc, char *argv[]) {
     if (keylen_arg != nullptr) {
         const string keylen_str{keylen_arg};
         max_keylen = std::stoul(keylen_str);
+    }
+
+    if (range_arg != nullptr) {
+        const string range_str{range_arg};
+        range_num = std::stoul(range_str);
     }
 
     if (iterations_arg != nullptr) {

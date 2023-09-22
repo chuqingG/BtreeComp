@@ -73,27 +73,25 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
         // then only compare the prefix once
         if (leaf == nullptr)
             break;
+        if (pos >= leaf->size) {
+            leaf = leaf->next;
+            pos = 0;
+            continue;
+        }
         if (!pos && leaf->highkey->size) {
             // max key not in this leaf
             int lastcmp = char_cmp_new(leaf->highkey->addr, kmax,
                                        leaf->highkey->size, max_len);
-            if (lastcmp >= 0) {
-                entries += leaf->size;
+            if (lastcmp <= 0) {
+                entries += leaf->size - pos;
                 leaf = leaf->next;
+                pos = 0;
                 continue;
             }
             // don't need to compare prefix separately,
             // the remain bytes are enough
         }
-        // If the search reaches here, it means the next
 
-        // if (pos == leaf->size) {
-        //     pos = 0;
-        //     leaf = leaf->next;
-        //     if (leaf == nullptr) {
-        //         break;
-        //     }
-        // }
         Stdhead *head_pos = GetHeaderStd(leaf, pos);
         int cmp;
         if (this->head_comp) {
@@ -104,18 +102,9 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
             cmp = char_cmp_new(PageOffset(leaf, head_pos->key_offset), kmax,
                                head_pos->key_len, max_len);
         }
-        // string leafkey = leaf->keys.at(pos).value;
-
-        // if (this->head_comp) {
-        //     leafkey = leaf->prefix + leafkey;
-        // }
-        // if (lex_compare(leafkey, max) > 0) {
-        //     break;
-        // }
         if (cmp > 0)
             break;
         entries++;
-        // entries += leaf->keys.at(pos).ridList.size();
         pos++;
     }
     return entries;

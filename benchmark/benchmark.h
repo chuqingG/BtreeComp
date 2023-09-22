@@ -55,8 +55,8 @@ public:
         for (uint32_t i = 0; i < values.size(); i++) {
             _tree->insert(values[i]);
         }
-        // vector<bool> flag(values.size());
-        // _tree->printTree(_tree->getRoot(), flag, true);
+        vector<bool> flag(values.size() * 1.25);
+        _tree->printTree(_tree->getRoot(), flag, true);
     }
 
     bool Search(const std::vector<char *> &values) override {

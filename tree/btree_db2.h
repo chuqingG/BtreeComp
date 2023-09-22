@@ -24,6 +24,7 @@ public:
     ~BPTreeDB2();
     int search(const char *);
     void insert(char *);
+    int searchRange(const char *, const char *);
 
     void getSize(NodeDB2 *, int &, int &, int &, int &, unsigned long &, int &);
     int getHeight(NodeDB2 *);

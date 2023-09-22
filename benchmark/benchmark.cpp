@@ -56,14 +56,14 @@ const std::map<std::string, BenchmarkTypes> strBenchmarksMap{
     {"backward", BenchmarkTypes::BACKWARDSCAN}};
 
 const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
-    {"Btree-Std", new BPTreeStdBenchmark()},
-    {"Btree-Head", new BPTreeHeadCompBenchmark()},
-    {"Btree-Tail", new BPTreeTailCompBenchmark()},
-    {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
+    // {"Btree-Std", new BPTreeStdBenchmark()},
+    // {"Btree-Head", new BPTreeHeadCompBenchmark()},
+    // {"Btree-Tail", new BPTreeTailCompBenchmark()},
+    // {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
     // {"Btree-WT", new BPTreeWTBenchmark()},
     // {"Btree-My", new BPTreeMyISAMBenchmark()},
     // {"Btree-PkB", new BPTreePkBBenchmark()},
-    // {"Btree-DB2", new BPTreeDB2Benchmark()},
+    {"Btree-DB2", new BPTreeDB2Benchmark()},
 };
 
 auto RunBenchmarkIteration(std::vector<char *> values,
@@ -310,8 +310,6 @@ void PerformanceBenchmarkResults(
                 avg_ops = key_numbers / avg / 1e6;
                 med_ops = key_numbers / avg / 1e6;
             }
-            // double avg_ops = name == "range" ? range_num / avg / 1e6 : key_numbers / avg / 1e6;
-            // double med_ops = name == "range" ? range_num / avg / 1e6 : key_numbers / avg / 1e6;
 
             std::cout << "|" << FormatTime(min, true) << FormatTime(max, true)
                       << FormatTime(avg, true) << FormatTime(med, true)

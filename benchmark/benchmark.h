@@ -159,6 +159,20 @@ public:
 
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
+        int range_size = sorted_values.size() / 3;
+
+        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
+            char *min = sorted_values.at(minIdxs[i]);
+            char *max = sorted_values.at(minIdxs[i] + range_size);
+            // cout << "search: [" << min << ", " << max << "]" << endl;
+            int entries = _tree->searchRange(min, max);
+            int expected = count_range(sorted_values, minIdxs[i], range_size);
+            if (entries != expected) {
+                cout << "Failure number of entries " << entries << " , expected "
+                     << expected << endl;
+                return false;
+            }
+        }
         return true;
     }
 

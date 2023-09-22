@@ -45,6 +45,56 @@ int BPTreeDB2::search(const char *key) {
     return search_in_leaf(leaf, key + pfx->pfx_len, keylen - pfx->pfx_len, pfx->low, pfx->high);
 }
 
+int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
+    int min_len = strlen(kmin);
+    int max_len = strlen(kmax);
+    // vector<DB2Node *> parents;
+    NodeDB2 *leaf = search_leaf_node(_root, kmin, min_len);
+    int pos, metadatapos;
+    int entries = 0;
+    if (leaf == nullptr) {
+        return 0;
+    }
+    else {
+        metadatapos = find_prefix_pos(leaf, kmin, min_len, false);
+        if (metadatapos == -1) {
+            return 0;
+        }
+        else {
+            DB2pfxhead *pfx = GetHeaderDB2pfx(leaf, metadatapos);
+            pos = search_in_leaf(leaf, kmin + pfx->pfx_len, min_len - pfx->pfx_len, pfx->low, pfx->high);
+            // PrefixMetaData currentMetadata = leaf->prefixMetadata.at(metadatapos);
+            // string prefix = currentMetadata.prefix;
+            // string compressed_key = min.substr(prefix.length());
+            // pos = search_binary(leaf, compressed_key, currentMetadata.low,
+            //                     currentMetadata.high);
+        }
+    }
+    // Keep searching till value > max or we reach end of tree
+    while (leaf != nullptr) {
+        if (pos == leaf->size) {
+            pos = 0;
+            metadatapos = 0;
+            leaf = leaf->next;
+            if (leaf == nullptr) {
+                break;
+            }
+        }
+
+        if (pos > leaf->prefixMetadata.at(metadatapos).high) {
+            metadatapos += 1;
+        }
+        string leafkey =
+            leaf->prefixMetadata.at(metadatapos).prefix + leaf->keys.at(pos).value;
+        if (lex_compare(leafkey, max) > 0) {
+            break;
+        }
+        entries += leaf->keys.at(pos).ridList.size();
+        pos++;
+    }
+    return entries;
+}
+
 void BPTreeDB2::insert(char *x) {
     int keylen = strlen(x);
     if (_root == nullptr) {

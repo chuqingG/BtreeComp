@@ -51,7 +51,6 @@ int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
     // vector<DB2Node *> parents;
     NodeDB2 *leaf = search_leaf_node(_root, kmin, min_len);
     int pos, metadatapos;
-    int entries = 0;
     if (leaf == nullptr) {
         return 0;
     }
@@ -70,27 +69,42 @@ int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
             //                     currentMetadata.high);
         }
     }
+    int entries = 0;
     // Keep searching till value > max or we reach end of tree
     while (leaf != nullptr) {
-        if (pos == leaf->size) {
+        if (pos >= leaf->size) {
+            leaf = leaf->next;
             pos = 0;
             metadatapos = 0;
-            leaf = leaf->next;
-            if (leaf == nullptr) {
-                break;
-            }
+            continue;
         }
 
-        if (pos > leaf->prefixMetadata.at(metadatapos).high) {
-            metadatapos += 1;
-        }
-        string leafkey =
-            leaf->prefixMetadata.at(metadatapos).prefix + leaf->keys.at(pos).value;
-        if (lex_compare(leafkey, max) > 0) {
+        DB2pfxhead *pfx = GetHeaderDB2pfx(leaf, metadatapos);
+
+        int pfxcmp = strncmp(PfxOffset(leaf, pfx->pfx_offset), kmax, pfx->pfx_len);
+        if (pfxcmp > 0)
             break;
+        else if (pfxcmp < 0) {
+            entries += pfx->high - pos + 1;
+            metadatapos++;
+            pos = pfx->high + 1;
+            continue;
         }
-        entries += leaf->keys.at(pos).ridList.size();
-        pos++;
+        int i;
+        for (i = pos; i <= pfx->high; i++) {
+            DB2head *head_i = GetHeaderDB2(leaf, i);
+            if (char_cmp_new(PageOffset(leaf, head_i->key_offset), kmax + pfx->pfx_len,
+                             head_i->key_len, max_len - pfx->pfx_len)
+                > 0)
+                break;
+            entries++;
+        }
+        if (i <= pfx->high)
+            break;
+        else {
+            metadatapos++;
+            pos = i;
+        }
     }
     return entries;
 }

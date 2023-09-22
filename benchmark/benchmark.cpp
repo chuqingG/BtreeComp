@@ -57,9 +57,9 @@ const std::map<std::string, BenchmarkTypes> strBenchmarksMap{
 
 const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
     {"Btree-Std", new BPTreeStdBenchmark()},
-    // {"Btree-Head", new BPTreeHeadCompBenchmark()},
-    // {"Btree-Tail", new BPTreeTailCompBenchmark()},
-    // {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
+    {"Btree-Head", new BPTreeHeadCompBenchmark()},
+    {"Btree-Tail", new BPTreeTailCompBenchmark()},
+    {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
     // {"Btree-WT", new BPTreeWTBenchmark()},
     // {"Btree-My", new BPTreeMyISAMBenchmark()},
     // {"Btree-PkB", new BPTreePkBBenchmark()},
@@ -263,9 +263,16 @@ void PerformanceBenchmarkResults(
         std::cout << "============================================================="
                      "===================================================="
                   << std::endl;
-        std::cout << "Index Structure\t|      Min\t|      Max\t|      Avg\t|      "
-                     "Med\t| M Ops/s (Avg)\t| M Ops/s (Med)\t|"
-                  << std::endl;
+        if (benchmark == BenchmarkTypes::RANGE) {
+            std::cout << "Index Structure\t|      Min\t|      Max\t|      Avg\t|      "
+                         "Med\t| M Ops/s (Avg)\t| K Ops/s (Med)\t|"
+                      << std::endl;
+        }
+        else {
+            std::cout << "Index Structure\t|      Min\t|      Max\t|      Avg\t|      "
+                         "Med\t| M Ops/s (Avg)\t| M Ops/s (Med)\t|"
+                      << std::endl;
+        }
         std::cout << "-------------------------------------------------------------"
                      "----------------------------------------------------"
                   << std::endl;
@@ -296,8 +303,8 @@ void PerformanceBenchmarkResults(
             double avg_ops, med_ops;
 
             if (benchmark == BenchmarkTypes::RANGE) {
-                avg_ops = range_num / avg / 1e6;
-                med_ops = range_num / avg / 1e6;
+                avg_ops = range_num / avg / 1e3;
+                med_ops = range_num / avg / 1e3;
             }
             else {
                 avg_ops = key_numbers / avg / 1e6;

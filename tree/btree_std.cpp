@@ -55,9 +55,6 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
     Node *leaf = search_leaf_node(_root, kmin, min_len);
     if (leaf == nullptr)
         return 0;
-    // if (this->head_comp)
-    //     min = min.substr(leaf->prefix.length());
-    // int pos = search_binary(leaf, min, 0, leaf->size - 1);
     int pos;
     if (this->head_comp) {
         pos = search_in_node(leaf, kmin + leaf->prefix->size, min_len - leaf->prefix->size,
@@ -78,7 +75,7 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
             pos = 0;
             continue;
         }
-        if (!pos && leaf->highkey->size) {
+        if ((!pos || !entries) && leaf->highkey->size) {
             // max key not in this leaf
             int lastcmp = char_cmp_new(leaf->highkey->addr, kmax,
                                        leaf->highkey->size, max_len);
@@ -88,6 +85,8 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
                 pos = 0;
                 continue;
             }
+            if (char_cmp_new(leaf->prefix->addr, kmax, leaf->prefix->size, max_len) > 0)
+                break;
             // don't need to compare prefix separately,
             // the remain bytes are enough
         }
@@ -95,8 +94,8 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
         Stdhead *head_pos = GetHeaderStd(leaf, pos);
         int cmp;
         if (this->head_comp) {
-            cmp = char_cmp_new(PageOffset(leaf, head_pos->key_offset) + leaf->prefix->size,
-                               kmax, head_pos->key_len - leaf->prefix->size, max_len);
+            cmp = char_cmp_new(PageOffset(leaf, head_pos->key_offset),
+                               kmax + leaf->prefix->size, head_pos->key_len, max_len - leaf->prefix->size);
         }
         else {
             cmp = char_cmp_new(PageOffset(leaf, head_pos->key_offset), kmax,

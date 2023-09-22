@@ -55,8 +55,8 @@ public:
         for (uint32_t i = 0; i < values.size(); i++) {
             _tree->insert(values[i]);
         }
-        vector<bool> flag(values.size() * 1.25);
-        _tree->printTree(_tree->getRoot(), flag, true);
+        // vector<bool> flag(values.size() * 1.25);
+        // _tree->printTree(_tree->getRoot(), flag, true);
     }
 
     bool Search(const std::vector<char *> &values) override {
@@ -69,13 +69,12 @@ public:
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
         int range_size = sorted_values.size() / 3;
-        // vector<const char *> keys = get_map_keys(valuesFreq);
+
         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
             char *min = sorted_values.at(minIdxs[i]);
             char *max = sorted_values.at(minIdxs[i] + range_size);
-            cout << "search: [" << min << ", " << max << "]" << endl;
+            // cout << "search: [" << min << ", " << max << "]" << endl;
             int entries = _tree->searchRange(min, max);
-            // int expected = get_map_values_in_range(valuesFreq, min, max);
             int expected = count_range(sorted_values, minIdxs[i], range_size);
             if (entries != expected) {
                 cout << "Failure number of entries " << entries << " , expected "

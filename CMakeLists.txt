@@ -28,7 +28,7 @@ add_subdirectory(tree)
 add_subdirectory(tree_mt)
 
 add_executable("Benchmark" "benchmark/benchmark.cpp")
-add_executable("BenchmarkMT" "benchmark_mt/benchmark.cpp")
+add_executable("BenchmarkMT" "benchmark/benchmark_mt.cpp")
 
 target_link_libraries("Benchmark" btree)
 target_link_libraries("BenchmarkMT" btree_mt)

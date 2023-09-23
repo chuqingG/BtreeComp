@@ -7,7 +7,7 @@
 #include <chrono>
 #include <vector>
 #include <map>
-#include "benchmark.h"
+#include "benchmark_mt.h"
 #include "../include/config.h"
 #include "../include/util.h"
 

@@ -55,20 +55,62 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
     Node *leaf = search_leaf_node(_root, kmin, min_len);
     if (leaf == nullptr)
         return 0;
-    int pos;
-    if (this->head_comp) {
-        pos = search_in_node(leaf, kmin + leaf->prefix->size, min_len - leaf->prefix->size,
-                             0, leaf->size - 1, true);
-    }
-    else {
-        pos = search_in_node(leaf, kmin, min_len, 0, leaf->size - 1, true);
-    }
+    int pos = search_in_node(leaf, kmin, min_len, 0, leaf->size - 1, true);
     int entries = 0;
     // Keep searching till value > max or we reach end of tree
     while (leaf != nullptr) {
         // each while loop for a leaf, instead of a pos
         // then only compare the prefix once
-        if (pos >= leaf->size) {
+        if (pos == leaf->size) {
+            leaf = leaf->next;
+            pos = 0;
+            continue;
+        }
+        // if ((!pos || !entries) && leaf->highkey->size) {
+        //     // max key not in this leaf
+        //     // int lastcmp = char_cmp_new(leaf->highkey->addr, kmax,
+        //     //                            leaf->highkey->size, max_len);
+        //     if (char_cmp_new(leaf->highkey->addr, kmax,
+        //                      leaf->highkey->size, max_len)
+        //         <= 0) {
+        //         // fetch all the keys within the node
+        //         for (int i = 0; i < leaf->size; i++) {
+        //             Stdhead *head_i = GetHeaderStd(leaf, i);
+        //             char *p = PageOffset(leaf, head_i->key_offset);
+        //         }
+        //         entries += leaf->size - pos;
+        //         leaf = leaf->next;
+        //         pos = 0;
+        //         continue;
+        //     }
+        // }
+
+        Stdhead *head_pos = GetHeaderStd(leaf, pos);
+        if (char_cmp_new(PageOffset(leaf, head_pos->key_offset), kmax,
+                         head_pos->key_len, max_len)
+            > 0)
+            break;
+        entries++;
+        pos++;
+    }
+    return entries;
+}
+
+int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
+    int min_len = strlen(kmin);
+    int max_len = strlen(kmax);
+
+    Node *leaf = search_leaf_node(_root, kmin, min_len);
+    if (leaf == nullptr)
+        return 0;
+    int pos = search_in_node(leaf, kmin + leaf->prefix->size, min_len - leaf->prefix->size,
+                             0, leaf->size - 1, true);
+    int entries = 0;
+    // Keep searching till value > max or we reach end of tree
+    while (leaf != nullptr) {
+        // each while loop for a leaf, instead of a pos
+        // then only compare the prefix once
+        if (pos == leaf->size) {
             leaf = leaf->next;
             pos = 0;
             continue;
@@ -86,6 +128,7 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
                     strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_i->key_offset));
                     delete decomp_key;
                 }
+
                 entries += leaf->size - pos;
                 leaf = leaf->next;
                 pos = 0;
@@ -99,22 +142,15 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
 
         Stdhead *head_pos = GetHeaderStd(leaf, pos);
         int cmp;
-        if (this->head_comp) {
-            if (char_cmp_new(PageOffset(leaf, head_pos->key_offset),
-                             kmax + leaf->prefix->size, head_pos->key_len, max_len - leaf->prefix->size)
-                > 0)
-                break;
-            char *decomp_key = new char[leaf->prefix->size + head_pos->key_len + 1];
-            strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
-            strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_pos->key_offset));
-            delete decomp_key;
-        }
-        else {
-            if (char_cmp_new(PageOffset(leaf, head_pos->key_offset), kmax,
-                             head_pos->key_len, max_len)
-                > 0)
-                break;
-        }
+        if (char_cmp_new(PageOffset(leaf, head_pos->key_offset),
+                         kmax + leaf->prefix->size, head_pos->key_len, max_len - leaf->prefix->size)
+            > 0)
+            break;
+        char *decomp_key = new char[leaf->prefix->size + head_pos->key_len + 1];
+        strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
+        strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_pos->key_offset));
+        delete decomp_key;
+
         entries++;
         pos++;
     }

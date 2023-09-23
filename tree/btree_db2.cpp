@@ -67,7 +67,7 @@ int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
     int entries = 0;
     // Keep searching till value > max or we reach end of tree
     while (leaf != nullptr) {
-        if (pos >= leaf->size) {
+        if (pos == leaf->size) {
             leaf = leaf->next;
             pos = 0;
             metadatapos = 0;

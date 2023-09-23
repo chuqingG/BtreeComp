@@ -21,6 +21,7 @@ public:
     void insert(char *);
     int search(const char *);
     int searchRange(const char *min, const char *max);
+    int searchRangeHead(const char *min, const char *max);
     void getSize(Node *, int &, int &, int &, int &, unsigned long &, int &);
     int getHeight(Node *);
     Node *getRoot();

@@ -17,6 +17,7 @@ public:
     ~BPTreeMyISAM();
     int search(const char *);
     void insert(char *);
+    int searchRange(const char *min, const char *max);
     void getSize(NodeMyISAM *, int &, int &, int &, int &, unsigned long &, int &);
     int getHeight(NodeMyISAM *);
     NodeMyISAM *getRoot();

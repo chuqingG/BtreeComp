@@ -45,6 +45,41 @@ int BPTreePkB::search(const char *key) {
         return -1;
 }
 
+int BPTreePkB::searchRange(const char *kmin, const char *kmax) {
+    int min_len = strlen(kmin);
+    int max_len = strlen(kmax);
+    int offset = 0;
+    NodePkB *leaf = search_leaf_node(_root, kmin, min_len, offset);
+    if (leaf == nullptr)
+        return 0;
+
+    bool equal = false;
+    findNodeResult result = find_node(leaf, kmin, min_len, offset, equal);
+    int pos = -1;
+    if (result.low == result.high)
+        pos = result.low;
+
+    int entries = 0;
+    // Keep searching till value > max or we reach end of tree
+    while (leaf != nullptr) {
+        if (pos == leaf->size) {
+            pos = 0;
+            leaf = leaf->next;
+            continue;
+        }
+
+        PkBhead *head = GetHeaderPkB(leaf, pos);
+        if (char_cmp_new(PageOffset(leaf, head->key_offset), kmax,
+                         head->key_len, max_len)
+            > 0) {
+            break;
+        }
+        entries++;
+        pos++;
+    }
+    return entries;
+}
+
 void BPTreePkB::insert(char *key) {
     int keylen = strlen(key);
     if (_root == nullptr) {

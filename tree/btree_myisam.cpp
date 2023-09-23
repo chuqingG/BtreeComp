@@ -42,6 +42,59 @@ int BPTreeMyISAM::search(const char *key) {
     return prefix_search(leaf, key, keylen);
 }
 
+int BPTreeMyISAM::searchRange(const char *kmin, const char *kmax) {
+    int min_len = strlen(kmin);
+    int max_len = strlen(kmax);
+    // vector<NodeMyISAM *> parents;
+    NodeMyISAM *leaf = search_leaf_node(_root, kmin, min_len);
+    if (leaf == nullptr)
+        return 0;
+    int pos = prefix_search(leaf, kmin, min_len);
+    if (pos == -1)
+        return 0;
+    int entries = 0;
+
+    Item prevkey, curkey;
+    prevkey.addr = new char[min_len + 1];
+    strcpy(prevkey.addr, kmin);
+    prevkey.size = min_len;
+    prevkey.newallocated = true;
+
+    // string prevkey = min;
+    // Keep searching till value > max or we reach end of tree
+    while (leaf != nullptr) {
+        if (pos == leaf->size) {
+            pos = 0;
+            leaf = leaf->next;
+
+            MyISAMhead *head_first = GetHeaderMyISAM(leaf, 0);
+            prevkey.addr = PageOffset(leaf, head_first->key_offset);
+            prevkey.size = head_first->key_len;
+            continue;
+            // prevkey = leaf->keys.at(0).value;
+        }
+        // build current key
+        MyISAMhead *h_pos = GetHeaderMyISAM(leaf, pos);
+        curkey.size = h_pos->pfx_len + h_pos->key_len;
+        curkey.addr = new char[curkey.size + 1];
+        curkey.newallocated = true;
+
+        strncpy(curkey.addr, prevkey.addr, h_pos->pfx_len);
+        strcpy(curkey.addr + h_pos->pfx_len, PageOffset(leaf, h_pos->key_offset));
+
+        if (char_cmp_new(curkey.addr, kmax, curkey.size, max_len) > 0)
+            break;
+
+        // delete the previous allocated memory
+        if (pos)
+            delete prevkey.addr;
+        prevkey = curkey;
+        entries++;
+        pos++;
+    }
+    return entries;
+}
+
 void BPTreeMyISAM::insert(char *key) {
     int keylen = strlen(key);
     if (_root == nullptr) {

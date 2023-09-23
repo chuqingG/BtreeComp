@@ -15,9 +15,10 @@ class BPTreePkB {
 public:
     BPTreePkB();
     ~BPTreePkB();
-    // unordered_map<string, char *> strPtrMap;
     int search(const char *);
     void insert(char *);
+    int searchRange(const char *, const char *);
+
     void getSize(NodePkB *, int &, int &, int &, int &, unsigned long &, int &);
     int getHeight(NodePkB *);
     NodePkB *getRoot();

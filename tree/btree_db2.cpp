@@ -2,7 +2,7 @@
 
 // Initialise the BPTreeDB2 NodeDB2
 BPTreeDB2::BPTreeDB2() {
-    _root = NULL;
+    _root = nullptr;
     max_level = 1;
 }
 
@@ -33,8 +33,6 @@ NodeDB2 *BPTreeDB2::getRoot() {
 // in B+ Tree
 int BPTreeDB2::search(const char *key) {
     int keylen = strlen(key);
-    if (char_cmp_new(key, "34430789", keylen, 8) == 0)
-        cout << "here" << endl;
     NodeDB2 *leaf = search_leaf_node(_root, key, keylen);
     if (leaf == nullptr)
         return -1;
@@ -120,14 +118,7 @@ void BPTreeDB2::insert(char *x) {
     int keylen = strlen(x);
     if (_root == nullptr) {
         _root = new NodeDB2;
-#ifdef DUPKEY
-        int rid = rand();
-        _root->keys.push_back(Key_c(x, rid));
-        _root->size = 1;
-#else
         InsertKeyDB2(_root, 0, x, keylen);
-#endif
-        // _root->IS_LEAF = true;
         return;
     }
     NodeDB2 *search_path[max_level];

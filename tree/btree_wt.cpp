@@ -4,7 +4,7 @@
 // Initialise the BPTreeWT NodeWT
 BPTreeWT::BPTreeWT(bool non_leaf_compression,
                    bool suffix_compression) {
-    _root = NULL;
+    _root = new NodeWT();
     max_level = 1;
     non_leaf_comp = non_leaf_compression;
     suffix_comp = suffix_compression;
@@ -95,14 +95,6 @@ int BPTreeWT::searchRange(const char *kmin, const char *kmax) {
 
 void BPTreeWT::insert(char *x) {
     int keylen = strlen(x);
-    if (_root == nullptr) {
-        _root = new NodeWT();
-
-        InsertKeyWT(_root, 0, x, keylen, 0);
-        _root->IS_LEAF = true;
-        return;
-    }
-
     NodeWT *search_path[max_level];
     int path_level = 0;
     uint8_t skiplow = 0;

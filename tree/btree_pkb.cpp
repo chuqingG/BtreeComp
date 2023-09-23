@@ -2,7 +2,7 @@
 
 // Initialise the BPTreePkB NodePkB
 BPTreePkB::BPTreePkB() {
-    _root = NULL;
+    _root = new NodePkB();
     max_level = 1;
 }
 
@@ -82,13 +82,6 @@ int BPTreePkB::searchRange(const char *kmin, const char *kmax) {
 
 void BPTreePkB::insert(char *key) {
     int keylen = strlen(key);
-    if (_root == nullptr) {
-        _root = new NodePkB;
-
-        InsertKeyPkB(_root, 0, key, keylen, 0);
-        _root->IS_LEAF = true;
-        return;
-    }
 
     int offset = 0;
     int path_level = 0;

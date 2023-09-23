@@ -61,7 +61,7 @@ Node::Node() {
     highkey->newallocated = true;
     highkey->size = 0;
     prefix = new Item(true);
-
+    IS_LEAF = true;
     prev = nullptr;
     next = nullptr;
 }
@@ -84,8 +84,6 @@ NodeDB2::NodeDB2() {
     ptr_cnt = 0;
     base = NewPageDB2();
     SetEmptyPageDB2(base);
-    // pfxbase = new char[DB2_PFX_MAX_SIZE];
-    // memset(pfxbase, 0, sizeof(char) * DB2_PFX_MAX_SIZE);
     IS_LEAF = true;
     space_top = 0;
     pfx_top = 0;
@@ -116,6 +114,7 @@ NodeWT::NodeWT() {
     base = NewPage();
     SetEmptyPage(base);
     space_top = 0;
+    IS_LEAF = true;
 }
 
 // Destructor of NodeWT
@@ -134,6 +133,7 @@ NodeMyISAM::NodeMyISAM() {
     base = NewPage();
     SetEmptyPage(base);
     space_top = 0;
+    IS_LEAF = true;
 }
 
 // Destructor of NodeMyISAM
@@ -149,6 +149,7 @@ NodePkB::NodePkB() {
     base = NewPage();
     SetEmptyPage(base);
     space_top = 0;
+    IS_LEAF = true;
 }
 
 // Destructor of NodePkB

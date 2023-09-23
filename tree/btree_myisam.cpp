@@ -3,7 +3,7 @@
 
 // Initialise the BPTreeMyISAM NodeMyISAM
 BPTreeMyISAM::BPTreeMyISAM(bool non_leaf_compression) {
-    _root = NULL;
+    _root = new NodeMyISAM();
     max_level = 1;
     non_leaf_comp = non_leaf_compression;
 }
@@ -97,15 +97,6 @@ int BPTreeMyISAM::searchRange(const char *kmin, const char *kmax) {
 
 void BPTreeMyISAM::insert(char *key) {
     int keylen = strlen(key);
-    if (_root == nullptr) {
-        _root = new NodeMyISAM;
-        // int rid = rand();
-        // _root->keys.push_back(KeyMyISAM(x, 0, rid));
-        // _root->size = 1;
-        InsertKeyMyISAM(_root, 0, key, keylen, 0);
-        _root->IS_LEAF = true;
-        return;
-    }
     int path_level = 0;
     NodeMyISAM *search_path[max_level];
     NodeMyISAM *leaf = search_leaf_node_for_insert(_root, key, keylen, search_path, path_level);

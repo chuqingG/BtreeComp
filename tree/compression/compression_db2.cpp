@@ -149,7 +149,7 @@ void merge_prefixes_in_segment(prefixOptimization *result,
     // the result.prefix should be shorten in this section
 
     // firstpos is the same as segment.low
-    int firstpos = bestsegment->segment.low;
+    // int firstpos = bestsegment->segment.low;
     int firstlow = -1;
     int lasthigh = 0;
     for (int i = bestsegment->segment.low; i <= bestsegment->segment.high; i++) {
@@ -193,8 +193,8 @@ prefixOptimization *prefix_merge(NodeDB2 *node) {
         DB2pfxhead *p_i = GetPfxInPageDB2(result, nextindex);
         DB2pfxhead *p_prev = GetPfxInPageDB2(result, nextindex - 1);
 
-        DB2head *head_ll = GetHeaderInPageDB2(result, p_prev->high);
-        DB2head *head_rf = GetHeaderInPageDB2(result, p_i->low);
+        // DB2head *head_ll = GetHeaderInPageDB2(result, p_prev->high);
+        // DB2head *head_rf = GetHeaderInPageDB2(result, p_i->low);
 
         // we don't need to decompress the string,
         // Because the common prefix should be shorter than any existing prefixes
@@ -410,7 +410,7 @@ void apply_prefix_optimization(NodeDB2 *node) {
 
         int prevprefix_len = 0;
         bool uninitialized = true;
-        uint32_t i;
+        int i;
         for (i = 1; i < node->size; i++) {
             // the curprefix doesn't include the original prefix
             DB2head *head_i = GetHeaderDB2(node, i);

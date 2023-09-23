@@ -1,5 +1,5 @@
 #include "btree_std.h"
-#include "./compression/compression_std.cpp"
+#include "../compression/compression_std.cpp"
 
 // Initialise the BPTree Node
 BPTree::BPTree(bool head_compression, bool tail_compression) {
@@ -203,11 +203,7 @@ void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int
         splitReturn_new split = split_leaf(leaf, key, keylen);
         if (leaf == _root) {
             Node *newRoot = new Node();
-#ifdef DUPKEY
-            int rid = rand();
-            newRoot->keys.push_back(Key_c(string_to_char(split.promotekey), rid));
-            // TODO: to fix
-#endif
+
             InsertNode(newRoot, 0, split.left);
             InsertKeyStd(newRoot, 0, split.promotekey.addr, split.promotekey.size);
             InsertNode(newRoot, 1, split.right);
@@ -352,7 +348,6 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     // Copy the two parts into new pages
     Node *right = new Node();
     char *left_base = NewPage();
-    char *right_base = right->base;
     SetEmptyPage(left_base);
     uint16_t left_top = 0;
 
@@ -507,7 +502,6 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
 
     // Copy the two parts into new pages
     char *left_base = NewPage();
-    char *right_base = right->base;
     SetEmptyPage(left_base);
     uint16_t left_top = 0;
 
@@ -765,7 +759,6 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
         cout << endl;
     }
 
-    int it = 0;
     for (auto i = 0; i < x->ptr_cnt; i++)
         // Recursive call for the
         // children nodes

@@ -2,50 +2,6 @@
 #include "node_mt.h"
 #include "node_inline.h"
 
-// // Constructor of key
-// Key::Key(string val, int rid) {
-//     value = val;
-//     ridList.push_back(to_string(rid));
-// }
-
-// // Method to add new rid with same key value
-// void Key::addRecord(int rid) {
-//     ridList.push_back(to_string(rid));
-// }
-
-// // Method to get size of key
-// int Key::getSize() {
-//     int totalLen = value.length();
-//     for (int i = 0; i < ridList.size(); i++) {
-//         totalLen += ridList.at(i).length();
-//     }
-//     return totalLen;
-// }
-
-// Key_c::Key_c(char *val, int rid) {
-//     value = val;
-//     ridList.push_back(rid);
-// }
-
-// // Method to add new rid with same key value
-// void Key_c::addRecord(int rid) {
-//     ridList.push_back(rid);
-// }
-
-// // Method to get size of key
-// int Key_c::getSize() {
-//     int totalLen = strlen(value);
-//     totalLen += ridList.size() * sizeof(int);
-//     return totalLen;
-// }
-
-// void Key_c::update_value(string str) {
-//     delete value;
-//     char *val = new char[str.size() + 1];
-//     memcpy(val, str.data(), str.size() + 1);
-//     value = val;
-// }
-
 // Constructor of Node
 Node::Node() {
     size = 0;
@@ -186,7 +142,7 @@ NodePkB::~NodePkB() {
 void printKeys(Node *node, bool compressed) {
     if (compressed && node->prefix->addr)
         cout << node->prefix->addr << ": ";
-    for (uint32_t i = 0; i < node->size; i++) {
+    for (int i = 0; i < node->size; i++) {
         Stdhead *head = GetHeaderStd(node, i);
         if (compressed && node->prefix->addr) {
             cout << PageOffset(node, head->key_offset) << ",";
@@ -198,7 +154,7 @@ void printKeys(Node *node, bool compressed) {
 }
 
 void printKeys_db2(NodeDB2 *node, bool compressed) {
-    for (uint32_t i = 0; i < node->pfx_size; i++) {
+    for (int i = 0; i < node->pfx_size; i++) {
         DB2pfxhead *pfx = GetHeaderDB2pfx(node, i);
         if (compressed) {
             cout << "Prefix " << PfxOffset(node, pfx->pfx_offset) << ": ";
@@ -219,7 +175,7 @@ void printKeys_db2(NodeDB2 *node, bool compressed) {
 void printKeys_myisam(NodeMyISAM *node, bool compressed) {
     char *prev_key;
     char *curr_key;
-    for (uint32_t i = 0; i < node->size; i++) {
+    for (int i = 0; i < node->size; i++) {
         MyISAMhead *head = GetHeaderMyISAM(node, i);
         if (compressed || head->pfx_len == 0 || i == 0) {
             curr_key = PageOffset(node, head->key_offset);

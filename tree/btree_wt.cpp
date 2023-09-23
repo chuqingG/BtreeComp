@@ -458,11 +458,11 @@ int BPTreeWT::search_insert_pos(NodeWT *cursor, const char *key, int keylen,
         else {
             get_full_key(cursor, mid, curkey);
         }
-        // char *pagekey = extract_key(cursor, mid, this->non_leaf_comp);
+
         int cmp;
         uint8_t match = min(skiplow, skiphigh);
         cmp = char_cmp_skip(key, curkey.addr, keylen, curkey.size, &match);
-        // cmp = lex_compare_skip(string(key), curkey, &match);
+
         if (cmp > 0) {
             skiplow = match;
         }
@@ -533,7 +533,6 @@ int BPTreeWT::search_in_leaf(NodeWT *cursor, const char *key, int keylen,
         int cmp;
         uint8_t match = min(skiplow, skiphigh);
         cmp = char_cmp_skip(key, curkey.addr, keylen, curkey.size, &match);
-        // cmp = lex_compare_skip(string(key), pagekey, &match);
 
         if (cmp > 0) {
             skiplow = match;
@@ -645,13 +644,10 @@ void BPTreeWT::printTree(NodeWT *x, vector<bool> flag, bool compressed, int dept
         cout << endl;
     }
 
-    int it = 0;
-    for (auto i = x->ptrs.begin();
-         i != x->ptrs.end(); ++i, ++it)
-
+    for (auto i = 0; i < x->ptr_cnt; i++)
         // Recursive call for the
         // children nodes
-        printTree(*i, flag, compressed, depth + 1,
-                  it == (x->ptrs.size()) - 1);
+        printTree(x->ptrs[i], flag, compressed, depth + 1,
+                  i == (x->ptrs.size()) - 1);
     flag[depth] = true;
 }

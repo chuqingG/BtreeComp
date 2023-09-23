@@ -1,6 +1,6 @@
 #pragma once
-#include "node.h"
-#include "node_inline.h"
+#include "node_disk.h"
+#include "node_disk_inline.h"
 
 // Constructor of Node
 Node::Node() {

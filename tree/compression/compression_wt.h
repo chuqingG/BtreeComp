@@ -2,7 +2,7 @@
 #include <iostream>
 #include "../node.cpp"
 #include "../node_inline.h"
-#include "../util.cpp"
+#include "../../utils/compare.cpp"
 
 using namespace std;
 
@@ -11,7 +11,6 @@ using namespace std;
 #define MIN_PREFIX_LEN 1
 int prefix_compression_min = 1;
 
-uint8_t compute_prefix_wt(string prev_key, string key);
 uint8_t compute_prefix_wt(string prev_key, string key, uint8_t prev_pfx);
 // string initialize_prefix_compressed_key(NodeWT *node, int ind);
 void get_full_key(NodeWT *node, int slot, Item &key);

@@ -1,6 +1,5 @@
 #pragma once
-#include "node_mt.h"
-#include "../utils/config.h"
+#include "node_disk.h"
 
 #define NewPage() (char *)malloc(MAX_SIZE_IN_BYTES * sizeof(char))
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
@@ -14,6 +13,11 @@
         node->base = newbase;     \
     }
 
+// #define UpdatePfx(node, newpfx) \
+//     {                           \
+//         delete node->pfxbase;   \
+//         node->pfxbase = newpfx; \
+//     }
 #define UpdatePfx(node, newpfx)                                            \
     {                                                                      \
         strncpy(node->base + MAX_SIZE_IN_BYTES, newpfx, DB2_PFX_MAX_SIZE); \
@@ -93,7 +97,9 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint8
 #define PfxOffset(node, off) (char *)(node->base + MAX_SIZE_IN_BYTES + off)
 
 inline void InsertPfxDB2(NodeDB2 *nptr, int pos, const char *p, uint8_t plen, uint8_t low, uint8_t high) {
-    strcpy(PfxTop(nptr), p);
+    char *temp = PfxTop(nptr);
+    memcpy(temp, p, sizeof(char) * plen);
+    temp[plen] = '\0';
     // shift the headers
     for (int i = nptr->pfx_size; i > pos; i--) {
         memcpy(GetHeaderDB2pfx(nptr, i), GetHeaderDB2pfx(nptr, i - 1), sizeof(DB2pfxhead));

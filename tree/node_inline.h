@@ -1,6 +1,6 @@
 #pragma once
 #include "node.h"
-#include "../include/config.h"
+// #include "../utils/config.h"
 
 #define NewPage() (char *)malloc(MAX_SIZE_IN_BYTES * sizeof(char))
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)

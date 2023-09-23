@@ -215,7 +215,7 @@ int BPTreeDB2::insert_prefix_and_key(NodeDB2 *node, const char *key, int keylen,
             insertpos = pfxhead->low;
             InsertPfxDB2(node, pfx_pos, "", 0, insertpos, insertpos);
         }
-        for (uint32_t i = pfx_pos + 1; i < node->pfx_size; i++) {
+        for (int i = pfx_pos + 1; i < node->pfx_size; i++) {
             DB2pfxhead *head_i = GetHeaderDB2pfx(node, i);
             head_i->low += 1;
             head_i->high += 1;
@@ -383,10 +383,9 @@ splitReturnDB2 BPTreeDB2::split_leaf(NodeDB2 *node, char *newkey, int keylen) {
     splitReturnDB2 newsplit;
     NodeDB2 *right = new NodeDB2;
     right->pfx_size = 0;
-    int insertpos;
     bool equal = false;
 
-    insertpos = insert_prefix_and_key(node, newkey, keylen, equal);
+    int insertpos = insert_prefix_and_key(node, newkey, keylen, equal);
     int split = split_point(node);
 
     Item splitkey;
@@ -542,7 +541,7 @@ void BPTreeDB2::getSize(NodeDB2 *cursor, int &numNodes, int &numNonLeaf, int &nu
     if (cursor != NULL) {
         int currSize = 0;
         int prefixSize = 0;
-        for (uint32_t i = 0; i < cursor->pfx_size; i++) {
+        for (int i = 0; i < cursor->pfx_size; i++) {
             DB2pfxhead *head = GetHeaderDB2pfx(cursor, i);
             currSize += head->pfx_len + sizeof(DB2pfxhead);
             prefixSize += head->pfx_len + sizeof(DB2pfxhead);
@@ -629,13 +628,10 @@ void BPTreeDB2::printTree(NodeDB2 *x, vector<bool> flag, bool compressed, int de
         cout << endl;
     }
 
-    int it = 0;
-    for (auto i = x->ptrs.begin();
-         i != x->ptrs.end(); ++i, ++it)
-
+    for (auto i = 0; i < x->ptr_cnt; i++)
         // Recursive call for the
         // children nodes
-        printTree(*i, flag, compressed, depth + 1,
-                  it == (x->ptrs.size()) - 1);
+        printTree(x->ptrs[i], flag, compressed, depth + 1,
+                  i == (x->ptrs.size()) - 1);
     flag[depth] = true;
 }

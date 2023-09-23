@@ -1,15 +1,14 @@
+
 #include <algorithm>
-#include <iostream>
+#include <chrono>
 #include <fstream>
 #include <iomanip>
-#include <random>
-#include <string>
-#include <chrono>
-#include <vector>
+#include <iostream>
 #include <map>
-#include "benchmark_mt.h"
-#include "../utils/config.h"
-#include "../utils/util.h"
+#include <random>
+#include <vector>
+
+#include "benchmark_disk.h"
 
 using namespace std;
 
@@ -29,10 +28,6 @@ enum class DatasetTypes {
 struct BenchmarkResult {
     std::vector<std::map<BenchmarkTypes, double>> structure_times;
     std::vector<TreeStatistics> structure_statistics;
-#ifdef TIMEDEBUG
-    std::vector<std::map<BenchmarkTypes, double>> prefix_update_times;
-    std::vector<std::map<BenchmarkTypes, double>> prefix_calc_times;
-#endif
 };
 
 // Define multiple benchmarks in single run
@@ -46,7 +41,8 @@ string dataset_file_name = "";
 string output_path = "";
 bool write_to_file = false;
 int column_num = 0;
-int thread_num = 0;
+uint16_t max_keylen = 0;
+int range_num = 100; // Default value
 
 const std::map<BenchmarkTypes, std::string> benchmarkStrMap{
     {BenchmarkTypes::INSERT, "insert"},
@@ -60,133 +56,160 @@ const std::map<std::string, BenchmarkTypes> strBenchmarksMap{
     {"range", BenchmarkTypes::RANGE},
     {"backward", BenchmarkTypes::BACKWARDSCAN}};
 
-const std::vector<std::tuple<std::string, Benchmark_c *>> kIndexStructures{
-    {"BPTree-std", new BPTreeStdBenchmark()},
-    {"BPTree-head", new BPTreeHeadCompBenchmark()},
-    {"BPTree-tail", new BPTreeTailCompBenchmark()},
-    {"BPTree-headtail", new BPTreeHeadTailCompBenchmark()},
-    // {"BPTree-DB2", new BPTreeDB2Benchmark()},
-    // {"BPTree-MyISAM", new BPTreeMyISAMBenchmark()},
-    // {"BPTree-WT", new BPTreeWTBenchmark()},
-    // {"BPTree-PkB", new BPTreePkBBenchmark()},
+const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
+    {"Btree-Std", new BPTreeStdBenchmark()},
+    {"Btree-Head", new BPTreeHeadCompBenchmark()},
+    {"Btree-Tail", new BPTreeTailCompBenchmark()},
+    {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
+    // {"Btree-WT", new BPTreeWTBenchmark()},
+    // {"Btree-My", new BPTreeMyISAMBenchmark()},
+    // {"Btree-PkB", new BPTreePkBBenchmark()},
+    // {"Btree-DB2", new BPTreeDB2Benchmark()},
 };
 
-auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> values_warmup) {
+auto RunBenchmarkIteration(std::vector<char *> values,
+                           std::vector<char *> values_warmup) {
     // List of time spent for each benchmark
-    std::vector<std::map<BenchmarkTypes, double>> structure_times(kIndexStructures.size());
+    std::vector<std::map<BenchmarkTypes, double>> structure_times(
+        kIndexStructures.size());
     std::vector<TreeStatistics> structure_statistics(kIndexStructures.size());
 
-#ifdef THREAD_DEBUG
-    auto t_start = std::chrono::system_clock::now();
-#endif
-
-    // construct elements for range and backward if needed
     vector<char *> sorted_values;
-    map<char *, int, mapcmp> values_freq_map;
-    std::vector<int> minIndxs(100);
+    std::vector<int> minIndxs(range_num);
 
-    std::vector<BenchmarkTypes> tofind{BenchmarkTypes::RANGE, BenchmarkTypes::BACKWARDSCAN};
-    auto founded = std::find_if(benchmarks.begin(), benchmarks.end(), [&](BenchmarkTypes val) {
-        return std::find(tofind.begin(), tofind.end(), val) != tofind.end();
-    });
+    std::vector<BenchmarkTypes> tofind{BenchmarkTypes::RANGE,
+                                       BenchmarkTypes::BACKWARDSCAN};
+    auto founded = std::find_if(
+        benchmarks.begin(), benchmarks.end(), [&](BenchmarkTypes val) { return std::find(tofind.begin(), tofind.end(), val) != tofind.end(); });
 
     if (founded != benchmarks.end()) {
-        // Concatenate both values and values warmup for sorted list to perform range query
-        // vector<const char *> sorted_values;
-        sorted_values.insert(sorted_values.end(), values.begin(), values.end());
-        sorted_values.insert(sorted_values.end(), values_warmup.begin(), values_warmup.end());
-        sort(sorted_values.begin(), sorted_values.end());
-        values_freq_map = convert_to_freq_map_char(values, values_warmup);
-        // Initialize min indexes for range benchmark
+        // Concatenate both values and values warmup for sorted list to perform
+
+        sorted_values.insert(sorted_values.end(), values.begin(),
+                             values.end());
+        sorted_values.insert(sorted_values.end(), values_warmup.begin(),
+                             values_warmup.end());
+
+        std::sort(sorted_values.begin(), sorted_values.end(), [](const char *lhs, const char *rhs) {
+            int llen = strlen(lhs);
+            int rlen = strlen(rhs);
+            return char_cmp_new(lhs, rhs, llen, rlen) < 0;
+        });
+
         for (int i = 0; i < minIndxs.size(); i++) {
-            minIndxs[i] = rand() % values_freq_map.size() / 2;
+            minIndxs[i] = rand() % sorted_values.size() / 2;
         }
     }
 
-#ifdef THREAD_DEBUG
-    auto time_gap = static_cast<double>(std::chrono::duration_cast<
-                                            std::chrono::nanoseconds>(std::chrono::system_clock::now() - t_start)
-                                            .count())
-                    / 1e9;
-    cout << "Finish sort and freq for range query: " << time_gap << " (s)" << endl;
-#endif
-
     for (uint32_t i = 0; i < kIndexStructures.size(); ++i) {
         const auto &[name, structure] = kIndexStructures[i];
-        structure->InitializeStructure(thread_num, column_num);
+        structure->InitializeStructure();
         double time_spent;
         std::chrono::system_clock::time_point t1;
 
-#ifdef THREAD_DEBUG
+#ifdef SINGLE_DEBUG
         auto t_start = std::chrono::system_clock::now();
 #endif
 
         // Insert values for warmup
         structure->Insert(values_warmup);
 
-#ifdef THREAD_DEBUG
-        auto time_gap = static_cast<double>(std::chrono::duration_cast<
-                                                std::chrono::nanoseconds>(std::chrono::system_clock::now() - t_start)
-                                                .count())
+#ifdef SINGLE_DEBUG
+        auto time_gap = static_cast<double>(
+                            std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                std::chrono::system_clock::now() - t_start)
+                                .count())
                         / 1e9;
         cout << "Finish Warmup: " << time_gap << " (s)" << endl;
 #endif
 
         for (BenchmarkTypes benchmark : benchmarks) {
-#ifdef TIMEDEBUG
-            double prefix_update = 0.0;
-            double prefix_calc = 0.0;
-#endif
             switch (benchmark) {
-            case BenchmarkTypes::INSERT:
+            case BenchmarkTypes::INSERT: {
                 t1 = std::chrono::system_clock::now();
-#ifndef TIMEDEBUG
                 structure->Insert(values);
-#else
-                structure->Insert(values, &prefix_calc, &prefix_update);
-#endif
-                time_spent = static_cast<double>(std::chrono::duration_cast<
-                                                     std::chrono::nanoseconds>(std::chrono::system_clock::now() - t1)
-                                                     .count())
+                time_spent = static_cast<double>(
+                                 std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                     std::chrono::system_clock::now() - t1)
+                                     .count())
                              / 1e9;
+#ifdef SINGLE_DEBUG
                 cout << name << "\t:"
                      << "Finish" << endl;
+#endif
                 break;
-            case BenchmarkTypes::SEARCH:
+            }
+            case BenchmarkTypes::SEARCH: {
                 t1 = std::chrono::system_clock::now();
-                // TODO(chuqing): more accurate correctness check, e.g. generate new search set
-                if (structure->Search(values))
+                // TODO(chuqing): more accurate correctness check, e.g. generate new
+                // search set
+                bool noerror_s = structure->Search(values);
+                time_spent = static_cast<double>(
+                                 std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                     std::chrono::system_clock::now() - t1)
+                                     .count())
+                             / 1e9;
+                if (noerror_s)
                     cout << name << "\t:"
                          << "No errors happen during search" << endl;
                 else
                     cout << name << "\t:"
                          << "Errors happen during search" << endl;
-                time_spent = static_cast<double>(std::chrono::duration_cast<
-                                                     std::chrono::nanoseconds>(std::chrono::system_clock::now() - t1)
-                                                     .count())
-                             / 1e9;
                 break;
             }
+            case BenchmarkTypes::RANGE: {
+                t1 = std::chrono::system_clock::now();
+                bool noerror_sr = structure->SearchRange(sorted_values, minIndxs);
+                time_spent = static_cast<double>(
+                                 std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                     std::chrono::system_clock::now() - t1)
+                                     .count())
+                             / 1e9;
+                if (noerror_sr)
+                    cout << name << "\t:"
+                         << "No errors happen during search range" << endl;
+                else
+                    cout << name << "\t:"
+                         << "Errors happen during search range" << endl;
+                break;
+            }
+            }
             structure_times[i].insert({benchmark, time_spent});
-#ifdef THREAD_DEBUG
-            std::ofstream myfile;
+#ifdef VERBOSE_PRINT
             if (write_to_file) {
+                std::ofstream myfile;
                 const double ops = key_numbers / time_spent / 1e6;
                 string file_name = output_path + ".txt";
                 myfile.open(file_name, fstream::out | ios::app);
                 myfile << name << " (" << benchmarkStrMap.at(benchmark) << ")\t"
-                       << FormatTime(time_spent, true) << FormatTime(ops, false) << endl;
+                       << FormatTime(time_spent, true) << FormatTime(ops, false)
+                       << endl;
+                myfile.close();
             }
 #endif
         }
         structure_statistics[i] = structure->CalcStatistics();
+#ifdef VERBOSE_PRINT
+        if (write_to_file) {
+            std::ofstream myfile;
+            auto ss = structure_statistics[i];
+            string file_name = output_path + ".txt";
+            myfile.open(file_name, fstream::out | ios::app);
+            myfile << "name\theight\tkeysize\tprefix\tfanout\tnodes\tnonleaf\t\n";
+            myfile << name << "\t" << ss.height << "   \t"
+                   << ss.totalKeySize / (double)ss.numKeys << "\t"
+                   << ss.totalPrefixSize / (double)ss.numKeys << "\t"
+                   << ss.totalBranching / (double)ss.nonLeafNodes << "\t"
+                   << ss.numNodes << "\t" << ss.nonLeafNodes << std::endl;
+            myfile << "--------------------------------------------------" << endl;
+            myfile.close();
+        }
+#endif
         structure->DeleteStructure();
     }
     BenchmarkResult results = {
         structure_times,
         structure_statistics,
-#ifdef TIMEDEBUG
-#endif
     };
     return results;
 }
@@ -194,9 +217,10 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
 auto BenchmarkToString() {
     std::string s;
     std::for_each(benchmarks.begin(), benchmarks.end(),
-                  [&](const BenchmarkTypes &benchmark) {  
-                    std::string benchmark_str = benchmarkStrMap.at(benchmark);
-                    s += s.empty() ? benchmark_str : "," + benchmark_str; });
+                  [&](const BenchmarkTypes &benchmark) {
+                      std::string benchmark_str = benchmarkStrMap.at(benchmark);
+                      s += s.empty() ? benchmark_str : "," + benchmark_str;
+                  });
     return s;
 }
 
@@ -222,19 +246,40 @@ auto ArgToBenchmark(std::string benchmark_str) {
     return tokens;
 }
 
-void PerformanceBenchmarkResults(std::vector<map<BenchmarkTypes, vector<double>>> structure_benchmark_times) {
+void PerformanceBenchmarkResults(
+    std::vector<map<BenchmarkTypes, vector<double>>>
+        structure_benchmark_times) {
+    std::ofstream myfile;
+    if (write_to_file) {
+        string file_name = output_path + ".txt";
+        myfile.open(file_name, fstream::out | ios::app);
+        myfile << "===========================START SUMMARY========================" << endl;
+    }
     for (auto benchmark : benchmarks) {
-        std::cout << "=================================================================================================================" << std::endl;
-        std::cout << "\t\t\t\t\tPERFORMANCE BENCHMARK RESULTS - " << benchmarkStrMap.at(benchmark) << std::endl;
-        std::cout << "=================================================================================================================" << std::endl;
-        std::cout << "Index Structure\t|      Min\t|      Max\t|      Avg\t|      Med\t| M Ops/s (Avg)\t| M Ops/s (Med)\t|" << std::endl;
-        std::cout << "-----------------------------------------------------------------------------------------------------------------" << std::endl;
+        std::cout << "============================================================="
+                     "===================================================="
+                  << std::endl;
+        std::cout << "\t\t\t\t\tPERFORMANCE BENCHMARK RESULTS - "
+                  << benchmarkStrMap.at(benchmark) << std::endl;
+        std::cout << "============================================================="
+                     "===================================================="
+                  << std::endl;
+        if (benchmark == BenchmarkTypes::RANGE) {
+            std::cout << "Index Structure\t|      Min\t|      Max\t|      Avg\t|      "
+                         "Med\t| M Ops/s (Avg)\t| K Ops/s (Med)\t|"
+                      << std::endl;
+        }
+        else {
+            std::cout << "Index Structure\t|      Min\t|      Max\t|      Avg\t|      "
+                         "Med\t| M Ops/s (Avg)\t| M Ops/s (Med)\t|"
+                      << std::endl;
+        }
+        std::cout << "-------------------------------------------------------------"
+                     "----------------------------------------------------"
+                  << std::endl;
 
         // New file for every benchmark result
-        std::ofstream myfile;
         if (write_to_file) {
-            string file_name = output_path + ".txt";
-            myfile.open(file_name, fstream::out | ios::app);
             myfile << "\n"
                    << benchmarkStrMap.at(benchmark) << " performance\n"
                    << "name\tmin\tmax\tavg\tmed\tmops_avg\tmops_med\n";
@@ -252,48 +297,62 @@ void PerformanceBenchmarkResults(std::vector<map<BenchmarkTypes, vector<double>>
             for (const auto &t : times)
                 sum += t;
             const double avg = sum / times.size();
-            const double med = times.size() % 2 == 1 ? times[times.size() / 2] : (times[times.size() / 2] + times[times.size() / 2 + 1]) / 2.0;
+            const double med =
+                times.size() % 2 == 1 ? times[times.size() / 2] : (times[times.size() / 2] + times[times.size() / 2 + 1]) / 2.0;
 
-            // std::cout << name << "\t" << benchmarkStrMap.at(benchmark) << "\t";
             std::cout << name << "\t";
+            double avg_ops, med_ops;
 
-            const double avg_ops = key_numbers / avg / 1e6;
-            const double med_ops = key_numbers / med / 1e6;
+            if (benchmark == BenchmarkTypes::RANGE) {
+                avg_ops = range_num / avg / 1e3;
+                med_ops = range_num / avg / 1e3;
+            }
+            else {
+                avg_ops = key_numbers / avg / 1e6;
+                med_ops = key_numbers / avg / 1e6;
+            }
 
-            std::cout << "|"
-                      << FormatTime(min, true) << FormatTime(max, true)
+            std::cout << "|" << FormatTime(min, true) << FormatTime(max, true)
                       << FormatTime(avg, true) << FormatTime(med, true)
                       << FormatTime(avg_ops, false) << FormatTime(med_ops, false)
                       << std::endl;
 
             if (write_to_file) {
-                output_row << name << "\t" << min << "\t" << max << "\t"
-                           << avg << "\t" << med << "\t"
-                           << avg_ops << "\t" << med_ops << std::endl;
+                output_row << name << "\t" << min << "\t" << max << "\t" << avg << "\t"
+                           << med << "\t" << avg_ops << "\t" << med_ops << std::endl;
                 myfile << output_row.str();
             }
-
             structure->DeleteStructure();
         }
-        if (write_to_file) {
-            myfile.close();
-        }
+    }
+    if (write_to_file) {
+        myfile.close();
     }
 }
 
-void TreeStatisticBenchmarkResults(std::vector<vector<TreeStatistics>> structure_benchmark_statistics) {
-    std::cout << "=================================================================================================================" << std::endl;
+void TreeStatisticBenchmarkResults(
+    std::vector<vector<TreeStatistics>> structure_benchmark_statistics) {
+    std::cout << "==============================================================="
+                 "=================================================="
+              << std::endl;
     std::cout << "\t\t\t\t\tTREE STATISTICS BENCHMARK RESULTS" << std::endl;
-    std::cout << "=================================================================================================================" << std::endl;
-    std::cout << "Index Structure\t|      Height\t|      Avg Key Size\t|      Avg Prefix Size\t|      Avg Branching degree\t| Nodes\t| Non-leaf Nodes\t|" << std::endl;
-    std::cout << "-----------------------------------------------------------------------------------------------------------------" << std::endl;
+    std::cout << "==============================================================="
+                 "=================================================="
+              << std::endl;
+    std::cout << "Index Structure\t|      Height\t| Avg Key Size\t|"
+                 "  Prefix Size\t|  Avg Fanout\t| Total Nodes\t| "
+                 "Non-leaf #\t|"
+              << std::endl;
+    std::cout << "---------------------------------------------------------------"
+                 "--------------------------------------------------"
+              << std::endl;
 
     std::ofstream myfile;
     if (write_to_file) {
         string file_name = output_path + ".txt";
         myfile.open(file_name, fstream::out | ios::app);
-        myfile << "\nstatistics\n"
-               << "name\theight\tkeysize\tprefixsize\tbranchdegree\tnodes\tnonleafnodes\n";
+        myfile
+            << "\nname\theight\tkeysize\tprefixsize\tbranchdegree\tnodes\tnonleafnodes\n";
     }
 
     for (uint32_t i = 0; i < kIndexStructures.size(); ++i) {
@@ -313,8 +372,10 @@ void TreeStatisticBenchmarkResults(std::vector<vector<TreeStatistics>> structure
             sum_non_leaf_nodes += statistic.nonLeafNodes;
             sum_keys += statistic.numKeys;
             sum_avg_key_size += statistic.totalKeySize / (double)statistic.numKeys;
-            sum_avg_prefix_size += statistic.totalPrefixSize / (double)statistic.numKeys;
-            sum_avg_branch_degree += statistic.totalBranching / (double)statistic.nonLeafNodes;
+            sum_avg_prefix_size +=
+                statistic.totalPrefixSize / (double)statistic.numKeys;
+            sum_avg_branch_degree +=
+                statistic.totalBranching / (double)statistic.nonLeafNodes;
         }
         const double avg_height = sum_height / statistics.size();
         const double avg_nodes = sum_nodes / statistics.size();
@@ -325,11 +386,12 @@ void TreeStatisticBenchmarkResults(std::vector<vector<TreeStatistics>> structure
 
         std::cout << name << "\t";
 
-        std::cout << "|"
-                  << FormatStatistic(avg_height) << FormatStatistic(avg_key_size)
-                  << FormatStatistic(avg_prefix_size) << FormatStatistic(avg_branch_degree)
-                  << FormatStatistic(avg_nodes) << FormatStatistic(avg_non_leaf_nodes)
-                  << std::endl;
+        std::cout << "|" << FormatStatistic(avg_height)
+                  << FormatStatistic(avg_key_size)
+                  << FormatStatistic(avg_prefix_size)
+                  << FormatStatistic(avg_branch_degree)
+                  << FormatStatistic(avg_nodes)
+                  << FormatStatistic(avg_non_leaf_nodes) << std::endl;
         if (write_to_file) {
             output_row << name << "\t" << avg_height << "\t" << avg_key_size << "\t"
                        << avg_prefix_size << "\t" << avg_branch_degree << "\t"
@@ -340,17 +402,19 @@ void TreeStatisticBenchmarkResults(std::vector<vector<TreeStatistics>> structure
         structure->DeleteStructure();
     }
     if (write_to_file) {
-        myfile << "====================================================\n";
+        myfile << "=========================END OF SUMMARY=====================" << endl;
         myfile.close();
     }
 }
 
 void RunBenchmark() {
     cout << "Starting [" << BenchmarkToString() << "]: size=" << key_numbers
-         << ", iter=" << iterations << ", thread=" << thread_num << endl;
+         << ", iter=" << iterations << endl;
 
-    std::vector<map<BenchmarkTypes, vector<double>>> structure_benchmark_times(kIndexStructures.size());
-    std::vector<vector<TreeStatistics>> structure_benchmark_statistics(kIndexStructures.size());
+    std::vector<map<BenchmarkTypes, vector<double>>> structure_benchmark_times(
+        kIndexStructures.size());
+    std::vector<vector<TreeStatistics>> structure_benchmark_statistics(
+        kIndexStructures.size());
 
     const auto t1 = std::chrono::system_clock::now();
 
@@ -358,9 +422,11 @@ void RunBenchmark() {
     std::vector<char *> values_warmup;
     if (dataset == DatasetTypes::RANDOM) {
         column_num = 1;
-#ifndef MEMDEBUG
+#ifdef TOFIX
         generate_random_number(values, key_numbers);
-        generate_random_number(values_warmup, 1'000); // TODO(chuqing): now set a small value for test
+        generate_random_number(
+            values_warmup,
+            100'000); // TODO(chuqing): now set a small value for test
 #endif
     }
     else {
@@ -369,22 +435,17 @@ void RunBenchmark() {
         int max_data_length;
         if (key_numbers) {
             // cutoff on the whole dataset
-            // TODO: add keylen here
-            max_data_length = read_dataset_char(allvalues, dataset_file_name, 0, key_numbers);
+            max_data_length =
+                read_dataset_char(allvalues, dataset_file_name, max_keylen, key_numbers);
         }
         else {
-            max_data_length = read_dataset_char(allvalues, dataset_file_name, 0);
+            max_data_length = read_dataset_char(allvalues, dataset_file_name, max_keylen);
             key_numbers = allvalues.size();
         }
-#ifdef THREAD_DEBUG
+#ifdef SINGLE_DEBUG
         cout << "Finish reading: " << key_numbers << " items in total, "
              << "max length: " << max_data_length << endl;
 #endif
-
-        // auto split_point = std::next(allvalues.begin(), std::size_t(std::round(allvalues.size() * (1 - warmup_split_ratio))));
-        // std::partition_copy(allvalues.begin(), allvalues.end(), std::back_inserter(values), std::back_inserter(values_warmup),
-        // [&](char* elem){ return &elem < &(*split_point); });
-        // std::partition_copy(allvalues.begin(), allvalues.end(), values, values_warmup,[&](char* elem){ return &elem < &(*split_point); });
         int warm_num = std::round(allvalues.size() * warmup_split_ratio);
         for (int i = 0; i < warm_num; i++) {
             values_warmup.push_back(allvalues[i]);
@@ -392,19 +453,18 @@ void RunBenchmark() {
         for (int i = warm_num; i < allvalues.size(); i++) {
             values.push_back(allvalues[i]);
         }
-        // count columns
-        // column_num = count_column(values[0]);
-        // free allvalues
+
+        // Free extra space
         values.shrink_to_fit();
         values_warmup.shrink_to_fit();
         allvalues.clear();
         vector<char *>(allvalues).swap(allvalues);
     }
 
-#ifndef MYDEBUG
     // Run Benchmarks
     for (int i = 0; i < iterations; ++i) {
-        std::cout << '\r' << "Running iteration " << (i + 1) << "/" << iterations << "...\n"
+        std::cout << '\r' << "Running iteration " << (i + 1) << "/" << iterations
+                  << "...\n"
                   << std::flush;
         BenchmarkResult results = RunBenchmarkIteration(values, values_warmup);
         // times is vector<std::map<BenchmarkTypes, double>> structure_times
@@ -419,18 +479,18 @@ void RunBenchmark() {
     }
 
     const auto after_bench = std::chrono::system_clock::now();
-    const auto time = static_cast<double>(std::chrono::duration_cast<
-                                              std::chrono::seconds>(after_bench - t1)
-                                              .count())
-                      / 60;
+    const auto time =
+        static_cast<double>(
+            std::chrono::duration_cast<std::chrono::seconds>(after_bench - t1)
+                .count())
+        / 60;
 
     std::cout << "\nFinish [" << BenchmarkToString() << "]: size=" << key_numbers
-              << ", iter=" << iterations << std::fixed << ", " << std::setprecision(1) << time << " minutes."
-              << std::endl;
+              << ", iter=" << iterations << std::fixed << ", "
+              << std::setprecision(1) << time << " minutes." << std::endl;
 
     PerformanceBenchmarkResults(structure_benchmark_times);
     TreeStatisticBenchmarkResults(structure_benchmark_statistics);
-#endif
 }
 
 int main(int argc, char *argv[]) {
@@ -439,7 +499,8 @@ int main(int argc, char *argv[]) {
     char *iterations_arg = GetCmdArg(argv, argv + argc, "-i");
     char *datasets_arg = GetCmdArg(argv, argv + argc, "-d");
     char *output_file_arg = GetCmdArg(argv, argv + argc, "-o");
-    char *thread_arg = GetCmdArg(argv, argv + argc, "-t");
+    char *keylen_arg = GetCmdArg(argv, argv + argc, "-l");
+    char *range_arg = GetCmdArg(argv, argv + argc, "-r");
 
     if (benchmark_arg == nullptr || (datasets_arg == nullptr && size_arg == nullptr)) {
         perror("invalid args");
@@ -453,20 +514,22 @@ int main(int argc, char *argv[]) {
         key_numbers = std::stoul(size_str);
     }
 
+    if (keylen_arg != nullptr) {
+        const string keylen_str{keylen_arg};
+        max_keylen = std::stoul(keylen_str);
+    }
+
+    if (range_arg != nullptr) {
+        const string range_str{range_arg};
+        range_num = std::stoul(range_str);
+    }
+
     if (iterations_arg != nullptr) {
         const string iterations_str{iterations_arg};
         iterations = std::stoul(iterations_str);
     }
     else {
         iterations = 5; // default
-    }
-
-    if (thread_arg != nullptr) {
-        const string thread_str{thread_arg};
-        thread_num = std::stoul(thread_str);
-    }
-    else {
-        thread_num = 16; // default
     }
 
     if (datasets_arg != nullptr) {
@@ -485,7 +548,8 @@ int main(int argc, char *argv[]) {
     if (output_file_arg != nullptr) {
         const string output_path_str{output_file_arg};
         if (output_path_str == "auto") {
-            output_path = generate_output_path(datasets_arg, key_numbers, iterations, thread_num, 0); // 0 is place holder
+            output_path =
+                generate_output_path(datasets_arg, key_numbers, iterations, 0, max_keylen);
         }
         else {
             output_path = output_path_str;

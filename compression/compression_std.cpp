@@ -1,20 +1,12 @@
 #pragma once
 #include <iostream>
-#include <string>
 #include <vector>
-#include "../node.h"
-#include "../util.cpp"
+#include <memory>
+#include <cstring>
+#include "../utils/item.hpp"
+#include "../utils/compare.cpp"
 
 using namespace std;
-
-string tail_compress_old(string lastleft, string firstright) {
-    string prefix = get_common_prefix(lastleft, firstright);
-    string compressed = prefix;
-    if (firstright.length() > prefix.length()) {
-        compressed = compressed + firstright.at(prefix.length());
-    }
-    return compressed;
-}
 
 char *tail_compress(const char *lastleft, const char *firstright, int len_ll, int len_fr) {
     int prefixlen = get_common_prefix_len(lastleft, firstright, len_ll, len_fr);
@@ -43,13 +35,3 @@ int head_compression_find_prefix_length(Item *low, Item *high) {
     }
     return prefixlen;
 }
-
-#ifdef DUPKEY
-void prefix_compress_vector(vector<Key_c> &keys, string origprefix, int prefixlen) {
-    for (uint32_t i = 0; i < keys.size(); i++) {
-        string key = origprefix + keys.at(i).value;
-        string compressedkey = key.substr(prefixlen, key.length() - prefixlen);
-        keys.at(i).update_value(compressedkey);
-    }
-}
-#endif

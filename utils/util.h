@@ -6,9 +6,11 @@
 #include <random>
 #include <algorithm>
 #include <fstream>
+#include <sstream>
 #include <climits>
 #include <regex.h>
 #include <map>
+#include <iomanip>
 #include "config.h"
 using namespace std;
 
@@ -173,16 +175,6 @@ vector<char *> get_map_keys(map<char *, int, mapcmp> map) {
     return keys;
 }
 
-// int get_map_values_in_range(map<char *, int, mapcmp> map, char *min, char *max) {
-//     auto lower = map.lower_bound(min);
-//     auto upper = map.upper_bound(max);
-//     int sum = 0;
-//     for (auto it = lower; it != upper; ++it) {
-//         sum += it->second;
-//     }
-//     return sum;
-// }
-
 int count_range(vector<char *> &sorted, int idx, int num) {
     char *last = sorted[idx + num];
     int last_l = strlen(last);
@@ -239,7 +231,7 @@ string generate_output_path(char *dataset, int number, int iter, int thread_num,
         int cflags = REG_EXTENDED | REG_NEWLINE;
         regmatch_t pmatch;
         const size_t nmatch = 1;
-        regex_t reg, end_reg;
+        regex_t reg;
         const char *pattern = "[a-zA-Z0-9]+(_[a-zA-Z0-9]+)*.txt";
         regcomp(&reg, pattern, cflags);
 

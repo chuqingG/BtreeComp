@@ -7,8 +7,8 @@
 #include "node.cpp"
 #include "node_inline.h"
 #include "./compression/compression_db2.cpp"
-#include "util.cpp"
-#include "../include/config.h"
+#include "../utils/compare.cpp"
+#include "../utils/config.h"
 
 using namespace std;
 #define likely(x) __builtin_expect(!!(x), 1)

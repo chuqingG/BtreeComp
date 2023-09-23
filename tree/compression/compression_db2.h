@@ -2,7 +2,7 @@
 #include <iostream>
 #include "../node.cpp"
 #include "../node_inline.h"
-#include "../util.cpp"
+#include "../../utils/compare.cpp"
 
 struct closedRange {
     int low = 0;

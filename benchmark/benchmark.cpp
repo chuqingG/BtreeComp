@@ -379,7 +379,6 @@ void TreeStatisticBenchmarkResults(
         const double avg_height = sum_height / statistics.size();
         const double avg_nodes = sum_nodes / statistics.size();
         const double avg_non_leaf_nodes = sum_non_leaf_nodes / statistics.size();
-        const double avg_keys = sum_keys / statistics.size();
         const double avg_key_size = sum_avg_key_size / statistics.size();
         const double avg_prefix_size = sum_avg_prefix_size / statistics.size();
         const double avg_branch_degree = sum_avg_branch_degree / statistics.size();
@@ -443,7 +442,8 @@ void RunBenchmark() {
             key_numbers = allvalues.size();
         }
 #ifdef SINGLE_DEBUG
-        cout << "Finish reading: " << key_numbers << " items in total" << endl;
+        cout << "Finish reading: " << key_numbers << " items in total, "
+             << "max length: " << max_data_length << endl;
 #endif
         int warm_num = std::round(allvalues.size() * warmup_split_ratio);
         for (int i = 0; i < warm_num; i++) {

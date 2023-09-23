@@ -4,8 +4,8 @@
 #include <iostream>
 #include "node.cpp"
 #include "node_inline.h"
-#include "util.cpp"
-#include "../include/config.h"
+#include "../utils/compare.cpp"
+#include "../utils/config.h"
 
 using namespace std;
 

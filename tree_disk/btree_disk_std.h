@@ -1,13 +1,9 @@
-
 #include <chrono>
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include "node.cpp"
-#include "node_inline.h"
-#include "../utils/compare.cpp"
-#include "../utils/config.h"
+#include "node_disk.cpp"
+#include "node_disk_inline.h"
 
 using namespace std;
 

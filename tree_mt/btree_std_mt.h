@@ -1,11 +1,12 @@
-#include "../include/config.h"
+
 #include "node_mt.cpp"
 #include "node_inline.h"
-#include "../tree/util.cpp"
+#include "../utils/compare.cpp"
 #include <chrono>
 #include <iostream>
 #include <string>
 #include <vector>
+#include "../utils/config.h"
 // #include "../include/util.h"
 
 using namespace std;

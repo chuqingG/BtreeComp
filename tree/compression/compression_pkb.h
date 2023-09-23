@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 #include "../node.cpp"
-#include "../util.cpp"
+#include "../../utils/compare.cpp"
 
 using namespace std;
 

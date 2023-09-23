@@ -1,12 +1,11 @@
 #pragma once
-
 #include <vector>
 #include <sstream>
 #include <iomanip>
 #include <string>
 #include <cmath>
-#include "../include/config.h"
-#include "../include/util.h"
+#include "../utils/config.h"
+#include "../utils/util.h"
 
 #include "../tree_mt/btree_std_mt.cpp"
 

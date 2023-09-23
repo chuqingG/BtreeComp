@@ -1,28 +1,9 @@
 #pragma once
 #include "compression_wt.h"
 
-uint8_t compute_prefix_wt(string prev_key, string key) {
-    uint8_t pfx_max;
-    uint8_t pfx = 0;
-
-    pfx_max = UINT8_MAX;
-    if (key.length() < pfx_max)
-        pfx_max = key.length();
-    if (prev_key.length() < pfx_max)
-        pfx_max = prev_key.length();
-
-    for (pfx = 0; pfx < pfx_max; ++pfx) {
-        if (prev_key.at(pfx) != key.at(pfx))
-            break;
-    }
-
-    return pfx;
-}
-
 uint8_t compute_prefix_wt(string prev_key, string key, uint8_t prev_pfx) {
     uint8_t pfx_max;
     uint8_t pfx = 0;
-    const char *a, *b;
 
     pfx_max = UINT8_MAX;
     if (key.length() < pfx_max)
@@ -467,7 +448,7 @@ void update_next_prefix(NodeWT *node, int pos, char *fullkey_before_pos,
 // inmem_row_leaf
 void record_page_prefix_group(NodeWT *node) {
     uint32_t best_prefix_count, best_prefix_start, best_prefix_stop;
-    uint32_t last_slot, prefix_count, prefix_start, prefix_stop, slot;
+    uint32_t last_slot, prefix_count, prefix_start, prefix_stop;
     uint8_t smallest_prefix;
 
     best_prefix_count = prefix_count = 0;
@@ -479,7 +460,6 @@ void record_page_prefix_group(NodeWT *node) {
     for (int slot = 0; slot < node->size; slot++) {
         WThead *h_slot = GetHeaderWT(node, slot);
         int prefix = h_slot->pfx_len;
-        // int prefix = node->keys.at(slot).prefix;
         if (prefix == 0) {
             /* If the last prefix group was the best, track it. */
             if (prefix_count > best_prefix_count) {

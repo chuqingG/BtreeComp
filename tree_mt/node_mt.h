@@ -8,7 +8,8 @@
 #include <memory>
 #include <cstring>
 #include "../multithreading/rwlock.cpp"
-#include "../include/config.h"
+#include "../utils/config.h"
+#include "../utils/item.hpp"
 
 using namespace std;
 
@@ -18,67 +19,6 @@ enum accessMode {
     READ = 0,
     WRITE = 1,
 };
-// Key represented as <key, {rid list}>
-// str representation of rids for easy comparison and prefix compression
-// if other approaches are used
-struct Item {
-    char *addr;
-    uint8_t size;
-    bool newallocated = false;
-    Item() {
-        // this works for wt, myisam, pkb and splitkey,
-        // temporarily fetch a key
-        newallocated = false;
-    }
-    Item(bool allocated) {
-        // this works for std compression: prefix, l/hkey
-        addr = new char[1];
-        addr[0] = '\0';
-        size = 0;
-        newallocated = true;
-    }
-    Item(Item &old) {
-        addr = new char[old.size + 1];
-        strcpy(addr, old.addr);
-        size = old.size;
-        newallocated = true;
-    }
-    Item(char *p, uint8_t l, bool allo) {
-        addr = p;
-        size = l;
-        newallocated = allo;
-    }
-    ~Item() {
-        if (newallocated) {
-            delete addr;
-        }
-    }
-    Item &operator=(Item &old) {
-        addr = old.addr;
-        size = old.size;
-        newallocated = false;
-        return *this;
-    }
-};
-
-// class Key {
-// public:
-//     vector<string> ridList;
-//     string value;
-//     Key(string value, int rid);
-//     void addRecord(int rid);
-//     int getSize();
-// };
-
-// class Key_c {
-// public:
-//     vector<int> ridList;
-//     char *value;
-//     Key_c(char *value, int rid);
-//     void addRecord(int rid);
-//     int getSize();
-//     void update_value(string s);
-// };
 
 // BP-std node
 

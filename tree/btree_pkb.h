@@ -4,8 +4,8 @@
 #include <iostream>
 #include "node.cpp"
 #include "node_inline.h"
-#include "util.cpp"
-#include "../include/config.h"
+#include "../utils/compare.cpp"
+#include "../utils/config.h"
 #include "./compression/compression_pkb.cpp"
 
 using namespace std;

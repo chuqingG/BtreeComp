@@ -665,13 +665,10 @@ void BPTreeMyISAM::printTree(NodeMyISAM *x, vector<bool> flag, bool compressed, 
         cout << endl;
     }
 
-    int it = 0;
-    for (auto i = x->ptrs.begin();
-         i != x->ptrs.end(); ++i, ++it)
-
+    for (auto i = 0; i < x->ptr_cnt; i++)
         // Recursive call for the
         // children nodes
-        printTree(*i, flag, compressed, depth + 1,
-                  it == (x->ptrs.size()) - 1);
+        printTree(x->ptrs[i], flag, compressed, depth + 1,
+                  i == (x->ptrs.size()) - 1);
     flag[depth] = true;
 }

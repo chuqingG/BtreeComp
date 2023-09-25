@@ -4,6 +4,7 @@
 
 // Constructor of Node
 Node::Node() {
+    id = 0;
     size = 0;
     ptr_cnt = 0;
     space_top = 0;
@@ -27,6 +28,24 @@ Node::~Node() {
     delete lowkey;
     delete highkey;
     delete prefix;
+    if (!IS_LEAF)
+        delete base;
+}
+
+void Node::fetch_page(FILE *fp) {
+    base = NewPage();
+    SetEmptyPage(base);
+    fseek(fp, id * MAX_SIZE_IN_BYTES, SEEK_SET);
+    fread(base, MAX_SIZE_IN_BYTES, 1, fp);
+}
+
+void Node::write_page(FILE *fp) {
+    fseek(fp, id * MAX_SIZE_IN_BYTES, SEEK_SET);
+    fwrite(base, MAX_SIZE_IN_BYTES, 1, fp);
+    delete base;
+}
+
+void Node::delete_from_mem() {
     delete base;
 }
 

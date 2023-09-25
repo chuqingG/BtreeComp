@@ -13,6 +13,14 @@
         node->base = newbase;     \
     }
 
+#define UpdateBaseInDisk(node, newbase, dsk)                   \
+    {                                                          \
+        delete node->base;                                     \
+        fseek(dsk->fp, node->id *MAX_SIZE_IN_BYTES, SEEK_SET); \
+        fwrite(newbase, MAX_SIZE_IN_BYTES, 1, dsk->fp);        \
+        delete newbase;                                        \
+    }
+
 // #define UpdatePfx(node, newpfx) \
 //     {                           \
 //         delete node->pfxbase;   \

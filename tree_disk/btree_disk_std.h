@@ -1,9 +1,11 @@
+#pragma once
 #include <chrono>
 #include <iostream>
 #include <string>
 #include <vector>
 #include "node_disk.cpp"
 #include "node_disk_inline.h"
+#include "dsk_manager.cpp"
 
 using namespace std;
 
@@ -30,6 +32,7 @@ private:
     bool head_comp;
     bool tail_comp;
     int max_level;
+    DskManager *dsk;
     void insert_leaf(Node *leaf, Node **path, int path_level, char *key, int keylen);
     void insert_nonleaf(Node *node, Node **path, int pos,
                         splitReturn_new *childsplit);

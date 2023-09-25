@@ -3,10 +3,18 @@
 
 // Initialise the BPTree Node
 BPTree::BPTree(bool head_compression, bool tail_compression) {
-    _root = new Node();
     max_level = 1;
     head_comp = head_compression;
     tail_comp = tail_compression;
+    string dsk_name = "file_std";
+    if (head_compression)
+        dsk_name += "_head";
+    if (tail_compression)
+        dsk_name += "_tail";
+    dsk_name += ".txt";
+    dsk = new DskManager(dsk_name.c_str());
+    _root = dsk->get_new_leaf();
+    _root->write_page(dsk->fp);
 }
 
 void deletefrom(Node *node) {
@@ -38,13 +46,16 @@ int BPTree::search(const char *key) {
     Node *leaf = search_leaf_node(_root, key, keylen);
     if (leaf == nullptr)
         return -1;
+    leaf->fetch_page(dsk->fp);
+    int pos;
     if (this->head_comp) {
-        return search_in_node(leaf, key + leaf->prefix->size, keylen - leaf->prefix->size,
-                              0, leaf->size - 1, true);
+        pos = search_in_node(leaf, key + leaf->prefix->size, keylen - leaf->prefix->size,
+                             0, leaf->size - 1, true);
     }
     else {
-        return search_in_node(leaf, key, keylen, 0, leaf->size - 1, true);
+        pos = search_in_node(leaf, key, keylen, 0, leaf->size - 1, true);
     }
+    leaf->delete_from_mem();
 }
 
 // Function to peform range query on B+Tree
@@ -222,6 +233,9 @@ void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int
     else {
         int insertpos;
         bool equal = false;
+        // fetch the page content back
+        leaf->fetch_page(dsk->fp);
+
         if (this->head_comp) {
             insertpos = search_insert_pos(leaf, key + leaf->prefix->size, keylen - leaf->prefix->size, 0,
                                           leaf->size - 1, equal);
@@ -238,6 +252,9 @@ void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int
         else {
             InsertKeyStd(leaf, insertpos, key, keylen);
         }
+
+        // Write back to disk, delete the copy in memory
+        leaf->write_page(dsk->fp);
     }
 }
 
@@ -437,9 +454,12 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
 
 splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     splitReturn_new newsplit;
-    Node *right = new Node();
+    Node *right = dsk->get_new_leaf();
     int insertpos;
     bool equal = false;
+
+    node->fetch_page(dsk->fp);
+
     if (this->head_comp) {
         insertpos = search_insert_pos(node, newkey + node->prefix->size, newkey_len - node->prefix->size, 0,
                                       node->size - 1, equal);
@@ -532,11 +552,13 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     }
     right->size = node->size - split;
     right->IS_LEAF = true;
+    right->write_page(dsk->fp);
 
     node->size = split;
     node->space_top = left_top;
-    UpdateBase(node, left_base);
-
+    // UpdateBase(node, left_base);
+    UpdateBaseInDisk(node, left_base, dsk);
+    node->fetch_page(dsk->fp);
     // set key bound
     right->highkey = new Item(*node->highkey);
     node->highkey = new Item(newsplit.promotekey);
@@ -552,7 +574,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
 
     newsplit.left = node;
     newsplit.right = right;
-
+    node->write_page(dsk->fp);
     return newsplit;
 }
 
@@ -589,12 +611,6 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
 }
 
 Node *BPTree::search_leaf_node(Node *searchroot, const char *key, int keylen) {
-    // Tree is empty
-    if (searchroot == NULL) {
-        cout << "Tree is empty" << endl;
-        return nullptr;
-    }
-
     Node *cursor = searchroot;
     // Till we reach leaf node
     while (!cursor->IS_LEAF) {
@@ -613,12 +629,6 @@ Node *BPTree::search_leaf_node(Node *searchroot, const char *key, int keylen) {
 
 Node *BPTree::search_leaf_node_for_insert(Node *searchroot, const char *key, int keylen,
                                           Node **path, int &path_level) {
-    // Tree is empty
-    if (searchroot == NULL) {
-        cout << "Tree is empty" << endl;
-        return nullptr;
-    }
-
     Node *cursor = searchroot;
     bool equal = false;
     // Till we reach leaf node

@@ -68,7 +68,7 @@ public:
 
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
-        int range_size = sorted_values.size() / 3;
+        int range_size = sorted_values.size() * RANGE_SCOPE;
 
         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
             char *min = sorted_values.at(minIdxs[i]);
@@ -104,7 +104,7 @@ public:
 
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
-        int range_size = sorted_values.size() / 3;
+        int range_size = sorted_values.size() * RANGE_SCOPE;
 
         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
             char *min = sorted_values.at(minIdxs[i]);
@@ -137,7 +137,7 @@ public:
 
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
-        int range_size = sorted_values.size() / 3;
+        int range_size = sorted_values.size() * RANGE_SCOPE;
 
         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
             char *min = sorted_values.at(minIdxs[i]);
@@ -197,7 +197,7 @@ public:
 
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
-        int range_size = sorted_values.size() / 3;
+        int range_size = sorted_values.size() * RANGE_SCOPE;
 
         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
             char *min = sorted_values.at(minIdxs[i]);
@@ -257,7 +257,7 @@ public:
 
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
-        int range_size = sorted_values.size() / 3;
+        int range_size = sorted_values.size() * RANGE_SCOPE;
 
         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
             char *min = sorted_values.at(minIdxs[i]);
@@ -320,7 +320,7 @@ public:
 
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
-        int range_size = sorted_values.size() / 3;
+        int range_size = sorted_values.size() * RANGE_SCOPE;
 
         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
             char *min = sorted_values.at(minIdxs[i]);
@@ -388,7 +388,7 @@ public:
 
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
-        int range_size = sorted_values.size() / 3;
+        int range_size = sorted_values.size() * RANGE_SCOPE;
 
         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
             char *min = sorted_values.at(minIdxs[i]);

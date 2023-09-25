@@ -30,6 +30,7 @@ class Node {
 public:
     bool IS_LEAF;
     int size;
+    uint16_t id;
     char *base;
     uint16_t space_top;
     vector<Node *> ptrs;
@@ -42,6 +43,9 @@ public:
     Node *next; // Next node pointer
     Node();
     ~Node();
+    void fetch_page(FILE *fp);
+    void write_page(FILE *fp);
+    void delete_from_mem();
 };
 
 struct DB2head {

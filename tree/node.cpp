@@ -12,9 +12,9 @@ Node::Node() {
 
     lowkey = new Item(true);
     highkey = new Item(); // this hk will be deallocated automatically
-    highkey->addr = new char[9];
-    strcpy(highkey->addr, MAXHIGHKEY);
-    highkey->newallocated = true;
+    // highkey->addr = new char[9];
+    // strcpy(highkey->addr, MAXHIGHKEY);
+    // highkey->newallocated = true;
     highkey->size = 0;
     prefix = new Item(true);
     IS_LEAF = true;
@@ -27,7 +27,7 @@ Node::~Node() {
     delete lowkey;
     delete highkey;
     delete prefix;
-    delete base;
+    delete[] base;
 }
 
 //===============Below for DB2===========
@@ -50,8 +50,7 @@ NodeDB2::NodeDB2() {
 
 // Destructor of NodeDB2
 NodeDB2::~NodeDB2() {
-    // delete pfxbase;
-    delete base;
+    delete[] base;
 }
 
 /*
@@ -75,10 +74,7 @@ NodeWT::NodeWT() {
 
 // Destructor of NodeWT
 NodeWT::~NodeWT() {
-    // for (NodeWT *childptr : ptrs) {
-    //     delete childptr;
-    // }
-    delete base;
+    delete[] base;
 }
 
 NodeMyISAM::NodeMyISAM() {
@@ -94,7 +90,7 @@ NodeMyISAM::NodeMyISAM() {
 
 // Destructor of NodeMyISAM
 NodeMyISAM::~NodeMyISAM() {
-    delete base;
+    delete[] base;
 }
 
 NodePkB::NodePkB() {
@@ -110,7 +106,7 @@ NodePkB::NodePkB() {
 
 // Destructor of NodePkB
 NodePkB::~NodePkB() {
-    delete base;
+    delete[] base;
 }
 
 void printKeys(Node *node, bool compressed) {

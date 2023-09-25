@@ -2,7 +2,7 @@
 #include "node.h"
 // #include "../utils/config.h"
 
-#define NewPage() (char *)malloc(MAX_SIZE_IN_BYTES * sizeof(char))
+#define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
 #define BufTop(nptr) (nptr->base + nptr->space_top)
 
@@ -10,19 +10,8 @@
 
 #define UpdateBase(node, newbase) \
     {                             \
-        delete node->base;        \
+        delete[] node->base;      \
         node->base = newbase;     \
-    }
-
-// #define UpdatePfx(node, newpfx) \
-//     {                           \
-//         delete node->pfxbase;   \
-//         node->pfxbase = newpfx; \
-//     }
-#define UpdatePfx(node, newpfx)                                            \
-    {                                                                      \
-        strncpy(node->base + MAX_SIZE_IN_BYTES, newpfx, DB2_PFX_MAX_SIZE); \
-        delete newpfx;                                                     \
     }
 
 #define UpdatePtrs(node, newptrs, num)  \
@@ -81,7 +70,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint8
 /*
 ===============For DB2=============
 */
-#define NewPageDB2() (char *)malloc((MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE) * sizeof(char))
+#define NewPageDB2() (new char[MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE])
 #define SetEmptyPageDB2(p) memset(p, 0, sizeof(char) * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE))
 
 #define GetKeyDB2(result, off) (char *)(result->base + off)

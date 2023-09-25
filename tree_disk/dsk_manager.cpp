@@ -7,14 +7,16 @@ class DskManager {
 public:
     FILE *fp;
     bool isopen;
-    int page_count;
+    uint32_t page_count;
     DskManager(const char *filename) {
+        page_count = 0;
         fp = fopen(filename, "w+");
         fclose(fp);
         fp = fopen(filename, "r+");
         isopen = true;
     }
     ~DskManager() {
+        cout << "total leaf: " << unsigned(page_count) << endl;
         fclose(fp);
     }
 

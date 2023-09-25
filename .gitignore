@@ -4,6 +4,7 @@
 build
 builddebug
 buildnew
+builddebugnew
 benchmark/test*
 tree/insert.h
 tree/search.h

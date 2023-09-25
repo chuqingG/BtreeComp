@@ -281,7 +281,7 @@ void PerformanceBenchmarkResults(
         if (write_to_file) {
             if (benchmark == BenchmarkTypes::RANGE) {
                 myfile << "\n"
-                       << benchmarkStrMap.at(benchmark) << " performance: " << RANGE_SCOPE << "\n"
+                       << benchmarkStrMap.at(benchmark) << " performance: " << float(RANGE_SCOPE) << "\n"
                        << "name\tmin\tmax\tavg\tmed\tmops_avg\tmops_med\n";
             }
             else {

@@ -32,6 +32,7 @@ void deletefrom(Node *node) {
 // Destructor of BPTreePkB tree
 BPTree::~BPTree() {
     deletefrom(_root);
+    delete dsk;
 }
 
 // Function to get the rootNode
@@ -56,6 +57,7 @@ int BPTree::search(const char *key) {
         pos = search_in_node(leaf, key, keylen, 0, leaf->size - 1, true);
     }
     leaf->delete_from_mem();
+    return pos;
 }
 
 // Function to peform range query on B+Tree
@@ -558,7 +560,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     node->space_top = left_top;
     // UpdateBase(node, left_base);
     UpdateBaseInDisk(node, left_base, dsk);
-    node->fetch_page(dsk->fp);
+
     // set key bound
     right->highkey = new Item(*node->highkey);
     node->highkey = new Item(newsplit.promotekey);
@@ -574,7 +576,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
 
     newsplit.left = node;
     newsplit.right = right;
-    node->write_page(dsk->fp);
+
     return newsplit;
 }
 
@@ -684,10 +686,14 @@ void BPTree::getSize(Node *cursor, int &numNodes, int &numNonLeaf, int &numKeys,
 #else
         // subtract the \0
         // currSize += cursor->memusage - cursor->size;
+        if (cursor->IS_LEAF)
+            cursor->fetch_page(dsk->fp);
         for (int i = 0; i < cursor->size; i++) {
             Stdhead *header = GetHeaderStd(cursor, i);
             currSize += header->key_len + sizeof(Stdhead);
         }
+        if (cursor->IS_LEAF)
+            cursor->delete_from_mem();
 #endif
         totalKeySize += currSize + cursor->prefix->size;
         numKeys += cursor->size;

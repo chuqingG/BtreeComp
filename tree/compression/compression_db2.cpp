@@ -10,7 +10,7 @@ prefixOptimization::prefixOptimization() {
 }
 
 prefixOptimization::~prefixOptimization() {
-    delete base;
+    delete[] base;
 }
 
 closedRange find_closed_range(prefixOptimization *result,

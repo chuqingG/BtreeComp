@@ -28,7 +28,7 @@ Node::~Node() {
     delete lowkey;
     delete highkey;
     delete prefix;
-    delete base;
+    delete[] base;
 }
 
 void Node::lock(accessMode mode) {
@@ -79,8 +79,7 @@ NodeDB2::NodeDB2() {
 
 // Destructor of NodeDB2
 NodeDB2::~NodeDB2() {
-    // delete pfxbase;
-    delete base;
+    delete[] base;
 }
 
 /*
@@ -103,10 +102,7 @@ NodeWT::NodeWT() {
 
 // Destructor of NodeWT
 NodeWT::~NodeWT() {
-    // for (NodeWT *childptr : ptrs) {
-    //     delete childptr;
-    // }
-    delete base;
+    delete[] base;
 }
 
 NodeMyISAM::NodeMyISAM() {
@@ -121,7 +117,7 @@ NodeMyISAM::NodeMyISAM() {
 
 // Destructor of NodeMyISAM
 NodeMyISAM::~NodeMyISAM() {
-    delete base;
+    delete[] base;
 }
 
 NodePkB::NodePkB() {
@@ -136,7 +132,7 @@ NodePkB::NodePkB() {
 
 // Destructor of NodePkB
 NodePkB::~NodePkB() {
-    delete base;
+    delete[] base;
 }
 
 void printKeys(Node *node, bool compressed) {

@@ -29,24 +29,24 @@ Node::~Node() {
     delete highkey;
     delete prefix;
     if (!IS_LEAF)
-        delete base;
+        delete[] base;
 }
 
 void Node::fetch_page(FILE *fp) {
     base = NewPage();
     SetEmptyPage(base);
-    fseek(fp, id * MAX_SIZE_IN_BYTES, SEEK_SET);
-    fread(base, MAX_SIZE_IN_BYTES, 1, fp);
+    fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
+    fread(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
 }
 
 void Node::write_page(FILE *fp) {
-    fseek(fp, id * MAX_SIZE_IN_BYTES, SEEK_SET);
-    fwrite(base, MAX_SIZE_IN_BYTES, 1, fp);
-    delete base;
+    fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
+    fwrite(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
+    delete[] base;
 }
 
 void Node::delete_from_mem() {
-    delete base;
+    delete[] base;
 }
 
 //===============Below for DB2===========
@@ -69,8 +69,7 @@ NodeDB2::NodeDB2() {
 
 // Destructor of NodeDB2
 NodeDB2::~NodeDB2() {
-    // delete pfxbase;
-    delete base;
+    delete[] base;
 }
 
 /*
@@ -94,10 +93,7 @@ NodeWT::NodeWT() {
 
 // Destructor of NodeWT
 NodeWT::~NodeWT() {
-    // for (NodeWT *childptr : ptrs) {
-    //     delete childptr;
-    // }
-    delete base;
+    delete[] base;
 }
 
 NodeMyISAM::NodeMyISAM() {
@@ -113,7 +109,7 @@ NodeMyISAM::NodeMyISAM() {
 
 // Destructor of NodeMyISAM
 NodeMyISAM::~NodeMyISAM() {
-    delete base;
+    delete[] base;
 }
 
 NodePkB::NodePkB() {
@@ -129,7 +125,7 @@ NodePkB::NodePkB() {
 
 // Destructor of NodePkB
 NodePkB::~NodePkB() {
-    delete base;
+    delete[] base;
 }
 
 void printKeys(Node *node, bool compressed) {

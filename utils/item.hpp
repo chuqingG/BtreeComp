@@ -19,10 +19,16 @@ struct Item {
         newallocated = true;
     }
     Item(Item &old) {
-        addr = new char[old.size + 1];
-        strcpy(addr, old.addr);
-        size = old.size;
-        newallocated = true;
+        if (old.size) {
+            addr = new char[old.size + 1];
+            strcpy(addr, old.addr);
+            size = old.size;
+            newallocated = true;
+        }
+        else {
+            newallocated = false;
+            size = 0;
+        }
     }
     Item(char *p, uint8_t l, bool allo) {
         addr = p;
@@ -31,7 +37,7 @@ struct Item {
     }
     ~Item() {
         if (newallocated) {
-            delete addr;
+            delete[] addr;
         }
     }
     Item &operator=(Item &old) {

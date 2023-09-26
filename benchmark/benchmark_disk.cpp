@@ -179,7 +179,7 @@ auto RunBenchmarkIteration(std::vector<char *> values,
             if (write_to_file) {
                 std::ofstream myfile;
                 const double ops = key_numbers / time_spent / 1e6;
-                string file_name = output_path + ".txt";
+                string file_name = output_path + "_disk.txt";
                 myfile.open(file_name, fstream::out | ios::app);
                 myfile << name << " (" << benchmarkStrMap.at(benchmark) << ")\t"
                        << FormatTime(time_spent, true) << FormatTime(ops, false)
@@ -193,7 +193,7 @@ auto RunBenchmarkIteration(std::vector<char *> values,
         if (write_to_file) {
             std::ofstream myfile;
             auto ss = structure_statistics[i];
-            string file_name = output_path + ".txt";
+            string file_name = output_path + "_disk.txt";
             myfile.open(file_name, fstream::out | ios::app);
             myfile << "name\theight\tkeysize\tprefix\tfanout\tnodes\tnonleaf\t\n";
             myfile << name << "\t" << ss.height << "   \t"
@@ -349,7 +349,7 @@ void TreeStatisticBenchmarkResults(
 
     std::ofstream myfile;
     if (write_to_file) {
-        string file_name = output_path + ".txt";
+        string file_name = output_path + "_disk.txt";
         myfile.open(file_name, fstream::out | ios::app);
         myfile
             << "\nname\theight\tkeysize\tprefixsize\tbranchdegree\tnodes\tnonleafnodes\n";

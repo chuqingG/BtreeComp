@@ -30,7 +30,7 @@ class Node {
 public:
     bool IS_LEAF;
     int size;
-    uint16_t id;
+    uint32_t id;
     char *base;
     uint16_t space_top;
     vector<Node *> ptrs;

@@ -64,7 +64,7 @@ class NodeDB2 {
 public:
     bool IS_LEAF;
     int size;
-    uint16_t id;
+    uint32_t id;
     int pfx_size;
     char *base;
     // char *pfxbase;

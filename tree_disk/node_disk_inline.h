@@ -21,6 +21,14 @@
         delete[] newbase;                                      \
     }
 
+#define UpdateBaseInDiskDB2(node, newbase, dsk)                                     \
+    {                                                                               \
+        delete[] node->base;                                                        \
+        fseek(dsk->fp, node->id *(MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), SEEK_SET); \
+        fwrite(newbase, (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), 1, dsk->fp);        \
+        delete[] newbase;                                                           \
+    }
+
 #define UpdatePtrs(node, newptrs, num)  \
     {                                   \
         for (int i = 0; i < num; i++)   \

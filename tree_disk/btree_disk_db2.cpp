@@ -2,12 +2,12 @@
 
 // Initialise the BPTreeDB2 NodeDB2
 BPTreeDB2::BPTreeDB2() {
-    _root = nullptr;
     max_level = 1;
 
     dsk = new DskManager("file_db2.txt");
-    _root = dsk->get_new_leaf_db2();
-    _root->write_page(dsk->fp);
+    // _root = dsk->get_new_leaf_db2();
+    // _root->write_page(dsk->fp);
+    _root = nullptr;
 }
 
 void deletefrom(NodeDB2 *node) {
@@ -25,6 +25,7 @@ void deletefrom(NodeDB2 *node) {
 // Destructor of BPTreeDB2 tree
 BPTreeDB2::~BPTreeDB2() {
     deletefrom(_root);
+    delete dsk;
     // delete _root;
 }
 
@@ -40,11 +41,14 @@ int BPTreeDB2::search(const char *key) {
     NodeDB2 *leaf = search_leaf_node(_root, key, keylen);
     if (leaf == nullptr)
         return -1;
+    leaf->fetch_page(dsk->fp);
     int metadatapos = find_prefix_pos(leaf, key, keylen, false);
     if (metadatapos == -1)
         return -1;
     DB2pfxhead *pfx = GetHeaderDB2pfx(leaf, metadatapos);
-    return search_in_leaf(leaf, key + pfx->pfx_len, keylen - pfx->pfx_len, pfx->low, pfx->high);
+    int pos = search_in_leaf(leaf, key + pfx->pfx_len, keylen - pfx->pfx_len, pfx->low, pfx->high);
+    leaf->delete_from_mem();
+    return pos;
 }
 
 int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
@@ -56,21 +60,26 @@ int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
     if (leaf == nullptr) {
         return 0;
     }
-    else {
-        metadatapos = find_prefix_pos(leaf, kmin, min_len, false);
-        if (metadatapos == -1) {
-            return 0;
-        }
-        else {
-            DB2pfxhead *pfx = GetHeaderDB2pfx(leaf, metadatapos);
-            pos = search_in_leaf(leaf, kmin + pfx->pfx_len, min_len - pfx->pfx_len, pfx->low, pfx->high);
-        }
+
+    leaf->fetch_page(dsk->fp);
+    metadatapos = find_prefix_pos(leaf, kmin, min_len, false);
+    if (metadatapos == -1) {
+        return 0;
     }
+    else {
+        DB2pfxhead *pfx = GetHeaderDB2pfx(leaf, metadatapos);
+        pos = search_in_leaf(leaf, kmin + pfx->pfx_len, min_len - pfx->pfx_len, pfx->low, pfx->high);
+    }
+
     int entries = 0;
     // Keep searching till value > max or we reach end of tree
-    while (leaf != nullptr) {
+    while (1) {
         if (pos == leaf->size) {
+            leaf->delete_from_mem();
             leaf = leaf->next;
+            if (leaf == nullptr)
+                return entries;
+            leaf->fetch_page(dsk->fp);
             pos = 0;
             metadatapos = 0;
             continue;
@@ -115,16 +124,19 @@ int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
             pos = i;
         }
     }
+    leaf->delete_from_mem();
     return entries;
 }
 
 void BPTreeDB2::insert(char *x) {
     int keylen = strlen(x);
     if (_root == nullptr) {
-        _root = new NodeDB2;
+        _root = dsk->get_new_leaf_db2();
         InsertKeyDB2(_root, 0, x, keylen);
+        _root->write_page(dsk->fp);
         return;
     }
+
     NodeDB2 *search_path[max_level];
     int path_level = 0;
     NodeDB2 *leaf = search_leaf_node_for_insert(_root, x, keylen, search_path, path_level);
@@ -172,7 +184,9 @@ void BPTreeDB2::insert_nonleaf(NodeDB2 *node, NodeDB2 **path,
 
 void BPTreeDB2::insert_leaf(NodeDB2 *leaf, NodeDB2 **path, int path_level, char *key, int keylen) {
     if (check_split_condition(leaf, keylen)) {
+        leaf->fetch_page(dsk->fp);
         apply_prefix_optimization(leaf);
+        leaf->write_page(dsk->fp);
     }
     if (check_split_condition(leaf, keylen)) {
         splitReturnDB2 split = split_leaf(leaf, key, keylen);
@@ -194,8 +208,17 @@ void BPTreeDB2::insert_leaf(NodeDB2 *leaf, NodeDB2 **path, int path_level, char 
     else {
         int insertpos;
         bool equal = false;
-        // The key was concated inside it
+        // fetch the page content
+        vector<bool> flag(leaf->size + 1);
+        // printTree(leaf, flag, true);
+        leaf->fetch_page(dsk->fp);
+        // The key was concated inside
         insertpos = insert_prefix_and_key(leaf, key, keylen, equal);
+
+        leaf->write_page(dsk->fp);
+
+        // printTree(leaf, flag, true);
+        return;
     }
 }
 
@@ -324,7 +347,15 @@ void BPTreeDB2::do_split_node(NodeDB2 *node, NodeDB2 *right, int splitpos, bool 
 
     node->size = splitpos;
     node->space_top = l_usage;
-    UpdateBase(node, l_base);
+    // UpdateBase(node, l_base);
+
+    if (isleaf) {
+        // right->write_page(dsk->fp);
+        UpdateBaseInDiskDB2(node, l_base, dsk);
+    }
+    else {
+        UpdateBase(node, l_base);
+    }
     // no need to update size
 
     // Set prev and next pointers
@@ -385,9 +416,11 @@ splitReturnDB2 BPTreeDB2::split_nonleaf(NodeDB2 *node, int pos, splitReturnDB2 *
 
 splitReturnDB2 BPTreeDB2::split_leaf(NodeDB2 *node, char *newkey, int keylen) {
     splitReturnDB2 newsplit;
-    NodeDB2 *right = new NodeDB2;
+    NodeDB2 *right = dsk->get_new_leaf_db2();
     right->pfx_size = 0;
     bool equal = false;
+
+    node->fetch_page(dsk->fp);
 
     int insertpos = insert_prefix_and_key(node, newkey, keylen, equal);
     int split = split_point(node);
@@ -402,6 +435,8 @@ splitReturnDB2 BPTreeDB2::split_leaf(NodeDB2 *node, char *newkey, int keylen) {
     char *rightfirst = new char[rf_len + 1];
     strncpy(rightfirst, PfxOffset(right, rf_pfx->pfx_offset), rf_pfx->pfx_len);
     strcpy(rightfirst + rf_pfx->pfx_len, PageOffset(right, rf->key_offset));
+
+    right->write_page(dsk->fp);
 
     newsplit.promotekey.addr = rightfirst;
     newsplit.promotekey.size = rf_len;
@@ -545,6 +580,8 @@ void BPTreeDB2::getSize(NodeDB2 *cursor, int &numNodes, int &numNonLeaf, int &nu
     if (cursor != NULL) {
         int currSize = 0;
         int prefixSize = 0;
+        if (cursor->IS_LEAF)
+            cursor->fetch_page(dsk->fp);
         for (int i = 0; i < cursor->pfx_size; i++) {
             DB2pfxhead *head = GetHeaderDB2pfx(cursor, i);
             currSize += head->pfx_len + sizeof(DB2pfxhead);
@@ -554,6 +591,8 @@ void BPTreeDB2::getSize(NodeDB2 *cursor, int &numNodes, int &numNonLeaf, int &nu
             DB2head *head = GetHeaderDB2(cursor, i);
             currSize += head->key_len + sizeof(DB2head);
         }
+        if (cursor->IS_LEAF)
+            cursor->delete_from_mem();
         totalKeySize += currSize;
         numKeys += cursor->size;
         totalPrefixSize += prefixSize;
@@ -610,7 +649,14 @@ void BPTreeDB2::printTree(NodeDB2 *x, vector<bool> flag, bool compressed, int de
     // Condition when the current
     // node is the root node
     if (depth == 0) {
-        printKeys_db2(x, compressed);
+        if (x->IS_LEAF) {
+            x->fetch_page(dsk->fp);
+            printKeys_db2(x, compressed);
+            x->delete_from_mem();
+        }
+        else {
+            printKeys_db2(x, compressed);
+        }
         cout << endl;
     }
 
@@ -619,7 +665,14 @@ void BPTreeDB2::printTree(NodeDB2 *x, vector<bool> flag, bool compressed, int de
     // the exploring depth
     else if (isLast) {
         cout << "+--- ";
-        printKeys_db2(x, compressed);
+        if (x->IS_LEAF) {
+            x->fetch_page(dsk->fp);
+            printKeys_db2(x, compressed);
+            x->delete_from_mem();
+        }
+        else {
+            printKeys_db2(x, compressed);
+        }
         cout << endl;
 
         // No more childrens turn it
@@ -628,7 +681,14 @@ void BPTreeDB2::printTree(NodeDB2 *x, vector<bool> flag, bool compressed, int de
     }
     else {
         cout << "+--- ";
-        printKeys_db2(x, compressed);
+        if (x->IS_LEAF) {
+            x->fetch_page(dsk->fp);
+            printKeys_db2(x, compressed);
+            x->delete_from_mem();
+        }
+        else {
+            printKeys_db2(x, compressed);
+        }
         cout << endl;
     }
 

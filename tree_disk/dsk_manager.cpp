@@ -23,19 +23,6 @@ public:
         delete[] path;
     }
 
-    // void close() {
-    //     fclose(fp);
-    // }
-
-    // void write() {
-    //     fp = fopen(path, "a+");
-    //     rewind(fp);
-    // }
-
-    // void read() {
-    //     fopen(path, "r");
-    // }
-
     Node *get_new_leaf() {
         Node *n = new Node();
         n->id = page_count++;

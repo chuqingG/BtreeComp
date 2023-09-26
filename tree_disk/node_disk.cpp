@@ -69,12 +69,13 @@ NodeDB2::NodeDB2() {
 
 // Destructor of NodeDB2
 NodeDB2::~NodeDB2() {
-    delete[] base;
+    if (!IS_LEAF)
+        delete[] base;
 }
 
 void NodeDB2::fetch_page(FILE *fp) {
-    base = NewPage();
-    SetEmptyPage(base);
+    base = NewPageDB2();
+    SetEmptyPageDB2(base);
     fseek(fp, id * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), SEEK_SET);
     fread(base, (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), 1, fp);
 }

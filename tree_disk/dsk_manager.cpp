@@ -20,7 +20,7 @@ public:
     ~DskManager() {
         cout << "total leaf: " << unsigned(page_count) << endl;
         fclose(fp);
-        delete path;
+        delete[] path;
     }
 
     void close() {

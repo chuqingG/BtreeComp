@@ -64,7 +64,7 @@ public:
         // _tree->dsk->read();
         for (uint32_t i = 0; i < values.size(); i++)
             if (_tree->search(values.at(i)) == -1) {
-                _tree->dsk->close();
+                // _tree->dsk->close();
                 return false;
             }
         // _tree->dsk->close();
@@ -85,7 +85,7 @@ public:
             if (entries != expected) {
                 cout << "Failure number of entries " << entries << " , expected "
                      << expected << endl;
-                _tree->dsk->close();
+                // _tree->dsk->close();
                 return false;
             }
         }

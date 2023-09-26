@@ -483,6 +483,11 @@ void RunBenchmark() {
             structure_benchmark_statistics[j].push_back(statistics[j]);
         }
     }
+    // dealloc values
+    for (auto ptr : values)
+        delete[] ptr;
+    for (auto ptr : values_warmup)
+        delete[] ptr;
 
     const auto after_bench = std::chrono::system_clock::now();
     const auto time =

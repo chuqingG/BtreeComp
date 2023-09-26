@@ -6,6 +6,9 @@
 #include <string.h>
 #include <memory>
 #include <cstring>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 #include "../utils/config.h"
 #include "../utils/item.hpp"
 
@@ -30,7 +33,7 @@ class Node {
 public:
     bool IS_LEAF;
     int size;
-    uint16_t id;
+    uint32_t id;
     char *base;
     uint16_t space_top;
     vector<Node *> ptrs;
@@ -46,6 +49,9 @@ public:
     void fetch_page(FILE *fp);
     void write_page(FILE *fp);
     void delete_from_mem();
+    void fetch_page1(int);
+    void write_page1(int);
+    void delete_from_mem1();
 };
 
 struct DB2head {

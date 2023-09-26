@@ -1,6 +1,10 @@
 #pragma once
 #include <stdio.h>
 #include <iostream>
+#include <filesystem>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 #include "node_disk.h"
 
 class DskManager {
@@ -9,17 +13,25 @@ public:
     bool isopen;
     uint32_t page_count;
     char *path;
+    int fd;
     DskManager(const char *filename) {
         page_count = 0;
         // create the file
         fp = fopen(filename, "w+");
-        // fclose(fp);
+        fclose(fp);
+        std::filesystem::resize_file(filename, 1024 * 1024 * 1024);
+
+        fd = open(filename, O_RDWR);
+        if (fd < 0) {
+            printf("open file failed\n");
+        }
+        // fp = fopen(filename, "w+");
         path = new char[strlen(filename) + 1];
         strcpy(path, filename);
     }
     ~DskManager() {
         cout << "total leaf: " << unsigned(page_count) << endl;
-        fclose(fp);
+        // fclose(fp);
         delete[] path;
     }
 

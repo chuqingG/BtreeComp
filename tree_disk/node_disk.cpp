@@ -49,6 +49,29 @@ void Node::delete_from_mem() {
     delete[] base;
 }
 
+void Node::fetch_page1(int fd) {
+    base = (char *)mmap(NULL, MAX_SIZE_IN_BYTES, PROT_READ | PROT_WRITE,
+                        MAP_SHARED, fd, id * MAX_SIZE_IN_BYTES);
+    // fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
+    // fread(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
+}
+
+void Node::write_page1(int fd) {
+    // fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
+    // fwrite(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
+    // delete[] base;
+    void *dst = mmap(NULL, MAX_SIZE_IN_BYTES, PROT_READ | PROT_WRITE,
+                     MAP_SHARED, fd, id * MAX_SIZE_IN_BYTES);
+    memcpy(dst, base, sizeof(char) * MAX_SIZE_IN_BYTES);
+    munmap(dst, MAX_SIZE_IN_BYTES);
+    delete[] base;
+}
+
+void Node::delete_from_mem1() {
+    // delete[] base;
+    munmap(base, MAX_SIZE_IN_BYTES);
+}
+
 //===============Below for DB2===========
 
 NodeDB2::NodeDB2() {

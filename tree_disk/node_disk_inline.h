@@ -13,12 +13,12 @@
         node->base = newbase;     \
     }
 
-#define UpdateBaseInDisk(node, newbase, dsk)                   \
-    {                                                          \
-        delete[] node->base;                                   \
-        fseek(dsk->fp, node->id *MAX_SIZE_IN_BYTES, SEEK_SET); \
-        fwrite(newbase, MAX_SIZE_IN_BYTES, 1, dsk->fp);        \
-        delete[] newbase;                                      \
+#define UpdateBaseInDisk(node, newbase, dsk)                              \
+    {                                                                     \
+        delete[] node->base;                                              \
+        fseek(dsk->fp, unsigned(node->id) * MAX_SIZE_IN_BYTES, SEEK_SET); \
+        fwrite(newbase, MAX_SIZE_IN_BYTES, 1, dsk->fp);                   \
+        delete[] newbase;                                                 \
     }
 
 #define UpdatePtrs(node, newptrs, num)  \

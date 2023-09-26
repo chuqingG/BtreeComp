@@ -51,23 +51,30 @@ public:
     }
 
     void Insert(const vector<char *> &values) override {
+        // _tree->dsk->write();
         for (uint32_t i = 0; i < values.size(); i++) {
             _tree->insert(values[i]);
         }
         // vector<bool> flag(values.size() * 1.25);
         // _tree->printTree(_tree->getRoot(), flag, true);
+        // _tree->dsk->close();
     }
 
     bool Search(const std::vector<char *> &values) override {
+        // _tree->dsk->read();
         for (uint32_t i = 0; i < values.size(); i++)
-            if (_tree->search(values.at(i)) == -1)
+            if (_tree->search(values.at(i)) == -1) {
+                _tree->dsk->close();
                 return false;
+            }
+        // _tree->dsk->close();
         return true;
     }
 
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
         int range_size = sorted_values.size() * RANGE_SCOPE;
+        // _tree->dsk->read();
 
         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
             char *min = sorted_values.at(minIdxs[i]);
@@ -78,9 +85,11 @@ public:
             if (entries != expected) {
                 cout << "Failure number of entries " << entries << " , expected "
                      << expected << endl;
+                _tree->dsk->close();
                 return false;
             }
         }
+        // _tree->dsk->close();
         return true;
     }
 
@@ -104,6 +113,7 @@ public:
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
         int range_size = sorted_values.size() * RANGE_SCOPE;
+        // _tree->dsk->read();
 
         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
             char *min = sorted_values.at(minIdxs[i]);
@@ -117,6 +127,7 @@ public:
                 return false;
             }
         }
+        // _tree->dsk->close();
         return true;
     }
 };

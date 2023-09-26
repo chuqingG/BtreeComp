@@ -13,6 +13,7 @@ BPTree::BPTree(bool head_compression, bool tail_compression) {
         dsk_name += "_tail";
     dsk_name += ".txt";
     dsk = new DskManager(dsk_name.c_str());
+
     _root = dsk->get_new_leaf();
     _root->write_page(dsk->fp);
 }
@@ -68,15 +69,21 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
     Node *leaf = search_leaf_node(_root, kmin, min_len);
     if (leaf == nullptr)
         return 0;
+
+    leaf->fetch_page(dsk->fp);
     int pos = search_in_node(leaf, kmin, min_len, 0, leaf->size - 1, true);
     int entries = 0;
     // Keep searching till value > max or we reach end of tree
-    while (leaf != nullptr) {
+    while (1) {
         // each while loop for a leaf, instead of a pos
         // then only compare the prefix once
         if (pos == leaf->size) {
+            leaf->delete_from_mem();
             leaf = leaf->next;
             pos = 0;
+            if (leaf == nullptr)
+                return entries;
+            leaf->fetch_page(dsk->fp);
             continue;
         }
 
@@ -88,6 +95,7 @@ int BPTree::searchRange(const char *kmin, const char *kmax) {
         entries++;
         pos++;
     }
+    leaf->delete_from_mem();
     return entries;
 }
 
@@ -98,19 +106,25 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
     Node *leaf = search_leaf_node(_root, kmin, min_len);
     if (leaf == nullptr)
         return 0;
+
+    leaf->fetch_page(dsk->fp);
     int pos = search_in_node(leaf, kmin + leaf->prefix->size, min_len - leaf->prefix->size,
                              0, leaf->size - 1, true);
     int entries = 0;
     // Keep searching till value > max or we reach end of tree
-    while (leaf != nullptr) {
+    while (1) {
         // each while loop for a leaf, instead of a pos
         // then only compare the prefix once
         if (pos == leaf->size) {
+            leaf->delete_from_mem();
             leaf = leaf->next;
             pos = 0;
+            if (leaf == nullptr)
+                return entries;
+            leaf->fetch_page(dsk->fp);
             continue;
         }
-        if (!pos || !entries) {
+        if ((!pos || !entries) && leaf->highkey->size) {
             // max key not in this leaf
             int lastcmp = char_cmp_new(leaf->highkey->addr, kmax,
                                        leaf->highkey->size, max_len);
@@ -124,8 +138,12 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
                     delete decomp_key;
                 }
                 entries += leaf->size - pos;
+                leaf->delete_from_mem();
                 leaf = leaf->next;
                 pos = 0;
+                if (leaf == nullptr)
+                    return entries;
+                leaf->fetch_page(dsk->fp);
                 continue;
             }
             if (char_cmp_new(leaf->prefix->addr, kmax, leaf->prefix->size, max_len) > 0)
@@ -145,6 +163,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
         entries++;
         pos++;
     }
+    leaf->delete_from_mem();
     return entries;
 }
 
@@ -753,7 +772,14 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
     // Condition when the current
     // node is the rootnode
     if (depth == 0) {
-        printKeys(x, compressed);
+        if (x->IS_LEAF) {
+            x->fetch_page(dsk->fp);
+            printKeys(x, compressed);
+            x->delete_from_mem();
+        }
+        else {
+            printKeys(x, compressed);
+        }
         cout << endl;
     }
 
@@ -762,7 +788,14 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
     // the exploring depth
     else if (isLast) {
         cout << "+--- ";
-        printKeys(x, compressed);
+        if (x->IS_LEAF) {
+            x->fetch_page(dsk->fp);
+            printKeys(x, compressed);
+            x->delete_from_mem();
+        }
+        else {
+            printKeys(x, compressed);
+        }
         cout << endl;
 
         // No more childrens turn it
@@ -771,7 +804,14 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
     }
     else {
         cout << "+--- ";
-        printKeys(x, compressed);
+        if (x->IS_LEAF) {
+            x->fetch_page(dsk->fp);
+            printKeys(x, compressed);
+            x->delete_from_mem();
+        }
+        else {
+            printKeys(x, compressed);
+        }
         cout << endl;
     }
 

@@ -27,12 +27,13 @@ public:
     void printTree(Node *x, vector<bool> flag, bool compressed = true,
                    int depth = 0, bool isLast = false);
 
+    DskManager *dsk;
+
 private:
     Node *_root;
     bool head_comp;
     bool tail_comp;
     int max_level;
-    DskManager *dsk;
     void insert_leaf(Node *leaf, Node **path, int path_level, char *key, int keylen);
     void insert_nonleaf(Node *node, Node **path, int pos,
                         splitReturn_new *childsplit);

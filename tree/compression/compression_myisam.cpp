@@ -2,6 +2,7 @@
 #include <iostream>
 #include "../node.cpp"
 // #include "../node_inline.h"
+#include "../../utils/compare.cpp"
 
 void get_full_key(NodeMyISAM *node, int idx, Item &key) {
     enum {
@@ -20,6 +21,7 @@ void get_full_key(NodeMyISAM *node, int idx, Item &key) {
     }
 
     char *prev_key;
+    bool newbuf = false;
     for (int pos = idx - 1;;) {
         MyISAMhead *head_i = GetHeaderMyISAM(node, pos);
 
@@ -27,6 +29,7 @@ void get_full_key(NodeMyISAM *node, int idx, Item &key) {
             key.addr = PageOffset(node, head_i->key_offset);
             key.size = head_i->key_len;
             // curr_key = suffix;
+            key.newallocated = false;
             direction = FORWARD;
         }
         else {
@@ -51,8 +54,10 @@ void get_full_key(NodeMyISAM *node, int idx, Item &key) {
             ++pos;
             break;
         }
-
+        if (newbuf)
+            delete[] prev_key;
         prev_key = key.addr;
+        newbuf = key.newallocated;
     }
     return;
 }
@@ -91,4 +96,5 @@ void update_next_prefix(NodeMyISAM *node, int pos, char *fullkey_before_pos,
         header->pfx_len = newpfx_len;
         node->space_top += header->key_len + 1;
     }
+    delete[] fullkey;
 }

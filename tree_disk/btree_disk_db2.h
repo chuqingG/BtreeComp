@@ -4,11 +4,12 @@
 #include <iostream>
 #include <cstdio>
 
-#include "node.cpp"
-#include "node_inline.h"
-#include "../compression/compression_db2.cpp"
+#include "node_disk.cpp"
+#include "node_disk_inline.h"
+#include "../compression/compression_disk_db2.cpp"
 #include "../utils/compare.cpp"
 #include "../utils/config.h"
+#include "dsk_manager.cpp"
 
 using namespace std;
 #define likely(x) __builtin_expect(!!(x), 1)
@@ -31,6 +32,7 @@ public:
     NodeDB2 *getRoot();
     void printTree(NodeDB2 *x, vector<bool> flag, bool compressed = true,
                    int depth = 0, bool isLast = false);
+    DskManager *dsk;
 
 private:
     NodeDB2 *_root;

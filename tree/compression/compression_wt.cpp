@@ -443,6 +443,7 @@ void update_next_prefix(NodeWT *node, int pos, char *fullkey_before_pos,
         header->pfx_len = newpfx_len;
         node->space_top += header->key_len + 1;
     }
+    delete[] fullkey;
 }
 
 // inmem_row_leaf

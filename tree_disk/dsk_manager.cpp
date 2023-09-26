@@ -23,21 +23,27 @@ public:
         delete[] path;
     }
 
-    void close() {
-        fclose(fp);
-    }
+    // void close() {
+    //     fclose(fp);
+    // }
 
-    void write() {
-        fp = fopen(path, "a+");
-        rewind(fp);
-    }
+    // void write() {
+    //     fp = fopen(path, "a+");
+    //     rewind(fp);
+    // }
 
-    void read() {
-        fopen(path, "r");
-    }
+    // void read() {
+    //     fopen(path, "r");
+    // }
 
     Node *get_new_leaf() {
         Node *n = new Node();
+        n->id = page_count++;
+        return n;
+    }
+
+    NodeDB2 *get_new_leaf_db2() {
+        NodeDB2 *n = new NodeDB2();
         n->id = page_count++;
         return n;
     }

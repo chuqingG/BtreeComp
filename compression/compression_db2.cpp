@@ -361,8 +361,8 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
             return index + 2;
         }
     }
-    delete leftlast;
-    delete rightfirst;
+    delete[] leftlast;
+    delete[] rightfirst;
     // Do nothing
     return index + 1;
 }

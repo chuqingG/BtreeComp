@@ -72,6 +72,22 @@ NodeDB2::~NodeDB2() {
     delete[] base;
 }
 
+void NodeDB2::fetch_page(FILE *fp) {
+    base = NewPage();
+    SetEmptyPage(base);
+    fseek(fp, id * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), SEEK_SET);
+    fread(base, (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), 1, fp);
+}
+
+void NodeDB2::write_page(FILE *fp) {
+    fseek(fp, id * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), SEEK_SET);
+    fwrite(base, (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), 1, fp);
+    delete[] base;
+}
+
+void NodeDB2::delete_from_mem() {
+    delete[] base;
+}
 /*
 ==================For WiredTiger================
 */

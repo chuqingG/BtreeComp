@@ -64,6 +64,7 @@ class NodeDB2 {
 public:
     bool IS_LEAF;
     int size;
+    uint16_t id;
     int pfx_size;
     char *base;
     // char *pfxbase;
@@ -75,6 +76,9 @@ public:
     NodeDB2 *next; // Next node pointer
     NodeDB2();
     ~NodeDB2();
+    void fetch_page(FILE *fp);
+    void write_page(FILE *fp);
+    void delete_from_mem();
 };
 
 // Key with prefix and suffix encoding

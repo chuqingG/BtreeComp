@@ -40,4 +40,10 @@ public:
         n->id = page_count++;
         return n;
     }
+
+    NodeWT *get_new_leaf_wt() {
+        NodeWT *n = new NodeWT();
+        n->id = page_count++;
+        return n;
+    }
 };

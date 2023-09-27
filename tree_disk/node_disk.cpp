@@ -110,6 +110,24 @@ NodeWT::NodeWT() {
 
 // Destructor of NodeWT
 NodeWT::~NodeWT() {
+    if (!IS_LEAF)
+        delete[] base;
+}
+
+void NodeWT::fetch_page(FILE *fp) {
+    base = NewPage();
+    SetEmptyPage(base);
+    fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
+    fread(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
+}
+
+void NodeWT::write_page(FILE *fp) {
+    fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
+    fwrite(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
+    delete[] base;
+}
+
+void NodeWT::delete_from_mem() {
     delete[] base;
 }
 

@@ -1,13 +1,17 @@
-#include "btree_wt.h"
-#include "../compression/compression_wt.cpp"
+#include "btree_disk_wt.h"
+#include "../compression/compression_disk_wt.cpp"
 
 // Initialise the BPTreeWT NodeWT
 BPTreeWT::BPTreeWT(bool non_leaf_compression,
                    bool suffix_compression) {
-    _root = new NodeWT();
     max_level = 1;
     non_leaf_comp = non_leaf_compression;
     suffix_comp = suffix_compression;
+
+    dsk = new DskManager("file_WT.txt");
+
+    _root = dsk->get_new_leaf_wt();
+    _root->write_page(dsk->fp);
 }
 
 void deletefrom(NodeWT *node) {
@@ -25,7 +29,7 @@ void deletefrom(NodeWT *node) {
 // Destructor of BPTreeWT tree
 BPTreeWT::~BPTreeWT() {
     deletefrom(_root);
-    // delete _root;
+    delete dsk;
 }
 
 // Function to get the root NodeWT
@@ -41,7 +45,10 @@ int BPTreeWT::search(const char *key) {
     NodeWT *leaf = search_leaf_node(_root, key, keylen, skiplow);
     if (leaf == nullptr)
         return -1;
-    return search_in_leaf(leaf, key, keylen, 0, leaf->size - 1, skiplow);
+    leaf->fetch_page(dsk->fp);
+    int pos = search_in_leaf(leaf, key, keylen, 0, leaf->size - 1, skiplow);
+    leaf->delete_from_mem();
+    return pos;
 }
 
 int BPTreeWT::searchRange(const char *kmin, const char *kmax) {
@@ -51,6 +58,7 @@ int BPTreeWT::searchRange(const char *kmin, const char *kmax) {
     NodeWT *leaf = search_leaf_node(_root, kmin, min_len, skiplow);
     if (leaf == nullptr)
         return 0;
+    leaf->fetch_page(dsk->fp);
     int pos = search_in_leaf(leaf, kmin, min_len, 0, leaf->size - 1, skiplow);
     if (pos == -1)
         return 0;
@@ -61,11 +69,14 @@ int BPTreeWT::searchRange(const char *kmin, const char *kmax) {
     prevkey.size = min_len;
     prevkey.newallocated = true;
     // Keep searching till value > max or we reach end of tree
-    while (leaf != nullptr) {
+    while (1) {
         if (pos == leaf->size) {
+            leaf->delete_from_mem();
             pos = 0;
             leaf = leaf->next;
-
+            if (leaf == nullptr)
+                return entries;
+            leaf->fetch_page(dsk->fp);
             WThead *head_first = GetHeaderWT(leaf, 0);
             prevkey.addr = PageOffset(leaf, head_first->key_offset);
             prevkey.size = head_first->key_len;
@@ -90,6 +101,7 @@ int BPTreeWT::searchRange(const char *kmin, const char *kmax) {
         entries++;
         pos++;
     }
+    leaf->delete_from_mem();
     return entries;
 }
 
@@ -188,6 +200,8 @@ void BPTreeWT::insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *ke
     else {
         uint8_t skiplow = 0;
         bool equal = false;
+        leaf->fetch_page(dsk->fp);
+
         int insertpos = search_insert_pos(leaf, key, keylen,
                                           0, leaf->size - 1, skiplow, equal);
 
@@ -210,6 +224,8 @@ void BPTreeWT::insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *ke
             record_page_prefix_group(leaf);
 #endif
         }
+        // Write back to disk, delete the copy in memory
+        leaf->write_page(dsk->fp);
     }
 }
 
@@ -337,10 +353,12 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT *chil
 
 splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     splitReturnWT newsplit;
-    NodeWT *right = new NodeWT();
+    NodeWT *right = dsk->get_new_leaf_wt();
     uint8_t skiplow = 0;
 
     bool equal = false;
+    node->fetch_page(dsk->fp);
+
     int insertpos = search_insert_pos(node, newkey, keylen,
                                       0, node->size - 1, skiplow, equal);
     // insert the newkey into page
@@ -409,10 +427,12 @@ splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     right->size = node->size - split;
     right->space_top = right_top;
     right->IS_LEAF = true;
+    right->write_page(dsk->fp);
 
     node->size = split;
     node->space_top = left_top;
-    UpdateBase(node, leftbase);
+    // UpdateBase(node, leftbase);
+    UpdateBaseInDisk(node, leftbase, dsk);
 
     // Set next pointers
     NodeWT *next = node->next;
@@ -422,6 +442,7 @@ splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
         next->prev = right;
     node->next = right;
 
+    // TODO: fix here, if enable WT_OPTIM someday
 #ifdef WT_OPTIM
     record_page_prefix_group(node);
     record_page_prefix_group(right);
@@ -561,11 +582,15 @@ void BPTreeWT::getSize(NodeWT *cursor, int &numNodeWTs, int &numNonLeaf, int &nu
     if (cursor != NULL) {
         int currSize = 0;
         int prefixSize = 0;
+        if (cursor->IS_LEAF)
+            cursor->fetch_page(dsk->fp);
         for (int i = 0; i < cursor->size; i++) {
             WThead *header = GetHeaderWT(cursor, i);
             currSize += header->key_len + sizeof(WThead);
             prefixSize += sizeof(header->pfx_len);
         }
+        if (cursor->IS_LEAF)
+            cursor->delete_from_mem();
         totalKeyWTSize += currSize;
         numKeyWTs += cursor->size;
         totalPrefixSize += prefixSize;

@@ -68,7 +68,7 @@ int BPTreeMyISAM::searchRange(const char *kmin, const char *kmax) {
 
     // string prevkey = min;
     // Keep searching till value > max or we reach end of tree
-    while (leaf != nullptr) {
+    while (1) {
         if (pos == leaf->size) {
             leaf->delete_from_mem();
             pos = 0;

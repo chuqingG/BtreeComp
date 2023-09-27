@@ -131,13 +131,13 @@ struct WThead {
 } __attribute__((packed));
 #endif
 
-#ifndef DUPKEY
 class NodeWT {
 public:
     bool IS_LEAF;
     int size; // Total key number
     char *base;
     uint16_t space_top;
+    uint32_t id;
 
     uint8_t prefixstart; /* Best page prefix starting slot */
     uint8_t prefixstop;  /* Maximum slot to which the best page prefix applies */
@@ -148,22 +148,10 @@ public:
     uint16_t ptr_cnt;
     NodeWT();
     ~NodeWT();
+    void fetch_page(FILE *fp);
+    void write_page(FILE *fp);
+    void delete_from_mem();
 };
-#else
-class NodeWT {
-public:
-    bool IS_LEAF;
-    vector<KeyWT> keys;
-    int size;
-    vector<NodeWT *> ptrs;
-    uint32_t prefixstart; /* Best page prefix starting slot */
-    uint32_t prefixstop;  /* Maximum slot to which the best page prefix applies */
-    NodeWT *prev;         // Prev node pointer
-    NodeWT *next;         // Next node pointer
-    NodeWT();
-    ~NodeWT();
-};
-#endif
 
 #ifdef DUPKEY
 // Duplicates represented as <key, {rid list}>

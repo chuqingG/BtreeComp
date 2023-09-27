@@ -34,4 +34,10 @@ public:
         n->id = page_count++;
         return n;
     }
+
+    NodeMyISAM *get_new_leaf_myisam() {
+        NodeMyISAM *n = new NodeMyISAM();
+        n->id = page_count++;
+        return n;
+    }
 };

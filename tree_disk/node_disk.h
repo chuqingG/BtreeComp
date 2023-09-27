@@ -100,6 +100,7 @@ public:
     int size;
     char *base;
     uint16_t space_top;
+    uint32_t id;
 
     vector<NodeMyISAM *> ptrs;
     NodeMyISAM *prev; // Prev node pointer
@@ -107,6 +108,9 @@ public:
     uint16_t ptr_cnt;
     NodeMyISAM();
     ~NodeMyISAM();
+    void fetch_page(FILE *fp);
+    void write_page(FILE *fp);
+    void delete_from_mem();
 };
 
 // with no duplicate key

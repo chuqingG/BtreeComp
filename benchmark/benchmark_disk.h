@@ -7,7 +7,7 @@
 #include "../utils/util.h"
 #include "../tree_disk/btree_disk_std.cpp"
 #include "../tree_disk/btree_disk_db2.cpp"
-// #include "../tree/btree_myisam.cpp"
+#include "../tree_disk/btree_disk_myisam.cpp"
 // #include "../tree/btree_wt.cpp"
 // #include "../tree/btree_pkb.cpp"
 
@@ -190,20 +190,20 @@ public:
         // _tree->printTree(_tree->getRoot(), flag, true);
     }
 
-    bool Search(const std::vector<char *> &values) override {
-        for (uint32_t i = 0; i < values.size(); ++i)
-            if (_tree->search(values.at(i)) == -1)
-                return false;
-        return true;
-    }
     // bool Search(const std::vector<char *> &values) override {
-    //     int count = 0;
     //     for (uint32_t i = 0; i < values.size(); ++i)
     //         if (_tree->search(values.at(i)) == -1)
-    //             count++;
-    //     cout << "count:" << count << endl;
+    //             return false;
     //     return true;
     // }
+    bool Search(const std::vector<char *> &values) override {
+        int count = 0;
+        for (uint32_t i = 0; i < values.size(); ++i)
+            if (_tree->search(values.at(i)) == -1)
+                count++;
+        cout << "count:" << count << endl;
+        return true;
+    }
 
     bool SearchRange(std::vector<char *> &sorted_values,
                      std::vector<int> &minIdxs) override {
@@ -235,65 +235,65 @@ private:
     BPTreeDB2 *_tree;
 };
 
-// class BPTreeMyISAMBenchmark : public Benchmark {
-// public:
-//     ~BPTreeMyISAMBenchmark() override {
-//         delete _tree;
-//     }
+class BPTreeMyISAMBenchmark : public Benchmark {
+public:
+    ~BPTreeMyISAMBenchmark() override {
+        delete _tree;
+    }
 
-//     void InitializeStructure() override {
-//         _tree = new BPTreeMyISAM(true);
-//     }
+    void InitializeStructure() override {
+        _tree = new BPTreeMyISAM(true);
+    }
 
-//     void DeleteStructure() override {
-//         delete _tree;
-//         _tree = nullptr;
-//     }
+    void DeleteStructure() override {
+        delete _tree;
+        _tree = nullptr;
+    }
 
-//     void Insert(const vector<char *> &values) override {
-//         for (uint32_t i = 0; i < values.size(); ++i) {
-//             _tree->insert(values.at(i));
-//             // vector<bool> flag(i + 1);
-//             // _tree->printTree(_tree->getRoot(), flag, true);
-//         }
-//     }
+    void Insert(const vector<char *> &values) override {
+        for (uint32_t i = 0; i < values.size(); ++i) {
+            _tree->insert(values.at(i));
+            // vector<bool> flag(i + 1);
+            // _tree->printTree(_tree->getRoot(), flag, true);
+        }
+    }
 
-//     bool Search(const std::vector<char *> &values) override {
-//         for (uint32_t i = 0; i < values.size(); ++i)
-//             if (_tree->search(values[i]) == -1)
-//                 return false;
-//         return true;
-//     }
+    bool Search(const std::vector<char *> &values) override {
+        for (uint32_t i = 0; i < values.size(); ++i)
+            if (_tree->search(values[i]) == -1)
+                return false;
+        return true;
+    }
 
-//     bool SearchRange(std::vector<char *> &sorted_values,
-//                      std::vector<int> &minIdxs) override {
-//         int range_size = sorted_values.size() * RANGE_SCOPE;
+    bool SearchRange(std::vector<char *> &sorted_values,
+                     std::vector<int> &minIdxs) override {
+        int range_size = sorted_values.size() * RANGE_SCOPE;
 
-//         for (uint32_t i = 0; i < minIdxs.size(); ++i) {
-//             char *min = sorted_values.at(minIdxs[i]);
-//             char *max = sorted_values.at(minIdxs[i] + range_size);
-//             // cout << "search: [" << min << ", " << max << "]" << endl;
-//             int entries = _tree->searchRange(min, max);
-//             int expected = count_range(sorted_values, minIdxs[i], range_size);
-//             if (entries != expected) {
-//                 cout << "Failure number of entries " << entries << " , expected "
-//                      << expected << endl;
-//                 return false;
-//             }
-//         }
-//         return true;
-//     }
+        for (uint32_t i = 0; i < minIdxs.size(); ++i) {
+            char *min = sorted_values.at(minIdxs[i]);
+            char *max = sorted_values.at(minIdxs[i] + range_size);
+            // cout << "search: [" << min << ", " << max << "]" << endl;
+            int entries = _tree->searchRange(min, max);
+            int expected = count_range(sorted_values, minIdxs[i], range_size);
+            if (entries != expected) {
+                cout << "Failure number of entries " << entries << " , expected "
+                     << expected << endl;
+                return false;
+            }
+        }
+        return true;
+    }
 
-//     TreeStatistics CalcStatistics() override {
-//         TreeStatistics statistics;
-//         statistics.height = _tree->getHeight(_tree->getRoot());
-//         _tree->getSize(_tree->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
-//         return statistics;
-//     }
+    TreeStatistics CalcStatistics() override {
+        TreeStatistics statistics;
+        statistics.height = _tree->getHeight(_tree->getRoot());
+        _tree->getSize(_tree->getRoot(), statistics.numNodes, statistics.nonLeafNodes, statistics.numKeys, statistics.totalBranching, statistics.totalKeySize, statistics.totalPrefixSize);
+        return statistics;
+    }
 
-// private:
-//     BPTreeMyISAM *_tree;
-// };
+private:
+    BPTreeMyISAM *_tree;
+};
 
 // class BPTreeWTBenchmark : public Benchmark {
 // public:

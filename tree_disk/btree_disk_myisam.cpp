@@ -1,11 +1,14 @@
-#include "btree_myisam.h"
-#include "../compression/compression_myisam.cpp"
+#include "btree_disk_myisam.h"
 
 // Initialise the BPTreeMyISAM NodeMyISAM
 BPTreeMyISAM::BPTreeMyISAM(bool non_leaf_compression) {
-    _root = new NodeMyISAM();
     max_level = 1;
     non_leaf_comp = non_leaf_compression;
+
+    dsk = new DskManager("file_myisam.txt");
+
+    _root = dsk->get_new_leaf_myisam();
+    _root->write_page(dsk->fp);
 }
 
 void deletefrom(NodeMyISAM *node) {
@@ -23,7 +26,7 @@ void deletefrom(NodeMyISAM *node) {
 // Destructor of BPTreeMyISAM tree
 BPTreeMyISAM::~BPTreeMyISAM() {
     deletefrom(_root);
-    // delete _root;
+    delete dsk;
 }
 
 // Function to get the root NodeMyISAM
@@ -35,11 +38,13 @@ NodeMyISAM *BPTreeMyISAM::getRoot() {
 // in B+ Tree
 int BPTreeMyISAM::search(const char *key) {
     int keylen = strlen(key);
-    vector<NodeMyISAM *> parents;
     NodeMyISAM *leaf = search_leaf_node(_root, key, keylen);
     if (leaf == nullptr)
         return -1;
-    return prefix_search(leaf, key, keylen);
+    leaf->fetch_page(dsk->fp);
+    int pos = prefix_search(leaf, key, keylen);
+    leaf->delete_from_mem();
+    return pos;
 }
 
 int BPTreeMyISAM::searchRange(const char *kmin, const char *kmax) {
@@ -49,6 +54,7 @@ int BPTreeMyISAM::searchRange(const char *kmin, const char *kmax) {
     NodeMyISAM *leaf = search_leaf_node(_root, kmin, min_len);
     if (leaf == nullptr)
         return 0;
+    leaf->fetch_page(dsk->fp);
     int pos = prefix_search(leaf, kmin, min_len);
     if (pos == -1)
         return 0;
@@ -64,9 +70,12 @@ int BPTreeMyISAM::searchRange(const char *kmin, const char *kmax) {
     // Keep searching till value > max or we reach end of tree
     while (leaf != nullptr) {
         if (pos == leaf->size) {
+            leaf->delete_from_mem();
             pos = 0;
             leaf = leaf->next;
-
+            if (leaf == nullptr)
+                return entries;
+            leaf->fetch_page(dsk->fp);
             MyISAMhead *head_first = GetHeaderMyISAM(leaf, 0);
             prevkey.addr = PageOffset(leaf, head_first->key_offset);
             prevkey.size = head_first->key_len;
@@ -92,6 +101,7 @@ int BPTreeMyISAM::searchRange(const char *kmin, const char *kmax) {
         entries++;
         pos++;
     }
+    leaf->delete_from_mem();
     return entries;
 }
 
@@ -286,6 +296,8 @@ void BPTreeMyISAM::insert_leaf(NodeMyISAM *leaf, NodeMyISAM **path, int path_lev
     }
     else {
         bool equal = false;
+        leaf->fetch_page(dsk->fp);
+
         int insertpos = prefix_insert(leaf, key, keylen, equal);
 
         // Insert the new key
@@ -303,6 +315,9 @@ void BPTreeMyISAM::insert_leaf(NodeMyISAM *leaf, NodeMyISAM **path, int path_lev
         }
         if (!equal)
             update_next_prefix(leaf, insertpos, prevkey.addr, key, keylen);
+
+        // Write back to disk, delete the copy in memory
+        leaf->write_page(dsk->fp);
     }
 }
 
@@ -424,9 +439,11 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
 
 splitReturnMyISAM BPTreeMyISAM::split_leaf(NodeMyISAM *node, char *newkey, int keylen) {
     splitReturnMyISAM newsplit;
-    NodeMyISAM *right = new NodeMyISAM;
+    NodeMyISAM *right = dsk->get_new_leaf_myisam();
 
     bool equal = false;
+    node->fetch_page(dsk->fp);
+
     int insertpos = prefix_insert(node, newkey, keylen, equal);
 
     // insert the new key
@@ -477,10 +494,12 @@ splitReturnMyISAM BPTreeMyISAM::split_leaf(NodeMyISAM *node, char *newkey, int k
     right->size = node->size - split;
     right->space_top = right_top;
     right->IS_LEAF = true;
+    right->write_page(dsk->fp);
 
     node->size = split;
     node->space_top = left_top;
-    UpdateBase(node, leftbase);
+    // UpdateBase(node, leftbase);
+    UpdateBaseInDisk(node, leftbase, dsk);
 
     // Set prev and next pointers
     NodeMyISAM *next = node->next;
@@ -582,11 +601,15 @@ void BPTreeMyISAM::getSize(NodeMyISAM *cursor, int &numNodes, int &numNonLeaf, i
     if (cursor != NULL) {
         int currSize = 0;
         int prefixSize = 0;
+        if (cursor->IS_LEAF)
+            cursor->fetch_page(dsk->fp);
         for (int i = 0; i < cursor->size; i++) {
             MyISAMhead *header = GetHeaderMyISAM(cursor, i);
             currSize += header->key_len + sizeof(MyISAMhead);
             prefixSize += sizeof(header->pfx_len);
         }
+        if (cursor->IS_LEAF)
+            cursor->delete_from_mem();
         totalKeySize += currSize;
         numKeys += cursor->size;
         totalPrefixSize += prefixSize;

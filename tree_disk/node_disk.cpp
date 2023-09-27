@@ -122,10 +122,29 @@ NodeMyISAM::NodeMyISAM() {
     SetEmptyPage(base);
     space_top = 0;
     IS_LEAF = true;
+    id = 0;
 }
 
 // Destructor of NodeMyISAM
 NodeMyISAM::~NodeMyISAM() {
+    if (!IS_LEAF)
+        delete[] base;
+}
+
+void NodeMyISAM::fetch_page(FILE *fp) {
+    base = NewPage();
+    SetEmptyPage(base);
+    fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
+    fread(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
+}
+
+void NodeMyISAM::write_page(FILE *fp) {
+    fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
+    fwrite(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
+    delete[] base;
+}
+
+void NodeMyISAM::delete_from_mem() {
     delete[] base;
 }
 

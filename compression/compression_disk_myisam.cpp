@@ -1,8 +1,8 @@
 #pragma once
 #include <iostream>
-#include "../node.cpp"
+#include "../tree_disk/node_disk.cpp"
 // #include "../node_inline.h"
-#include "../../utils/compare.cpp"
+#include "../utils/compare.cpp"
 
 void get_full_key(NodeMyISAM *node, int idx, Item &key) {
     enum {

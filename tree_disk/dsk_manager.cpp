@@ -46,4 +46,10 @@ public:
         n->id = page_count++;
         return n;
     }
+
+    NodePkB *get_new_leaf_pkb() {
+        NodePkB *n = new NodePkB();
+        n->id = page_count++;
+        return n;
+    }
 };

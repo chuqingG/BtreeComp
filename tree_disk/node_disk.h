@@ -196,12 +196,17 @@ public:
     int size;
     char *base;
     uint16_t space_top;
+    uint32_t id;
+
     vector<NodePkB *> ptrs;
     uint16_t ptr_cnt;
     NodePkB *prev; // Prev node pointer
     NodePkB *next; // Next node pointer
     NodePkB();
     ~NodePkB();
+    void fetch_page(FILE *fp);
+    void write_page(FILE *fp);
+    void delete_from_mem();
 };
 #endif
 

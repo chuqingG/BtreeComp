@@ -1,8 +1,8 @@
 #pragma once
 #include <iostream>
 #include <vector>
-#include "../node.cpp"
-#include "../../utils/compare.cpp"
+#include "../tree_disk/node_disk.cpp"
+#include "../utils/compare.cpp"
 
 using namespace std;
 

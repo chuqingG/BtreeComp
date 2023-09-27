@@ -2,11 +2,12 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include "node.cpp"
-#include "node_inline.h"
+#include "node_disk.cpp"
+#include "node_disk_inline.h"
 #include "../utils/compare.cpp"
 #include "../utils/config.h"
-#include "../compression/compression_pkb.cpp"
+#include "../compression/compression_disk_pkb.cpp"
+#include "dsk_manager.cpp"
 
 using namespace std;
 
@@ -24,6 +25,7 @@ public:
     NodePkB *getRoot();
     void printTree(NodePkB *x, vector<bool> flag, bool compressed = false,
                    int depth = 0, bool isLast = false);
+    DskManager *dsk;
 
 private:
     NodePkB *_root;

@@ -9,8 +9,10 @@ public:
     bool isopen;
     uint32_t page_count;
     char *path;
+    uint32_t key_top;
     DskManager(const char *filename) {
         page_count = 0;
+        key_top = 0;
         // create the file
         fp = fopen(filename, "w+");
         // fclose(fp);
@@ -18,7 +20,7 @@ public:
         strcpy(path, filename);
     }
     ~DskManager() {
-        cout << "total leaf: " << unsigned(page_count) << endl;
+        cout << "total leaf: " << unsigned(page_count) << ", key space: " << unsigned(key_top) << endl;
         fclose(fp);
         delete[] path;
     }
@@ -47,9 +49,9 @@ public:
         return n;
     }
 
-    NodePkB *get_new_leaf_pkb() {
-        NodePkB *n = new NodePkB();
-        n->id = page_count++;
-        return n;
-    }
+    // NodePkB *get_new_leaf_pkb() {
+    //     NodePkB *n = new NodePkB();
+    //     n->id = page_count++;
+    //     return n;
+    // }
 };

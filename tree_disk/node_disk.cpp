@@ -76,12 +76,14 @@ NodeDB2::~NodeDB2() {
 void NodeDB2::fetch_page(FILE *fp) {
     base = NewPageDB2();
     SetEmptyPageDB2(base);
-    fseek(fp, id * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), SEEK_SET);
+    FSeekLongDB2(id, fp);
+    // fseek(fp, id * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), SEEK_SET);
     fread(base, (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), 1, fp);
 }
 
 void NodeDB2::write_page(FILE *fp) {
-    fseek(fp, id * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), SEEK_SET);
+    FSeekLongDB2(id, fp);
+    // fseek(fp, id * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), SEEK_SET);
     fwrite(base, (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), 1, fp);
     delete[] base;
 }
@@ -173,32 +175,31 @@ NodePkB::NodePkB() {
     ptr_cnt = 0;
     base = NewPage();
     SetEmptyPage(base);
-    space_top = 0;
+    // space_top = 0;
     IS_LEAF = true;
 }
 
 // Destructor of NodePkB
 NodePkB::~NodePkB() {
-    if (!IS_LEAF)
-        delete[] base;
-}
-
-void NodePkB::fetch_page(FILE *fp) {
-    base = NewPage();
-    SetEmptyPage(base);
-    fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
-    fread(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
-}
-
-void NodePkB::write_page(FILE *fp) {
-    fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
-    fwrite(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
     delete[] base;
 }
 
-void NodePkB::delete_from_mem() {
-    delete[] base;
-}
+// void NodePkB::fetch_page(FILE *fp) {
+//     base = NewPage();
+//     SetEmptyPage(base);
+//     fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
+//     fread(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
+// }
+
+// void NodePkB::write_page(FILE *fp) {
+//     fseek(fp, id * sizeof(char) * MAX_SIZE_IN_BYTES, SEEK_SET);
+//     fwrite(base, sizeof(char) * MAX_SIZE_IN_BYTES, 1, fp);
+//     delete[] base;
+// }
+
+// void NodePkB::delete_from_mem() {
+//     delete[] base;
+// }
 
 void printKeys(Node *node, bool compressed) {
     if (compressed && node->prefix->addr)
@@ -272,17 +273,21 @@ void printKeys_wt(NodeWT *node, bool compressed) {
     }
 }
 
-void printKeys_pkb(NodePkB *node, bool compressed) {
-    string curr_key;
+void printKeys_pkb(NodePkB *node, bool compressed, FILE *fp) {
     for (int i = 0; i < node->size; i++) {
         PkBhead *head = GetHeaderPkB(node, i);
+        char *buf = new char[head->key_len + 1];
+        // cout << "off:" << head->key_offset << " ";
+        FSeekLongPos(head->key_offset, fp);
+        fread(buf, head->key_len + 1, 1, fp);
         if (compressed) {
             cout << unsigned(head->pfx_len) << ":" << head->pk << "("
-                 << PageOffset(node, head->key_offset) << ")"
+                 << buf << ")"
                  << ",";
         }
         else {
-            cout << PageOffset(node, head->key_offset) << ",";
+            cout << buf << ",";
         }
+        delete[] buf;
     }
 }

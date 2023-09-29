@@ -5,9 +5,9 @@ BPTreePkB::BPTreePkB() {
     max_level = 1;
 
     dsk = new DskManager("file_pkb.txt");
-
-    _root = dsk->get_new_leaf_pkb();
-    _root->write_page(dsk->fp);
+    _root = new NodePkB();
+    // _root = dsk->get_new_leaf_pkb();
+    // _root->write_page(dsk->fp);
 }
 
 void deletefrom(NodePkB *node) {
@@ -42,9 +42,9 @@ int BPTreePkB::search(const char *key) {
     NodePkB *leaf = search_leaf_node(_root, key, keylen, offset);
     if (leaf == nullptr)
         return -1;
-    leaf->fetch_page(dsk->fp);
-    findNodeResult result = find_node(leaf, key, keylen, offset, equal);
-    leaf->delete_from_mem();
+    // leaf->fetch_page(dsk->fp);
+    findNodeResult result = find_node(leaf, key, keylen, offset, equal, dsk);
+    // leaf->delete_from_mem();
     if (result.low == result.high)
         return result.low;
     else
@@ -59,9 +59,9 @@ int BPTreePkB::searchRange(const char *kmin, const char *kmax) {
     if (leaf == nullptr)
         return 0;
 
-    leaf->fetch_page(dsk->fp);
+    // leaf->fetch_page(dsk->fp);
     bool equal = false;
-    findNodeResult result = find_node(leaf, kmin, min_len, offset, equal);
+    findNodeResult result = find_node(leaf, kmin, min_len, offset, equal, dsk);
     int pos = -1;
     if (result.low == result.high)
         pos = result.low;
@@ -70,25 +70,28 @@ int BPTreePkB::searchRange(const char *kmin, const char *kmax) {
     // Keep searching till value > max or we reach end of tree
     while (1) {
         if (pos == leaf->size) {
-            leaf->delete_from_mem();
+            // leaf->delete_from_mem();
             pos = 0;
             leaf = leaf->next;
             if (leaf == nullptr)
                 return entries;
-            leaf->fetch_page(dsk->fp);
+            // leaf->fetch_page(dsk->fp);
             continue;
         }
 
         PkBhead *head = GetHeaderPkB(leaf, pos);
-        if (char_cmp_new(PageOffset(leaf, head->key_offset), kmax,
-                         head->key_len, max_len)
-            > 0) {
+        char *buf = new char[head->key_len + 1];
+        GetKeyInDisk(buf, head->key_offset, dsk, head->key_len);
+        // if (char_cmp_new(PageOffset(leaf, head->key_offset), kmax,
+        //                  head->key_len, max_len)
+        if (char_cmp_new(buf, kmax, head->key_len, max_len) > 0) {
             break;
         }
+        delete[] buf;
         entries++;
         pos++;
     }
-    leaf->delete_from_mem();
+    // leaf->delete_from_mem();
     return entries;
 }
 
@@ -106,7 +109,7 @@ void BPTreePkB::insert(char *key) {
 void BPTreePkB::insert_nonleaf(NodePkB *node, NodePkB **path, int parentlevel, splitReturnPkB *childsplit) {
     // int offset;
     Item basekey;
-    get_base_key_from_ancestor(path, parentlevel, node, basekey);
+    get_base_key_from_ancestor(path, parentlevel, node, basekey, dsk->fp);
     int offset = get_common_prefix_len(basekey.addr, childsplit->promotekey.addr,
                                        basekey.size, childsplit->promotekey.size);
 
@@ -120,7 +123,7 @@ void BPTreePkB::insert_nonleaf(NodePkB *node, NodePkB **path, int parentlevel, s
             NodePkB *newRoot = new NodePkB;
 
             InsertNode(newRoot, 0, currsplit.left);
-            InsertKeyPkB(newRoot, 0,
+            InsertKeyPkB(dsk, newRoot, 0,
                          currsplit.promotekey.addr, currsplit.promotekey.size, 0);
             InsertNode(newRoot, 1, currsplit.right);
 
@@ -139,16 +142,16 @@ void BPTreePkB::insert_nonleaf(NodePkB *node, NodePkB **path, int parentlevel, s
 
         bool equal = false;
         findNodeResult result = find_node(node, promotekey->addr, promotekey->size,
-                                          offset, equal);
+                                          offset, equal, dsk);
         int insertpos = result.high;
 
         Item prevkey;
         generate_pkb_key(node, promotekey->addr, promotekey->size, insertpos,
-                         path, parentlevel, prevkey);
+                         path, parentlevel, prevkey, dsk->fp);
         int pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr, prevkey.size, promotekey->size);
-        InsertKeyPkB(node, insertpos, promotekey->addr, promotekey->size, pfx_len);
+        InsertKeyPkB(dsk, node, insertpos, promotekey->addr, promotekey->size, pfx_len);
 
-        update_next_prefix(node, insertpos, promotekey->addr, promotekey->size);
+        update_next_prefix(node, insertpos, promotekey->addr, promotekey->size, dsk->fp);
 
         InsertNode(node, insertpos + 1, childsplit->right);
     }
@@ -162,7 +165,7 @@ void BPTreePkB::insert_leaf(NodePkB *leaf, NodePkB **path, int path_level,
             NodePkB *newRoot = new NodePkB;
 
             InsertNode(newRoot, 0, split.left);
-            InsertKeyPkB(newRoot, 0,
+            InsertKeyPkB(dsk, newRoot, 0,
                          split.promotekey.addr, split.promotekey.size, 0);
             InsertNode(newRoot, 1, split.right);
 
@@ -178,22 +181,22 @@ void BPTreePkB::insert_leaf(NodePkB *leaf, NodePkB **path, int path_level,
     else {
         bool equal = false;
         // fetch the page content back
-        leaf->fetch_page(dsk->fp);
+        // leaf->fetch_page(dsk->fp);
 
-        findNodeResult result = find_node(leaf, key, keylen, offset, equal);
+        findNodeResult result = find_node(leaf, key, keylen, offset, equal, dsk);
         int insertpos = result.high;
 
         Item prevkey;
         generate_pkb_key(leaf, key, keylen, insertpos,
-                         path, path_level - 1, prevkey);
+                         path, path_level - 1, prevkey, dsk->fp);
         int pfx_len = get_common_prefix_len(prevkey.addr, key, prevkey.size, keylen);
-        InsertKeyPkB(leaf, insertpos, key, keylen, pfx_len);
+        InsertKeyPkB(dsk, leaf, insertpos, key, keylen, pfx_len);
 
         if (!equal) {
-            update_next_prefix(leaf, insertpos, key, keylen);
+            update_next_prefix(leaf, insertpos, key, keylen, dsk->fp);
         }
         // Write back to disk, delete the copy in memory
-        leaf->write_page(dsk->fp);
+        // leaf->write_page(dsk->fp);
     }
 }
 
@@ -210,17 +213,17 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
 
     bool equal = false;
     findNodeResult result = find_node(node, promotekey->addr, promotekey->size,
-                                      offset, equal);
+                                      offset, equal, dsk);
     int insertpos = result.high;
 
     // Insert the new key
     Item prevkey;
     generate_pkb_key(node, promotekey->addr, promotekey->size, insertpos,
-                     path, parentlevel, prevkey);
+                     path, parentlevel, prevkey, dsk->fp);
     int pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr, prevkey.size, promotekey->size);
-    InsertKeyPkB(node, insertpos, promotekey->addr, promotekey->size, pfx_len);
+    InsertKeyPkB(dsk, node, insertpos, promotekey->addr, promotekey->size, pfx_len);
     if (!equal) {
-        update_next_prefix(node, insertpos, promotekey->addr, promotekey->size);
+        update_next_prefix(node, insertpos, promotekey->addr, promotekey->size, dsk->fp);
     }
 
     InsertNode(node, insertpos + 1, childsplit->right);
@@ -231,7 +234,8 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
     PkBhead *head_split = GetHeaderPkB(node, split);
     newsplit.promotekey.size = head_split->key_len;
     newsplit.promotekey.addr = new char[newsplit.promotekey.size + 1];
-    strcpy(newsplit.promotekey.addr, PageOffset(node, head_split->key_offset));
+    GetKeyInDisk(newsplit.promotekey.addr, head_split->key_offset, dsk, head_split->key_len);
+    // strcpy(newsplit.promotekey.addr, PageOffset(node, head_split->key_offset));
     newsplit.promotekey.newallocated = true;
 
     // 2. fetch the full firstright(pos + 1), and compute pfx_len
@@ -246,10 +250,10 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
     char *leftbase = NewPage();
     SetEmptyPage(leftbase);
     char *rightbase = right->base;
-    int left_top = 0, right_top = 0;
+    // int left_top = 0, right_top = 0;
 
-    CopyToNewPagePkB(node, 0, split, leftbase, left_top);
-    CopyToNewPagePkB(node, split + 1, node->size, rightbase, right_top);
+    CopyToNewPagePkB(node, 0, split, leftbase);
+    CopyToNewPagePkB(node, split + 1, node->size, rightbase);
 
     // 4. update pointers
     vector<NodePkB *> leftptrs;
@@ -260,13 +264,13 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
          back_inserter(rightptrs));
 
     right->size = node->size - (split + 1);
-    right->space_top = right_top;
+    // right->space_top = right_top;
     right->IS_LEAF = false;
     right->ptrs = rightptrs;
     right->ptr_cnt = node->size - split;
 
     node->size = split;
-    node->space_top = left_top;
+    // node->space_top = left_top;
     UpdateBase(node, leftbase);
     node->ptrs = leftptrs;
     node->ptr_cnt = split + 1;
@@ -288,23 +292,24 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
 splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_level,
                                      char *newkey, int keylen, int offset) {
     splitReturnPkB newsplit;
-    NodePkB *right = dsk->get_new_leaf_pkb();
+    // NodePkB *right = dsk->get_new_leaf_pkb();
+    NodePkB *right = new NodePkB();
 
     bool equal = false;
-    node->fetch_page(dsk->fp);
+    // node->fetch_page(dsk->fp);
 
-    findNodeResult result = find_node(node, newkey, keylen, offset, equal);
+    findNodeResult result = find_node(node, newkey, keylen, offset, equal, dsk);
     int insertpos = result.high;
 
     // Insert the new key
     Item prevkey;
     generate_pkb_key(node, newkey, keylen, insertpos,
-                     path, path_level - 1, prevkey);
+                     path, path_level - 1, prevkey, dsk->fp);
     int pfx_len = get_common_prefix_len(prevkey.addr, newkey, prevkey.size, keylen);
-    InsertKeyPkB(node, insertpos, newkey, keylen, pfx_len);
+    InsertKeyPkB(dsk, node, insertpos, newkey, keylen, pfx_len);
 
     if (!equal) {
-        update_next_prefix(node, insertpos, newkey, keylen);
+        update_next_prefix(node, insertpos, newkey, keylen, dsk->fp);
     }
 
     int split = split_point(node);
@@ -313,7 +318,8 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
     PkBhead *head_split = GetHeaderPkB(node, split);
     newsplit.promotekey.size = head_split->key_len;
     newsplit.promotekey.addr = new char[newsplit.promotekey.size + 1];
-    strcpy(newsplit.promotekey.addr, PageOffset(node, head_split->key_offset));
+    GetKeyInDisk(newsplit.promotekey.addr, head_split->key_offset, dsk, head_split->key_len);
+    // strcpy(newsplit.promotekey.addr, PageOffset(node, head_split->key_offset));
     newsplit.promotekey.newallocated = true;
 
     // 2. Set the pfx_len of firstright to its length, the base key is the ancester
@@ -325,20 +331,20 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
     char *leftbase = NewPage();
     SetEmptyPage(leftbase);
     char *rightbase = right->base;
-    int left_top = 0, right_top = 0;
+    // int left_top = 0, right_top = 0;
 
-    CopyToNewPagePkB(node, 0, split, leftbase, left_top);
-    CopyToNewPagePkB(node, split, node->size, rightbase, right_top);
+    CopyToNewPagePkB(node, 0, split, leftbase);
+    CopyToNewPagePkB(node, split, node->size, rightbase);
 
     right->size = node->size - split;
-    right->space_top = right_top;
+    // right->space_top = right_top;
     right->IS_LEAF = true;
-    right->write_page(dsk->fp);
+    // right->write_page(dsk->fp);
 
     node->size = split;
-    node->space_top = left_top;
-    // UpdateBase(node, leftbase);
-    UpdateBaseInDisk(node, leftbase, dsk);
+    // node->space_top = left_top;
+    UpdateBase(node, leftbase);
+    // UpdateBaseInDisk(node, leftbase, dsk);
 
     // Set next pointers
     NodePkB *next = node->next;
@@ -355,10 +361,10 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
 }
 
 bool BPTreePkB::check_split_condition(NodePkB *node, int keylen) {
-    int currspace = node->space_top + node->size * sizeof(PkBhead);
+    int currspace = node->size * sizeof(PkBhead);
     // Update prefix need more space, the newkey,
     // should leave space for current insert and the following split
-    int splitcost = keylen + sizeof(PkBhead);
+    int splitcost = sizeof(PkBhead);
     // cout << "cur, split:" << currspace << splitcost << endl;
     if (currspace + 2 * splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
@@ -377,7 +383,7 @@ NodePkB *BPTreePkB::search_leaf_node(NodePkB *searchroot, const char *key, int k
     bool equal = false;
     // Till we reach leaf node
     while (!cursor->IS_LEAF) {
-        findNodeResult result = find_node(cursor, key, keylen, offset, equal);
+        findNodeResult result = find_node(cursor, key, keylen, offset, equal, dsk);
         // If equal key found, choose next position
         int pos;
         if (result.low == result.high)
@@ -404,7 +410,7 @@ NodePkB *BPTreePkB::search_leaf_node_for_insert(NodePkB *searchroot, const char 
     while (!cursor->IS_LEAF) {
         path[path_level++] = cursor;
 
-        findNodeResult result = find_node(cursor, key, keylen, offset, equal);
+        findNodeResult result = find_node(cursor, key, keylen, offset, equal, dsk);
         // If equal key found, choose next position
         int pos;
         if (result.low == result.high)
@@ -412,9 +418,9 @@ NodePkB *BPTreePkB::search_leaf_node_for_insert(NodePkB *searchroot, const char 
         else
             pos = result.high;
         offset = result.offset;
-        if (pos >= cursor->ptr_cnt) {
-            cout << "wrong index" << endl;
-        }
+        // if (pos >= cursor->ptr_cnt) {
+        //     cout << "wrong index" << endl;
+        // }
         cursor = cursor->ptrs[pos];
     }
     return cursor;
@@ -431,16 +437,16 @@ void BPTreePkB::getSize(NodePkB *cursor, int &numNodes, int &numNonLeaf, int &nu
     if (cursor != NULL) {
         unsigned long currSize = 0;
         int prefixSize = 0;
-        if (cursor->IS_LEAF)
-            cursor->fetch_page(dsk->fp);
+        // if (cursor->IS_LEAF)
+        //     cursor->fetch_page(dsk->fp);
 
         for (int i = 0; i < cursor->size; i++) {
             PkBhead *head = GetHeaderPkB(cursor, i);
             currSize += head->key_len + sizeof(PkBhead);
             prefixSize += sizeof(head->pfx_len) + head->pk_len + sizeof(head->pfx_len);
         }
-        if (cursor->IS_LEAF)
-            cursor->delete_from_mem();
+        // if (cursor->IS_LEAF)
+        //     cursor->delete_from_mem();
         totalKeySize += currSize;
         numKeys += cursor->size;
         totalPrefixSize += prefixSize;
@@ -497,7 +503,7 @@ void BPTreePkB::printTree(NodePkB *x, vector<bool> flag, bool compressed, int de
     // Condition when the current
     // node is the root node
     if (depth == 0) {
-        printKeys_pkb(x, compressed);
+        printKeys_pkb(x, compressed, dsk->fp);
         cout << endl;
     }
 
@@ -506,7 +512,7 @@ void BPTreePkB::printTree(NodePkB *x, vector<bool> flag, bool compressed, int de
     // the exploring depth
     else if (isLast) {
         cout << "+--- ";
-        printKeys_pkb(x, compressed);
+        printKeys_pkb(x, compressed, dsk->fp);
         cout << endl;
 
         // No more childrens turn it
@@ -515,7 +521,7 @@ void BPTreePkB::printTree(NodePkB *x, vector<bool> flag, bool compressed, int de
     }
     else {
         cout << "+--- ";
-        printKeys_pkb(x, compressed);
+        printKeys_pkb(x, compressed, dsk->fp);
         cout << endl;
     }
 

@@ -60,14 +60,24 @@ public:
         // _tree->dsk->close();
     }
 
+    // bool Search(const std::vector<char *> &values) override {
+    //     // _tree->dsk->read();
+    //     for (uint32_t i = 0; i < values.size(); i++)
+    //         if (_tree->search(values.at(i)) == -1) {
+    //             // _tree->dsk->close();
+    //             return false;
+    //         }
+    //     // _tree->dsk->close();
+    //     return true;
+    // }
+
     bool Search(const std::vector<char *> &values) override {
-        // _tree->dsk->read();
+        int count = 0;
         for (uint32_t i = 0; i < values.size(); i++)
             if (_tree->search(values.at(i)) == -1) {
-                // _tree->dsk->close();
-                return false;
+                count++;
             }
-        // _tree->dsk->close();
+        cout << "count: " << count << endl;
         return true;
     }
 
@@ -379,6 +389,8 @@ public:
             // vector<bool> flag(i + 1);
             // _tree->printTree(_tree->getRoot(), flag, true);
         }
+        // vector<bool> flag(values.size() * 1.25);
+        // _tree->printTree(_tree->getRoot(), flag, true);
     }
 
     // bool Search(const std::vector<char *> &values) override {

@@ -258,14 +258,20 @@ void PerformanceBenchmarkResults(
         std::cout << "============================================================="
                      "===================================================="
                   << std::endl;
-        std::cout << "\t\t\t\t\tPERFORMANCE BENCHMARK RESULTS - "
-                  << benchmarkStrMap.at(benchmark) << std::endl;
+        if (benchmark == BenchmarkTypes::RANGE) {
+            double r = 1 / RANGE_SCOPE;
+            std::cout << "\t\t\t\t\tPERFORMANCE BENCHMARK RESULTS - "
+                      << benchmarkStrMap.at(benchmark) << r << std::endl;
+        }
+        else
+            std::cout << "\t\t\t\t\tPERFORMANCE BENCHMARK RESULTS - "
+                      << benchmarkStrMap.at(benchmark) << std::endl;
         std::cout << "============================================================="
                      "===================================================="
                   << std::endl;
         if (benchmark == BenchmarkTypes::RANGE) {
             std::cout << "Index Structure\t|      Min\t|      Max\t|      Avg\t|      "
-                         "Med\t| M Ops/s (Avg)\t| K Ops/s (Med)\t|"
+                         "Med\t| M Ops/s (Avg)\t| Ops/s (Med)\t|"
                       << std::endl;
         }
         else {
@@ -281,7 +287,7 @@ void PerformanceBenchmarkResults(
         if (write_to_file) {
             if (benchmark == BenchmarkTypes::RANGE) {
                 myfile << "\n"
-                       << benchmarkStrMap.at(benchmark) << " performance: " << float(RANGE_SCOPE) << "\n"
+                       << benchmarkStrMap.at(benchmark) << " performance: " << float(1 * RANGE_SCOPE) << "\n"
                        << "name\tmin\tmax\tavg\tmed\tmops_avg\tmops_med\n";
             }
             else {
@@ -310,8 +316,8 @@ void PerformanceBenchmarkResults(
             double avg_ops, med_ops;
 
             if (benchmark == BenchmarkTypes::RANGE) {
-                avg_ops = range_num / avg / 1e3;
-                med_ops = range_num / avg / 1e3;
+                avg_ops = range_num / avg;
+                med_ops = range_num / avg;
             }
             else {
                 avg_ops = key_numbers / avg / 1e6;

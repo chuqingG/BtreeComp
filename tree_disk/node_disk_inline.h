@@ -1,5 +1,6 @@
 #pragma once
 #include "node_disk.h"
+#include "dsk_manager.cpp"
 
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * (MAX_SIZE_IN_BYTES))
@@ -242,16 +243,35 @@ inline void CopyToNewPageMyISAM(NodeMyISAM *nptr, int low, int high, char *newba
 
 #define GetHeaderPkB(nptr, i) (PkBhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(PkBhead))
 
+#define FSeekLongPos(top, fp)                   \
+    {                                           \
+        int n = top / 2'000'000'000;            \
+        int m = top % 2'000'000'000;            \
+        fseek(fp, m, SEEK_SET);                 \
+        for (int i = 0; i < n; i++)             \
+            fseek(fp, 2'000'000'000, SEEK_CUR); \
+    }
+
+#define GetKeyInDisk(buf, pos, dsk, keylen) \
+    {                                       \
+        FSeekLongPos(pos, dsk->fp);         \
+        fread(buf, keylen + 1, 1, dsk->fp); \
+    }
+
 // the k and klen here should always be the fullkey
-inline void InsertKeyPkB(NodePkB *nptr, int pos, const char *k, uint8_t klen, uint8_t plen) {
-    strcpy(BufTop(nptr), k);
+inline void InsertKeyPkB(DskManager *dsk, NodePkB *nptr, int pos, const char *k, uint8_t klen, uint8_t plen) {
+    // store the full key to disk
+    FSeekLongPos(dsk->key_top, dsk->fp);
+    fwrite(k, klen + 1, 1, dsk->fp);
+
+    // strcpy(BufTop(nptr), k);
     // shift the headers
     for (int i = nptr->size; i > pos; i--) {
         memcpy(GetHeaderPkB(nptr, i), GetHeaderPkB(nptr, i - 1), sizeof(PkBhead));
     }
     // Set the new header
     PkBhead *header = GetHeaderPkB(nptr, pos);
-    header->key_offset = nptr->space_top;
+    header->key_offset = dsk->key_top;
     header->key_len = klen;
     header->pfx_len = plen;
     if (plen < klen) {
@@ -264,21 +284,30 @@ inline void InsertKeyPkB(NodePkB *nptr, int pos, const char *k, uint8_t klen, ui
         memset(header->pk, 0, sizeof(header->pk));
         header->pk_len = 0;
     }
-
-    nptr->space_top += klen + 1;
+    dsk->key_top += klen + 1;
+    // nptr->space_top += klen + 1;
     nptr->size += 1;
 }
 
-inline void CopyToNewPagePkB(NodePkB *nptr, int low, int high, char *newbase, int &top) {
+inline void CopyToNewPagePkB(NodePkB *nptr, int low, int high, char *newbase) {
     for (int i = low; i < high; i++) {
         int newidx = i - low;
         PkBhead *oldhead = GetHeaderPkB(nptr, i);
         PkBhead *newhead = (PkBhead *)(newbase + MAX_SIZE_IN_BYTES
                                        - (newidx + 1) * sizeof(PkBhead));
-        strncpy(newbase + top, PageOffset(nptr, oldhead->key_offset), oldhead->key_len);
+        // strncpy(newbase + top, PageOffset(nptr, oldhead->key_offset), oldhead->key_len);
         memcpy(newhead, oldhead, sizeof(PkBhead));
         // offset is different
-        newhead->key_offset = top;
-        top += oldhead->key_len + 1;
+        // newhead->key_offset = top;
+        // top += oldhead->key_len + 1;
     }
 }
+
+#define FSeekLongDB2(id, fp)                                                       \
+    {                                                                              \
+        int n = id / 2000000;                                                      \
+        int m = id % 2000000;                                                      \
+        fseek(fp, m *(MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), SEEK_SET);            \
+        for (int i = 0; i < n; i++)                                                \
+            fseek(fp, 2000000 * (MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE), SEEK_CUR); \
+    }

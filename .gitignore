@@ -2,6 +2,7 @@
 .vscode
 .clang-format
 build
+build2
 builddebug
 buildnew
 builddebugnew

@@ -187,7 +187,7 @@ struct PkBhead {
     uint8_t key_len;
     uint8_t pk_len;
     char pk[PKB_LEN + 1];
-    uint16_t key_offset;
+    uint32_t key_offset;
 } __attribute__((packed));
 
 class NodePkB {
@@ -195,8 +195,8 @@ public:
     bool IS_LEAF;
     int size;
     char *base;
-    uint16_t space_top;
-    uint32_t id;
+    // uint16_t space_top;
+    // uint32_t id;
 
     vector<NodePkB *> ptrs;
     uint16_t ptr_cnt;
@@ -204,9 +204,9 @@ public:
     NodePkB *next; // Next node pointer
     NodePkB();
     ~NodePkB();
-    void fetch_page(FILE *fp);
-    void write_page(FILE *fp);
-    void delete_from_mem();
+    // void fetch_page(FILE *fp);
+    // void write_page(FILE *fp);
+    // void delete_from_mem();
 };
 #endif
 
@@ -260,4 +260,4 @@ void printKeys(Node *node, bool compressed);
 void printKeys_db2(NodeDB2 *node, bool compressed);
 void printKeys_myisam(NodeMyISAM *node, bool compressed);
 void printKeys_wt(NodeWT *node, bool compressed);
-void printKeys_pkb(NodePkB *node, bool compressed);
+void printKeys_pkb(NodePkB *node, bool compressed, FILE *fp);

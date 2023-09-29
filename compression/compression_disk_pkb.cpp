@@ -9,7 +9,7 @@ int bt_get_parent_child_pos(NodePkB *parent, NodePkB *node) {
     return -1;
 }
 
-void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, Item &key) {
+void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, Item &key, FILE *fp) {
     NodePkB *curr = node;
     for (int i = path_level; i >= 0; i--) {
         NodePkB *parent = path[i];
@@ -17,8 +17,12 @@ void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, I
 
         if (nodepos > 0) {
             PkBhead *head = GetHeaderPkB(parent, nodepos - 1);
-            key.addr = PageOffset(parent, head->key_offset);
+            // key.addr = PageOffset(parent, head->key_offset);
+            key.addr = new char[head->key_len + 1];
+            FSeekLongPos(head->key_offset, fp);
+            fread(key.addr, head->key_len + 1, 1, fp);
             key.size = head->key_len;
+            key.newallocated = true;
             return;
         }
         curr = parent;
@@ -28,18 +32,23 @@ void get_base_key_from_ancestor(NodePkB **path, int path_level, NodePkB *node, I
 }
 
 void generate_pkb_key(NodePkB *node, char *newkey, int keylen, int insertpos,
-                      NodePkB **path, int path_level, Item &key) {
+                      NodePkB **path, int path_level, Item &key, FILE *fp) {
     // string basekey;
     if (insertpos > 0) {
         // go to buffer get the complete key
 
         PkBhead *head = GetHeaderPkB(node, insertpos - 1);
-        key.addr = PageOffset(node, head->key_offset);
+        key.addr = new char[head->key_len + 1];
+        FSeekLongPos(head->key_offset, fp);
+        fread(key.addr, head->key_len + 1, 1, fp);
         key.size = head->key_len;
+        key.newallocated = true;
+        // key.addr = PageOffset(node, head->key_offset);
+
         return;
     }
     else {
-        get_base_key_from_ancestor(path, path_level, node, key);
+        get_base_key_from_ancestor(path, path_level, node, key, fp);
     }
 
     // It's enough to return, calculate the offset later
@@ -47,14 +56,17 @@ void generate_pkb_key(NodePkB *node, char *newkey, int keylen, int insertpos,
 }
 
 // TODO: see what happens if the new-inserted node is ancestor of a node
-void update_next_prefix(NodePkB *node, int pos, char *full_newkey, int keylen) {
+void update_next_prefix(NodePkB *node, int pos, char *full_newkey, int keylen, FILE *fp) {
     // if newkey is the last one
     if (node->size <= 1 || pos + 1 == node->size)
         return;
     PkBhead *header = GetHeaderPkB(node, pos + 1);
 
     // compare k[pos] and k[pos+1]
-    char *next_k = PageOffset(node, header->key_offset);
+    char *next_k = new char[header->key_len + 1];
+    FSeekLongPos(header->key_offset, fp);
+    fread(next_k, header->key_len + 1, 1, fp);
+    // char *next_k = PageOffset(node, header->key_offset);
     uint8_t newpfx_len = get_common_prefix_len(full_newkey, next_k,
                                                keylen, header->key_len);
 
@@ -63,7 +75,7 @@ void update_next_prefix(NodePkB *node, int pos, char *full_newkey, int keylen) {
     header->pk[pk_len] = '\0';
     header->pk_len = pk_len;
     header->pfx_len = newpfx_len;
-
+    delete[] next_k;
     return;
 }
 
@@ -118,7 +130,7 @@ compareKeyResult compare_part_key(NodePkB *node, int idx,
 }
 
 findNodeResult find_bit_tree(NodePkB *node, const char *searchKey, int keylen,
-                             int low, int high, int offset, bool &equal) {
+                             int low, int high, int offset, bool &equal, DskManager *dsk) {
     findNodeResult result;
     low = low < 0 ? 0 : low;
     high = high == node->size ? high - 1 : high;
@@ -150,8 +162,13 @@ findNodeResult find_bit_tree(NodePkB *node, const char *searchKey, int keylen,
         }
     }
     PkBhead *head = GetHeaderPkB(node, pos);
-    compareKeyResult cmpResult = compare_key(searchKey, PageOffset(node, head->key_offset),
+    char *fullkey = new char[head->key_len + 1];
+    GetKeyInDisk(fullkey, head->key_offset, dsk, head->key_len);
+    compareKeyResult cmpResult = compare_key(searchKey, fullkey,
                                              keylen, head->key_len);
+    // compareKeyResult cmpResult = compare_key(searchKey, PageOffset(node, head->key_offset),
+    //                                          keylen, head->key_len);
+    delete[] fullkey;
     if (cmpResult.comp == EQ) {
         equal = true;
         result.low = pos;
@@ -193,7 +210,7 @@ findNodeResult find_bit_tree(NodePkB *node, const char *searchKey, int keylen,
 }
 
 findNodeResult find_node(NodePkB *node, const char *searchKey, int keylen,
-                         int offset, bool &equal) {
+                         int offset, bool &equal, DskManager *dsk) {
     findNodeResult result;
     int high = node->size;
     int low = -1;
@@ -216,7 +233,7 @@ findNodeResult find_node(NodePkB *node, const char *searchKey, int keylen,
         curr++;
     }
     if (high - low > 1) {
-        return find_bit_tree(node, searchKey, keylen, low, high, offset, equal);
+        return find_bit_tree(node, searchKey, keylen, low, high, offset, equal, dsk);
     }
 
     result.low = low;

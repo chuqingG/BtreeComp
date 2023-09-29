@@ -311,8 +311,8 @@ int BPTree::split_point(Node *node) {
     int size = node->size;
     int bestsplit = size / 2;
     if (this->tail_comp) {
-        int split_range_low = size * (1 / 2 - TAIL_SPLIT_WIDTH);
-        int split_range_high = size * (1 / 2 + TAIL_SPLIT_WIDTH);
+        int split_range_low = size * (1.0 / 2 - TAIL_SPLIT_WIDTH);
+        int split_range_high = size * (1.0 / 2 + TAIL_SPLIT_WIDTH);
         // Representing 16 bytes of the integer
         int minlen = INT16_MAX;
         for (int i = split_range_low; i < split_range_high - 1; i++) {

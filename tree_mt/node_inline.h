@@ -43,7 +43,7 @@
 
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
 
-inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint8_t klen) {
+inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     strcpy(BufTop(nptr), k);
     // shift the headers
     for (int i = nptr->size; i > pos; i--) {
@@ -58,7 +58,7 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint8_t klen) {
 }
 
 // with cutoff
-inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint8_t cutoff, uint16_t &top) {
+inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint16_t cutoff, uint16_t &top) {
     for (int i = low; i < high; i++) {
         int newidx = i - low;
         Stdhead *oldhead = GetHeaderStd(nptr, i);
@@ -92,7 +92,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint8
 
 #define PfxOffset(node, off) (char *)(node->base + MAX_SIZE_IN_BYTES + off)
 
-inline void InsertPfxDB2(NodeDB2 *nptr, int pos, const char *p, uint8_t plen, uint8_t low, uint8_t high) {
+inline void InsertPfxDB2(NodeDB2 *nptr, int pos, const char *p, uint16_t plen, uint16_t low, uint16_t high) {
     strcpy(PfxTop(nptr), p);
     // shift the headers
     for (int i = nptr->pfx_size; i > pos; i--) {
@@ -108,7 +108,7 @@ inline void InsertPfxDB2(NodeDB2 *nptr, int pos, const char *p, uint8_t plen, ui
     nptr->pfx_size += 1;
 }
 
-inline void InsertKeyDB2(NodeDB2 *nptr, int pos, const char *k, uint8_t klen) {
+inline void InsertKeyDB2(NodeDB2 *nptr, int pos, const char *k, uint16_t klen) {
     strcpy(BufTop(nptr), k);
     // shift the headers
     for (int i = nptr->size; i > pos; i--) {
@@ -175,8 +175,8 @@ inline void InsertKeyWT(NodeWT *nptr, int pos, const char *k, int klen, int plen
     // Set the new header
     WThead *header = GetHeaderWT(nptr, pos);
     header->key_offset = nptr->space_top;
-    header->key_len = (uint8_t)klen;
-    header->pfx_len = (uint8_t)plen;
+    header->key_len = (uint16_t)klen;
+    header->pfx_len = (uint16_t)plen;
 #ifdef WTCACHE
     header->initialized = false;
 #endif
@@ -191,9 +191,9 @@ inline void CopyToNewPageWT(NodeWT *nptr, int low, int high, char *newbase, int 
         WThead *newhead = (WThead *)(newbase + MAX_SIZE_IN_BYTES
                                      - (newidx + 1) * sizeof(WThead));
         strncpy(newbase + top, PageOffset(nptr, oldhead->key_offset), oldhead->key_len);
-        newhead->key_len = (uint8_t)oldhead->key_len;
+        newhead->key_len = (uint16_t)oldhead->key_len;
         newhead->key_offset = top;
-        newhead->pfx_len = (uint8_t)oldhead->pfx_len;
+        newhead->pfx_len = (uint16_t)oldhead->pfx_len;
         top += oldhead->key_len + 1;
     }
 }
@@ -209,8 +209,8 @@ inline void InsertKeyMyISAM(NodeMyISAM *nptr, int pos, const char *k, int klen, 
     // Set the new header
     MyISAMhead *header = GetHeaderMyISAM(nptr, pos);
     header->key_offset = nptr->space_top;
-    header->key_len = (uint8_t)klen;
-    header->pfx_len = (uint8_t)plen;
+    header->key_len = (uint16_t)klen;
+    header->pfx_len = (uint16_t)plen;
     nptr->space_top += klen + 1;
     nptr->size += 1;
 }
@@ -222,9 +222,9 @@ inline void CopyToNewPageMyISAM(NodeMyISAM *nptr, int low, int high, char *newba
         MyISAMhead *newhead = (MyISAMhead *)(newbase + MAX_SIZE_IN_BYTES
                                              - (newidx + 1) * sizeof(MyISAMhead));
         strncpy(newbase + top, PageOffset(nptr, oldhead->key_offset), oldhead->key_len);
-        newhead->key_len = (uint8_t)oldhead->key_len;
+        newhead->key_len = (uint16_t)oldhead->key_len;
         newhead->key_offset = top;
-        newhead->pfx_len = (uint8_t)oldhead->pfx_len;
+        newhead->pfx_len = (uint16_t)oldhead->pfx_len;
         top += oldhead->key_len + 1;
     }
 }
@@ -232,7 +232,7 @@ inline void CopyToNewPageMyISAM(NodeMyISAM *nptr, int low, int high, char *newba
 #define GetHeaderPkB(nptr, i) (PkBhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(PkBhead))
 
 // the k and klen here should always be the fullkey
-inline void InsertKeyPkB(NodePkB *nptr, int pos, const char *k, uint8_t klen, uint8_t plen) {
+inline void InsertKeyPkB(NodePkB *nptr, int pos, const char *k, uint16_t klen, uint16_t plen) {
     strcpy(BufTop(nptr), k);
     // shift the headers
     for (int i = nptr->size; i > pos; i--) {

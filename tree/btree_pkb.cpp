@@ -338,8 +338,9 @@ bool BPTreePkB::check_split_condition(NodePkB *node, int keylen) {
     // Update prefix need more space, the newkey,
     // should leave space for current insert and the following split
     int splitcost = keylen + sizeof(PkBhead);
+    int nextcost = max(keylen, APPROX_KEY_SIZE) + sizeof(PkBhead);
     // cout << "cur, split:" << currspace << splitcost << endl;
-    if (currspace + 2 * splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
+    if (currspace + splitcost + nextcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
     else
         return false;

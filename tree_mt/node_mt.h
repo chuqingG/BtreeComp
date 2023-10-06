@@ -26,7 +26,7 @@ const char MAXHIGHKEY[] = "infinity";
 
 struct Stdhead {
     uint16_t key_offset;
-    uint8_t key_len;
+    uint16_t key_len;
 } __attribute__((packed));
 
 class Node {
@@ -36,7 +36,7 @@ public:
     char *base;
     uint16_t space_top;
     vector<Node *> ptrs;
-    uint8_t ptr_cnt;
+    uint16_t ptr_cnt;
 
     uint8_t level;
     Item *lowkey;
@@ -53,12 +53,12 @@ public:
 
 struct DB2head {
     uint16_t key_offset;
-    uint8_t key_len;
+    uint16_t key_len;
 } __attribute__((packed));
 
 struct DB2pfxhead {
     uint16_t pfx_offset;
-    uint8_t pfx_len;
+    uint16_t pfx_len;
     uint8_t low;
     uint8_t high;
 } __attribute__((packed));
@@ -73,7 +73,7 @@ public:
     uint16_t space_top;
     uint16_t pfx_top;
     vector<NodeDB2 *> ptrs;
-    uint8_t ptr_cnt;
+    uint16_t ptr_cnt;
     NodeDB2 *prev; // Prev node pointer
     NodeDB2 *next; // Next node pointer
     NodeDB2();
@@ -112,8 +112,8 @@ public:
 #else
 struct MyISAMhead {
     uint16_t key_offset;
-    uint8_t key_len;
-    uint8_t pfx_len;
+    uint16_t key_len;
+    uint16_t pfx_len;
     /* We assume all the prefix are less than 128 Byte, so remove is1Byte in MyISAM
      *  May need to consider the case key/pfx_len in [128, 256)
      */
@@ -157,16 +157,16 @@ public:
 struct WThead {
     uint16_t key_offset;
     uint16_t initval_offset;
-    uint8_t key_len;
-    uint8_t init_len = 0;
-    uint8_t pfx_len;
+    uint16_t key_len;
+    uint16_t init_len = 0;
+    uint16_t pfx_len;
     bool initialized = false;
 } __attribute__((packed));
 #else
 struct WThead {
     uint16_t key_offset;
-    uint8_t key_len;
-    uint8_t pfx_len;
+    uint16_t key_len;
+    uint16_t pfx_len;
 } __attribute__((packed));
 #endif
 
@@ -234,8 +234,8 @@ public:
 
 #else
 struct PkBhead {
-    uint8_t pfx_len;
-    uint8_t key_len;
+    uint16_t pfx_len;
+    uint16_t key_len;
     uint8_t pk_len;
     char pk[PKB_LEN + 1];
     uint16_t key_offset;

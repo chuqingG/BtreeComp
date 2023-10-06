@@ -336,7 +336,7 @@ int BPTree::split_point(Node *node) {
 splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *childsplit) {
     splitReturn_new newsplit;
     const char *newkey = childsplit->promotekey.addr;
-    uint8_t newkey_len = childsplit->promotekey.size;
+    uint16_t newkey_len = childsplit->promotekey.size;
     int insertpos;
     bool equal = false;
 
@@ -392,9 +392,9 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     if (this->head_comp && pos >= 0) {
         // when pos < 0, it means we are spliting the root
 
-        uint8_t leftprefix_len =
+        uint16_t leftprefix_len =
             head_compression_find_prefix_length(node->lowkey, &(newsplit.promotekey));
-        uint8_t rightprefix_len =
+        uint16_t rightprefix_len =
             head_compression_find_prefix_length(&(newsplit.promotekey), node->highkey);
 
         CopyToNewPageStd(node, 0, split, left_base,
@@ -547,9 +547,9 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     uint16_t left_top = 0;
 
     if (this->head_comp) {
-        uint8_t leftprefix_len =
+        uint16_t leftprefix_len =
             head_compression_find_prefix_length(node->lowkey, &(newsplit.promotekey));
-        uint8_t rightprefix_len =
+        uint16_t rightprefix_len =
             head_compression_find_prefix_length(&(newsplit.promotekey), node->highkey);
 
         CopyToNewPageStd(node, 0, split, left_base,

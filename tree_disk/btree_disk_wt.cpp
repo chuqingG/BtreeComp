@@ -41,7 +41,7 @@ NodeWT *BPTreeWT::getRoot() {
 // in B+ Tree
 int BPTreeWT::search(const char *key) {
     int keylen = strlen(key);
-    uint8_t skiplow = 0;
+    uint16_t skiplow = 0;
     NodeWT *leaf = search_leaf_node(_root, key, keylen, skiplow);
     if (leaf == nullptr)
         return -1;
@@ -54,7 +54,7 @@ int BPTreeWT::search(const char *key) {
 int BPTreeWT::searchRange(const char *kmin, const char *kmax) {
     int min_len = strlen(kmin);
     int max_len = strlen(kmax);
-    uint8_t skiplow = 0;
+    uint16_t skiplow = 0;
     NodeWT *leaf = search_leaf_node(_root, kmin, min_len, skiplow);
     if (leaf == nullptr)
         return 0;
@@ -109,7 +109,7 @@ void BPTreeWT::insert(char *x) {
     int keylen = strlen(x);
     NodeWT *search_path[max_level];
     int path_level = 0;
-    uint8_t skiplow = 0;
+    uint16_t skiplow = 0;
     NodeWT *leaf = search_leaf_node_for_insert(_root, x, keylen, search_path, path_level, skiplow);
     insert_leaf(leaf, search_path, path_level, x, keylen);
 }
@@ -141,7 +141,7 @@ void BPTreeWT::insert_nonleaf(NodeWT *node, NodeWT **path, int parentlevel, spli
     }
     else {
         Item *splitkey = &(childsplit->promotekey);
-        uint8_t skiplow = 0;
+        uint16_t skiplow = 0;
         // int rid = rand();
         bool equal = false;
         int insertpos = search_insert_pos(node, splitkey->addr, splitkey->size,
@@ -151,8 +151,8 @@ void BPTreeWT::insert_nonleaf(NodeWT *node, NodeWT **path, int parentlevel, spli
         if (this->non_leaf_comp && insertpos != 0) {
             // fetch the previous key, compute prefix_len
             get_full_key(node, insertpos - 1, prevkey);
-            uint8_t pfx_len = get_common_prefix_len(prevkey.addr, splitkey->addr,
-                                                    prevkey.size, splitkey->size);
+            uint16_t pfx_len = get_common_prefix_len(prevkey.addr, splitkey->addr,
+                                                     prevkey.size, splitkey->size);
             InsertKeyWT(node, insertpos, splitkey->addr + pfx_len,
                         splitkey->size - pfx_len, pfx_len);
         }
@@ -198,7 +198,7 @@ void BPTreeWT::insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *ke
         }
     }
     else {
-        uint8_t skiplow = 0;
+        uint16_t skiplow = 0;
         bool equal = false;
         leaf->fetch_page(dsk->fp);
 
@@ -214,8 +214,8 @@ void BPTreeWT::insert_leaf(NodeWT *leaf, NodeWT **path, int path_level, char *ke
         else {
             // fetch the previous key, compute prefix_len
             get_full_key(leaf, insertpos - 1, prevkey);
-            uint8_t pfx_len = get_common_prefix_len(prevkey.addr, key,
-                                                    prevkey.size, keylen);
+            uint16_t pfx_len = get_common_prefix_len(prevkey.addr, key,
+                                                     prevkey.size, keylen);
             InsertKeyWT(leaf, insertpos, key + pfx_len, keylen - pfx_len, pfx_len);
         }
         if (!equal) {
@@ -240,7 +240,7 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT *chil
     NodeWT *right = new NodeWT();
     Item *promotekey = &(childsplit->promotekey);
 
-    uint8_t skiplow = 0;
+    uint16_t skiplow = 0;
     bool equal = false;
     int insertpos = search_insert_pos(node, promotekey->addr, promotekey->size,
                                       0, node->size - 1, skiplow, equal);
@@ -250,8 +250,8 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT *chil
     if (this->non_leaf_comp && insertpos != 0) {
         // fetch the previous key, compute prefix_len
         get_full_key(node, insertpos - 1, prevkey);
-        uint8_t pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr,
-                                                prevkey.size, promotekey->size);
+        uint16_t pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr,
+                                                 prevkey.size, promotekey->size);
         InsertKeyWT(node, insertpos, promotekey->addr + pfx_len,
                     promotekey->size - pfx_len, pfx_len);
     }
@@ -354,7 +354,7 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT *chil
 splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     splitReturnWT newsplit;
     NodeWT *right = dsk->get_new_leaf_wt();
-    uint8_t skiplow = 0;
+    uint16_t skiplow = 0;
 
     bool equal = false;
     node->fetch_page(dsk->fp);
@@ -371,8 +371,8 @@ splitReturnWT BPTreeWT::split_leaf(NodeWT *node, char *newkey, int keylen) {
     else {
         // fetch the previous key, compute prefix_len
         get_full_key(node, insertpos - 1, prevkey);
-        uint8_t pfx_len = get_common_prefix_len(prevkey.addr, newkey,
-                                                prevkey.size, keylen);
+        uint16_t pfx_len = get_common_prefix_len(prevkey.addr, newkey,
+                                                 prevkey.size, keylen);
         InsertKeyWT(node, insertpos, newkey + pfx_len, keylen - pfx_len, pfx_len);
     }
     if (!equal) {
@@ -465,8 +465,8 @@ bool BPTreeWT::check_split_condition(NodeWT *node, int keylen) {
 }
 
 int BPTreeWT::search_insert_pos(NodeWT *cursor, const char *key, int keylen,
-                                int low, int high, uint8_t &skiplow, bool &equal) {
-    uint8_t skiphigh = 0;
+                                int low, int high, uint16_t &skiplow, bool &equal) {
+    uint16_t skiphigh = 0;
     while (low <= high) {
         int mid = low + (high - low) / 2;
         Item curkey;
@@ -481,7 +481,7 @@ int BPTreeWT::search_insert_pos(NodeWT *cursor, const char *key, int keylen,
         }
 
         int cmp;
-        uint8_t match = min(skiplow, skiphigh);
+        uint16_t match = min(skiplow, skiphigh);
         cmp = char_cmp_skip(key, curkey.addr, keylen, curkey.size, &match);
 
         if (cmp > 0) {
@@ -502,7 +502,7 @@ int BPTreeWT::search_insert_pos(NodeWT *cursor, const char *key, int keylen,
     return high + 1;
 }
 
-NodeWT *BPTreeWT::search_leaf_node(NodeWT *searchroot, const char *key, int keylen, uint8_t &skiplow) {
+NodeWT *BPTreeWT::search_leaf_node(NodeWT *searchroot, const char *key, int keylen, uint16_t &skiplow) {
     // Tree is empty
     if (searchroot == NULL) {
         cout << "Tree is empty" << endl;
@@ -521,7 +521,7 @@ NodeWT *BPTreeWT::search_leaf_node(NodeWT *searchroot, const char *key, int keyl
 }
 
 NodeWT *BPTreeWT::search_leaf_node_for_insert(NodeWT *searchroot, const char *key, int keylen,
-                                              NodeWT **path, int &path_level, uint8_t &skiplow) {
+                                              NodeWT **path, int &path_level, uint16_t &skiplow) {
     // Tree is empty
     if (searchroot == NULL) {
         cout << "Tree is empty" << endl;
@@ -542,9 +542,9 @@ NodeWT *BPTreeWT::search_leaf_node_for_insert(NodeWT *searchroot, const char *ke
 }
 
 int BPTreeWT::search_in_leaf(NodeWT *cursor, const char *key, int keylen,
-                             int low, int high, uint8_t &skiplow) {
-    uint8_t skiphigh = 0;
-    // uint8_t match;
+                             int low, int high, uint16_t &skiplow) {
+    uint16_t skiphigh = 0;
+    // uint16_t match;
     while (low <= high) {
         int mid = low + (high - low) / 2;
         Item curkey;
@@ -552,7 +552,7 @@ int BPTreeWT::search_in_leaf(NodeWT *cursor, const char *key, int keylen,
 
         // string pagekey = extract_key(cursor, mid, this->non_leaf_comp);
         int cmp;
-        uint8_t match = min(skiplow, skiphigh);
+        uint16_t match = min(skiplow, skiphigh);
         cmp = char_cmp_skip(key, curkey.addr, keylen, curkey.size, &match);
 
         if (cmp > 0) {

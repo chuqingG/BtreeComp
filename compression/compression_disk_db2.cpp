@@ -250,9 +250,12 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
     strcpy(rightfirst + pfx_i_1->pfx_len, GetKeyDB2(result, head_rf->key_offset));
 
     int prefixlen = get_common_prefix_len(leftlast, rightfirst, ll_len, rf_len);
-
+    if (prefixlen > 32)
+        cout << "wrong common prefix" << endl;
     int firstlow = -1;
     int lasthigh = -1;
+
+    int ori_pfx_top = result->pfx_top;
 
     if (prefixlen > 0 && prefixlen >= max(pfx_i->pfx_len, pfx_i_1->pfx_len)) {
         int cutoff = prefixlen - pfx_i->pfx_len;
@@ -361,6 +364,8 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
             return index + 2;
         }
     }
+    if (result->pfx_top > DB2_PFX_MAX_SIZE)
+        cout << "wrong top" << endl;
     delete[] leftlast;
     delete[] rightfirst;
     // Do nothing
@@ -406,6 +411,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
         int memusage = 0, pfx_top = 0;
         int pfx_size = 0;
 
+        if (strlen(node->base + DB2_PFX_MAX_SIZE) >= 32)
+            cout << "pfxbuf corrupt" << endl;
         prefixItem pfxitem;
 
         int prevprefix_len = 0;
@@ -524,7 +531,7 @@ void apply_prefix_optimization(NodeDB2 *node) {
             char *buf = NewPageDB2();
             SetEmptyPageDB2(buf);
 
-            uint8_t oldpfx_idx[node->size];
+            uint16_t oldpfx_idx[node->size];
             // Track their old prefix_idx
             for (int i = 0; i < node->pfx_size; i++) {
                 DB2pfxhead *pfx = GetHeaderDB2pfx(node, i);

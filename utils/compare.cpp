@@ -28,7 +28,7 @@ int get_common_prefix_len(const char *a, const char *b, int alen, int blen) {
 }
 
 int char_cmp_skip(const char *a, const char *b,
-                  int alen, int blen, uint8_t *matchp) {
+                  int alen, int blen, uint16_t *matchp) {
     // 1 : a > b
     // const size_t min_len = (alen < blen) ? alen : blen;
     int cmp_len = min(alen, blen) - *matchp;

@@ -32,12 +32,12 @@ private:
     void insert_nonleaf(NodeWT *node, NodeWT **path, int pos, splitReturnWT *childsplit);
     // insert_binary
     int search_insert_pos(NodeWT *cursor, const char *key, int keylen,
-                          int low, int high, uint8_t &skiplow, bool &equal);
+                          int low, int high, uint16_t &skiplow, bool &equal);
     // search_binary
-    int search_in_leaf(NodeWT *cursor, const char *key, int keylen, int low, int high, uint8_t &skiplow);
-    NodeWT *search_leaf_node(NodeWT *root, const char *key, int keylen, uint8_t &skiplow);
+    int search_in_leaf(NodeWT *cursor, const char *key, int keylen, int low, int high, uint16_t &skiplow);
+    NodeWT *search_leaf_node(NodeWT *root, const char *key, int keylen, uint16_t &skiplow);
     NodeWT *search_leaf_node_for_insert(NodeWT *root, const char *key, int keylen,
-                                        NodeWT **path, int &path_level, uint8_t &skiplow);
+                                        NodeWT **path, int &path_level, uint16_t &skiplow);
     bool check_split_condition(NodeWT *node, int keylen);
     int split_point(NodeWT *node);
     splitReturnWT split_nonleaf(NodeWT *node, int pos, splitReturnWT *childsplit);

@@ -158,6 +158,9 @@ void BPTreeDB2::insert_nonleaf(NodeDB2 *node, NodeDB2 **path,
     else {
         // string promotekey = childsplit.promotekey;
         bool equal = false;
+        // cout << "size: " << childsplit->promotekey.size << endl;
+        if (strcmp(childsplit->promotekey.addr, "http://brightlight.youngteam.co.uk/eng/gig2") == 0)
+            cout << "here" << endl;
         int insertpos = insert_prefix_and_key(node,
                                               childsplit->promotekey.addr,
                                               childsplit->promotekey.size, equal);
@@ -396,9 +399,12 @@ splitReturnDB2 BPTreeDB2::split_leaf(NodeDB2 *node, char *newkey, int keylen) {
 
     int rf_len = rf_pfx->pfx_len + rf->key_len;
     char *rightfirst = new char[rf_len + 1];
-    strncpy(rightfirst, PfxOffset(right, rf_pfx->pfx_offset), rf_pfx->pfx_len);
-    strcpy(rightfirst + rf_pfx->pfx_len, PageOffset(right, rf->key_offset));
-
+    // cout << rf_len << ":" << rf_pfx->pfx_len << " " << rf->key_len << endl;
+    memcpy(rightfirst, PfxOffset(right, rf_pfx->pfx_offset), sizeof(char) * rf_pfx->pfx_len);
+    memcpy(rightfirst + rf_pfx->pfx_len, PageOffset(right, rf->key_offset), sizeof(char) * rf->key_len);
+    rightfirst[rf_len] = '\0';
+    // if (!rf->key_len)
+    //     cout << "0" << endl;
     newsplit.promotekey.addr = rightfirst;
     newsplit.promotekey.size = rf_len;
     newsplit.promotekey.newallocated = true;
@@ -413,7 +419,7 @@ bool BPTreeDB2::check_split_condition(NodeDB2 *node, int keylen) {
     int currspace = node->space_top + node->size * sizeof(DB2head);
     // copy from myisam
     int splitcost = keylen + sizeof(DB2head);
-    int nextkey = sizeof(DB2head) + keylen;
+    int nextkey = sizeof(DB2head) + max(keylen, APPROX_KEY_SIZE);
     int currspace_pfx = node->pfx_top + node->pfx_size * sizeof(DB2pfxhead);
     int splitcost_pfx = sizeof(DB2pfxhead);     // must leave space for next split
     int optimcost_pfx = 2 * sizeof(DB2pfxhead); // for safety, prefix expand introduce new pfx segments
@@ -428,13 +434,25 @@ bool BPTreeDB2::check_split_condition(NodeDB2 *node, int keylen) {
 int BPTreeDB2::search_insert_pos(NodeDB2 *cursor, const char *key, int keylen,
                                  int low, int high, bool &equal) {
     // Search pos in node when insert, or search non-leaf node when search
+    int ori_low = low;
+    int ori_high = high;
     while (low <= high) {
         int mid = low + (high - low) / 2;
+        if (mid > ori_high)
+            cout << "why" << endl;
         DB2head *head = GetHeaderDB2(cursor, mid);
         int cmp = char_cmp_new(key, PageOffset(cursor, head->key_offset),
                                keylen, head->key_len);
         if (cmp == 0) {
             equal = true;
+            while (mid < high) {
+                DB2head *header = GetHeaderDB2(cursor, mid + 1);
+                if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                                 keylen, header->key_len))
+                    // return the last one if keys are equal
+                    break;
+                mid++;
+            }
             return mid + 1;
         }
         else if (cmp > 0)

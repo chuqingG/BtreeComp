@@ -380,6 +380,8 @@ prefixOptimization *prefix_expand(NodeDB2 *node) {
     // we only move the offset in expang_prefix, don't change the content of base
     while (nextprefix < result->pfx_size - 1) {
         nextprefix = expand_prefixes_in_boundary(result, nextprefix);
+        if (result->pfx_size * sizeof(DB2pfxhead) + result->pfx_top > DB2_PFX_MAX_SIZE - SPLIT_LIMIT)
+            break;
     }
 
     result->pfx_top = 0;
@@ -487,7 +489,9 @@ void apply_prefix_optimization(NodeDB2 *node) {
         prefixOptimization *merge = prefix_merge(node);
         if (expand->space_top <= merge->space_top) {
             // Do prefix_expand
-
+            // if (expand->pfx_top + expand->pfx_size * sizeof(DB2pfxhead) >= DB2_PFX_MAX_SIZE - SPLIT_LIMIT) {
+            //     cout << "expand limit: " << expand->pfx_top + expand->pfx_size * sizeof(DB2pfxhead) << endl;
+            // }
             int new_top = 0, new_pfx_top = 0;
             char *buf = NewPageDB2();
             SetEmptyPageDB2(buf);
@@ -520,11 +524,12 @@ void apply_prefix_optimization(NodeDB2 *node) {
         }
         else {
             // Do prefix_merge
+
             int new_top = 0, new_pfx_top = 0;
             char *buf = NewPageDB2();
             SetEmptyPageDB2(buf);
 
-            uint8_t oldpfx_idx[node->size];
+            uint16_t oldpfx_idx[node->size];
             // Track their old prefix_idx
             for (int i = 0; i < node->pfx_size; i++) {
                 DB2pfxhead *pfx = GetHeaderDB2pfx(node, i);

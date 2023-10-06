@@ -109,7 +109,7 @@ void read_dataset(vector<string> &values, string filename, int max_number = -1) 
 }
 
 int read_dataset_char(vector<char *> &values, string filename, int max_keylen, int max_number = -1) {
-    cout << "----- Processing file ----- " << filename << endl;
+    cout << "----- Processing file ----- " << filename << "max length" << max_keylen << endl;
     std::ifstream in(filename);
     int max_length = 0;
     int counter = 0;
@@ -127,10 +127,10 @@ int read_dataset_char(vector<char *> &values, string filename, int max_keylen, i
         strncpy(cptr, str.data(), real_len);
         cptr[real_len] = '\0';
 
-        if (len > 0) {
+        if (real_len > 0) {
             values.push_back(cptr);
-            if (len > max_length)
-                max_length = len;
+            if (real_len > max_length)
+                max_length = real_len;
         }
         else {
             break;

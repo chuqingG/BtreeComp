@@ -124,8 +124,8 @@ int BPTreeMyISAM::prefix_search(NodeMyISAM *cursor, const char *key, int keylen)
             If prefix_len > cmplen then we are in the end-space comparison
             phase. Do not try to access the key any more ==> left= 0.
             */
-            uint8_t left = ((len <= keylen) ? head->key_len :
-                                              ((head->pfx_len < keylen) ? keylen - head->pfx_len : 0));
+            uint16_t left = ((len <= keylen) ? head->key_len :
+                                               ((head->pfx_len < keylen) ? keylen - head->pfx_len : 0));
 
             // compare the compressed k[idx] with key[idx.pfx_len: ]
             // if they have a common pfx of length n, then subtract n from left
@@ -167,13 +167,13 @@ int BPTreeMyISAM::prefix_insert(NodeMyISAM *cursor, const char *key, int keylen,
 
         if (matched >= head->pfx_len) {
             /* We have to compare. But we can still skip part of the key */
-            // uint8_t left;
+            // uint16_t left;
             /*
             If prefix_len > cmplen then we are in the end-space comparison
             phase. Do not try to access the key any more ==> left= 0.
             */
-            uint8_t left = ((len <= keylen) ? head->key_len :
-                                              ((head->pfx_len < keylen) ? keylen - head->pfx_len : 0));
+            uint16_t left = ((len <= keylen) ? head->key_len :
+                                               ((head->pfx_len < keylen) ? keylen - head->pfx_len : 0));
 
             // compare the compressed k[idx] with key[idx.pfx_len: ]
             // if they have a common pfx of length n, then subtract n from left
@@ -242,7 +242,8 @@ void BPTreeMyISAM::insert_nonleaf(NodeMyISAM *node, NodeMyISAM **path, int paren
         else {
             insertpos = search_insert_pos(node, promotekey->addr, promotekey->size, 0, node->size - 1, equal);
         }
-
+        while (node->ptrs[insertpos] != childsplit->left)
+            insertpos++;
         // Insert the new key
         Item prevkey;
         if (!this->non_leaf_comp || insertpos == 0) {
@@ -252,8 +253,8 @@ void BPTreeMyISAM::insert_nonleaf(NodeMyISAM *node, NodeMyISAM **path, int paren
         }
         else {
             get_full_key(node, insertpos - 1, prevkey);
-            uint8_t pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr,
-                                                    prevkey.size, promotekey->size);
+            uint16_t pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr,
+                                                     prevkey.size, promotekey->size);
             InsertKeyMyISAM(node, insertpos, promotekey->addr + pfx_len, promotekey->size - pfx_len, pfx_len);
         }
         if (this->non_leaf_comp && !equal)
@@ -297,8 +298,8 @@ void BPTreeMyISAM::insert_leaf(NodeMyISAM *leaf, NodeMyISAM **path, int path_lev
         }
         else {
             get_full_key(leaf, insertpos - 1, prevkey);
-            uint8_t pfx_len = get_common_prefix_len(prevkey.addr, key,
-                                                    prevkey.size, keylen);
+            uint16_t pfx_len = get_common_prefix_len(prevkey.addr, key,
+                                                     prevkey.size, keylen);
             InsertKeyMyISAM(leaf, insertpos, key + pfx_len, keylen - pfx_len, pfx_len);
         }
         if (!equal)
@@ -337,8 +338,8 @@ splitReturnMyISAM BPTreeMyISAM::split_nonleaf(NodeMyISAM *node, int pos, splitRe
     }
     else {
         get_full_key(node, insertpos - 1, prevkey);
-        uint8_t pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr,
-                                                prevkey.size, promotekey->size);
+        uint16_t pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr,
+                                                 prevkey.size, promotekey->size);
         InsertKeyMyISAM(node, insertpos, promotekey->addr + pfx_len,
                         promotekey->size - pfx_len, pfx_len);
     }
@@ -438,8 +439,8 @@ splitReturnMyISAM BPTreeMyISAM::split_leaf(NodeMyISAM *node, char *newkey, int k
     }
     else {
         get_full_key(node, insertpos - 1, prevkey);
-        uint8_t pfx_len = get_common_prefix_len(prevkey.addr, newkey,
-                                                prevkey.size, keylen);
+        uint16_t pfx_len = get_common_prefix_len(prevkey.addr, newkey,
+                                                 prevkey.size, keylen);
         InsertKeyMyISAM(node, insertpos, newkey + pfx_len, keylen - pfx_len, pfx_len);
     }
     if (!equal)
@@ -464,6 +465,8 @@ splitReturnMyISAM BPTreeMyISAM::split_leaf(NodeMyISAM *node, char *newkey, int k
     header_rf->pfx_len = 0;
     header_rf->key_offset = node->space_top;
     node->space_top += header_rf->key_len + 1;
+
+    // cout << "after insert: " << node->space_top + node->size * sizeof(MyISAMhead) << endl;
 
     // 3. copy the two parts into new pages
     char *leftbase = NewPage();

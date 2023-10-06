@@ -4,7 +4,7 @@
 
 struct Item {
     char *addr;
-    uint8_t size;
+    uint16_t size;
     bool newallocated = false;
     Item() {
         // this works for wt, myisam, pkb and splitkey,

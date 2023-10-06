@@ -106,6 +106,8 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
                 for (int i = 0; i < leaf->size; i++) {
                     Stdhead *head_i = GetHeaderStd(leaf, i);
                     char *decomp_key = new char[leaf->prefix->size + head_i->key_len + 1];
+                    // memcpy(decomp_key, leaf->prefix->addr, sizeof(char) * leaf->prefix->size);
+                    // memcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_i->key_offset), sizeof(char) * head_i->key_len + 1);
                     strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
                     strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_i->key_offset));
                     delete decomp_key;
@@ -298,7 +300,7 @@ int BPTree::split_point(Node *node) {
 splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *childsplit) {
     splitReturn_new newsplit;
     const char *newkey = childsplit->promotekey.addr;
-    uint8_t newkey_len = childsplit->promotekey.size;
+    uint16_t newkey_len = childsplit->promotekey.size;
     int insertpos;
     bool equal = false;
 
@@ -354,9 +356,9 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     if (this->head_comp && pos >= 0) {
         // when pos < 0, it means we are spliting the root
 
-        uint8_t leftprefix_len =
+        uint16_t leftprefix_len =
             head_compression_find_prefix_length(node->lowkey, &(newsplit.promotekey));
-        uint8_t rightprefix_len =
+        uint16_t rightprefix_len =
             head_compression_find_prefix_length(&(newsplit.promotekey), node->highkey);
 
         CopyToNewPageStd(node, 0, split, left_base,
@@ -506,9 +508,9 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     uint16_t left_top = 0;
 
     if (this->head_comp) {
-        uint8_t leftprefix_len =
+        uint16_t leftprefix_len =
             head_compression_find_prefix_length(node->lowkey, &(newsplit.promotekey));
-        uint8_t rightprefix_len =
+        uint16_t rightprefix_len =
             head_compression_find_prefix_length(&(newsplit.promotekey), node->highkey);
 
         CopyToNewPageStd(node, 0, split, left_base,
@@ -561,7 +563,7 @@ bool BPTree::check_split_condition(Node *node, int keylen) {
     // double the key size to split safely
     // only works when the S_newkey <= S_prevkey + S_limit
     int currspace = node->space_top + node->size * sizeof(Stdhead);
-    int splitcost = 2 * keylen + sizeof(Stdhead);
+    int splitcost = 2 * max(keylen, APPROX_KEY_SIZE) + sizeof(Stdhead);
     if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
     else
@@ -578,6 +580,14 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
                                keylen, header->key_len);
         if (cmp == 0) {
             equal = true;
+            while (mid < high) {
+                Stdhead *header = GetHeaderStd(cursor, mid + 1);
+                if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                                 keylen, header->key_len))
+                    // return the last one if keys are equal
+                    break;
+                mid++;
+            }
             return mid + 1;
         }
         else if (cmp > 0)

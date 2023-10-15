@@ -1,4 +1,4 @@
-# B-tree compression benchmark
+# B-tree Compression Benchmark
 
 
 ## Usage

@@ -1,31 +1,14 @@
 #pragma once
 
-// Compilation options
-#define THREAD_DEBUG
-// #define MULTICOL_COMPRESSION
-// #define MYDEBUG
-// #define MULTICOL_LHKEY_SAVE_SPACE //disable means store full lhkey
-#define MEMDEBUG
-#define CHARALL
-#define SINGLE_DEBUG
-#define VERBOSE_PRINT // enable to write some intermediate results to output file (if set -o)
-// #define WT_OPTIM   // enable for prefixstart
-// #define WTCACHE
-// #define DUPKEY
-// #define TOFIX  // enable to fix some skipped problem
-
 // Setup
 #define SPLIT_STRATEGY_SPACE
-#define MAX_SIZE_IN_BYTES 4608 // 512 // 2048
-#define DB2_PFX_MAX_SIZE 1024  // 128  // 256
-#define SPLIT_LIMIT 512        // suggest to be >= 32 for safety on db2
+#define MAX_SIZE_IN_BYTES 1024
+#define DB2_PFX_MAX_SIZE 256
+#define SPLIT_LIMIT 32 // suggest to be >= 32 for safety on db2
 #define TAIL_SPLIT_WIDTH (1.0 / 6)
 #define RANGE_SCOPE (1.0 / 2)
 #define DEFAULT_DATASET_SIZE 100000
-#define APPROX_KEY_SIZE 500
+#define APPROX_KEY_SIZE 32
 #define WT_CACHE_KEY_NUM 1000
 
 #define PKB_LEN 2
-// Be careful when key length is variable,
-// this number leave a little gap for safety by our split strategy
-constexpr int kNumberBound = MAX_SIZE_IN_BYTES / APPROX_KEY_SIZE;

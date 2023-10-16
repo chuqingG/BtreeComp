@@ -1,5 +1,35 @@
-# B-tree compression benchmark
+# Revisiting B-tree Compression: An Experimental Study
 
+This repository hosts the source code and supplementary materials for our SIGMOD 2024 paper, "Revisiting B-tree Compression: An Experimental Study". We implemented 8 types of B-trees based on different compression techniques from scratch.
+
+## Code Structure
+
+The rough code structure is displayed below, omitting some auxiliary files (e.g. cmake files).
+```bash
+├── benchmark                      # Folder for benchmark codes
+├── compression                    # Folder for compression handling codes
+│   ├── compression_[method].cpp   
+│   ├── compression_[method].h
+├── README.md
+├── tree                           # Folder for trees' data structures 
+│   ├── btree_[method].cpp         # Definitions of the tree using [method]
+│   ├── btree_[method].h           # Declarations of the tree using [method]
+│   ├── node.cpp                   # Definitions of different types of nodes
+│   ├── node.h                     # Nodes' declarations and definitions of headers
+│   └── node_inline.h              # Macros and inline functions for accessing and updating metadata 
+├── tree_disk                      # Folder for disk-based trees, similar as tree
+│   ├── btree_disk_[method].cpp
+│   ├── btree_disk_[method].h
+│   ├── dsk_manager.cpp            # Disk management
+│   ├── node_disk.cpp
+│   ├── node_disk.h
+│   └── node_disk_inline.h              
+└── utils                          # Folder for utility functions
+    ├── compare.cpp                # Utility for comparisons
+    ├── config.h                   # Configurations
+    ├── item.hpp                   # Definition of the data unit
+    └── util.h                     # Utility for data processing and generate summary      
+```
 
 ## Usage
 ```bash
@@ -17,6 +47,8 @@ cmake -DCMAKE_BUILD_TYPE=Release .. && make
             -r [range_query_num] \      # number of the range query
             -l [max_key_length]         # max key length, enable to truncate each key
 ```
+
+
 
 We provide a readable summary in screen output, and you can also export a format suitable for csv or table files by specifying the `-o`. An example of a screen output summary shows as follows:
 
@@ -62,3 +94,18 @@ Btree-My        |      5.0000   |     33.0484   |      2.0000   |     18.7821   
 Btree-PkB       |      5.0000   |     42.0000   |      5.8782   |     16.2478   |  69103.0000   |   4253.0000   |
 Btree-DB2       |      5.0000   |     33.3584   |      1.5210   |     20.8700   |  52510.0000   |   2516.0000   |
 ```
+
+## Performance
+
+In our paper, we conducted the comparison and analyzed the results on both synthetic and real datasets, and finally found that Head+Tail wins on most datasets.
+
+For example, the results on TPC-H LINEITEM is shown below.
+
+##### Results on TPC-H LINEITEM
+<center class="half">
+     <img src="figures/tpch_insert.PNG" width="200" title="Insert Performance"/>
+     <img src="figures/tpch_search.PNG" width="200" title="Search Performance"/>
+     <img src="figures/tpch_size.PNG" width="200" title="Compression Ratio"/>
+     <figcaption>(a) Insert Performance &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp (b) Seacrh Performance &nbsp&nbsp&nbsp&nbsp&nbsp  (c) Compression Ratio</figcaption>
+</center>
+

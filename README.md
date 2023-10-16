@@ -104,6 +104,6 @@ For example, the results on TPC-H LINEITEM is shown below.
 ##### Results on TPC-H LINEITEM
 <center class="half">
      <img src="figures/tpch.PNG" width="600"/>
-     <figcaption>(a) Insert Performance &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp (b) Seacrh Performance &nbsp&nbsp&nbsp&nbsp&nbsp  (c) Compression Ratio</figcaption>
+     <figcaption>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp(a) Insert Performance &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp (b) Seacrh Performance &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp  (c) Compression Ratio</figcaption>
 </center>
 

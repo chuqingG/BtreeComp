@@ -11,8 +11,22 @@
 #include <regex.h>
 #include <map>
 #include <iomanip>
+#include <chrono>
 #include "config.h"
 using namespace std;
+
+#define TIMECOUNT(t, f, ...)                                                  \
+    {                                                                         \
+        auto t1 = std::chrono::system_clock::now();                           \
+        f(__VA_ARGS__);                                                       \
+        auto t2 = std::chrono::system_clock::now();                           \
+        double t_gap =                                                        \
+            static_cast<double>(                                              \
+                std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1) \
+                    .count())                                                 \
+            / 1e9;                                                            \
+        t += t_gap;                                                           \
+    }
 
 int char_cmp_map(const char *a, const char *b, int alen, int blen) {
     // 1 : a > b

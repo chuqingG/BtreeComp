@@ -130,7 +130,10 @@ void BPTreeDB2::insert(char *x) {
 void BPTreeDB2::insert_nonleaf(NodeDB2 *node, NodeDB2 **path,
                                int parentlevel, splitReturnDB2 *childsplit) {
     if (check_split_condition(node, childsplit->promotekey.size)) {
+        // cout << '1' << endl;
         apply_prefix_optimization(node);
+        // if (strlen(node->base) == 0 && strlen(node->base + 4608) == 0)
+        //     cout << "wrong base 1" << endl;
     }
     if (check_split_condition(node, childsplit->promotekey.size)) {
         NodeDB2 *parent = nullptr;
@@ -150,23 +153,29 @@ void BPTreeDB2::insert_nonleaf(NodeDB2 *node, NodeDB2 **path,
             max_level++;
         }
         else {
-            if (parent == nullptr)
+            // if (strlen(node->base) == 0 && strlen(node->base + 4608) == 0)
+            //     cout << "wrong base 4" << endl;
+            if (parent == nullptr) {
                 return;
+            }
             insert_nonleaf(parent, path, parentlevel - 1, &currsplit);
         }
     }
     else {
+        // cout << '2' << endl;
         // string promotekey = childsplit.promotekey;
+        // if (strlen(node->base) == 0 && strlen(node->base + 4608) == 0)
+        //     cout << "wrong base 3" << endl;
         bool equal = false;
-        // cout << "size: " << childsplit->promotekey.size << endl;
-        if (strcmp(childsplit->promotekey.addr, "http://brightlight.youngteam.co.uk/eng/gig2") == 0)
-            cout << "here" << endl;
+
         int insertpos = insert_prefix_and_key(node,
                                               childsplit->promotekey.addr,
                                               childsplit->promotekey.size, equal);
 
         InsertNode(node, insertpos + 1, childsplit->right);
     }
+    // if (strlen(node->base) == 0 && strlen(node->base + 4608) == 0)
+    //     cout << "wrong base 2" << endl;
 }
 
 void BPTreeDB2::insert_leaf(NodeDB2 *leaf, NodeDB2 **path, int path_level, char *key, int keylen) {

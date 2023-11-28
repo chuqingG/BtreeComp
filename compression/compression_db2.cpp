@@ -244,9 +244,9 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
 
     char *leftlast = new char[ll_len + 1];
     char *rightfirst = new char[rf_len + 1];
-    strcpy(leftlast, GetPfxDB2(result, pfx_i->pfx_offset));
+    strncpy(leftlast, GetPfxDB2(result, pfx_i->pfx_offset), pfx_i->pfx_len);
     strcpy(leftlast + pfx_i->pfx_len, GetKeyDB2(result, head_ll->key_offset));
-    strcpy(rightfirst, GetPfxDB2(result, pfx_i_1->pfx_offset));
+    strncpy(rightfirst, GetPfxDB2(result, pfx_i_1->pfx_offset), pfx_i_1->pfx_len);
     strcpy(rightfirst + pfx_i_1->pfx_len, GetKeyDB2(result, head_rf->key_offset));
 
     int prefixlen = get_common_prefix_len(leftlast, rightfirst, ll_len, rf_len);
@@ -298,6 +298,8 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
         pfxitem.low = firstlow;
         pfxitem.high = lasthigh;
 
+        // if (strncmp(pfxitem.prefix.addr, "h", 1) != 0)
+        //     cout << "in expand" << endl;
         if (firstlow == pfx_i->low && lasthigh == pfx_i_1->high) {
             // cover all keys in p[i] and p[i+1]
             // update pfx_head[i]
@@ -402,6 +404,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
         // Only one common prefix, so prefix is the only prefix
         DB2pfxhead *pfxhead = GetHeaderDB2pfx(node, 0);
 
+        // cout << "prev pfx: " << PfxOffset(node, pfxhead->pfx_offset) << endl;
+        // cout << "first buf: " << PageOffset(node, 0) << endl;
         // vector<Key_c> newkeys;
         char *newbase = NewPageDB2();
         SetEmptyPageDB2(newbase);
@@ -430,10 +434,14 @@ void apply_prefix_optimization(NodeDB2 *node) {
                                 head_i->key_len, curprefix_len);
 
                 int pfx_len = pfxhead->pfx_len + curprefix_len;
+                // if (pfx_len == 0)
+                //     cout << "wrong" << endl;
                 char *key_i = new char[pfx_len + 1];
-                strcpy(key_i, PfxOffset(node, pfxhead->pfx_offset));
+                strncpy(key_i, PfxOffset(node, pfxhead->pfx_offset), pfxhead->pfx_len);
                 strncpy(key_i + pfxhead->pfx_len, PageOffset(node, head_i->key_offset), curprefix_len);
                 key_i[pfx_len] = '\0';
+                // if (pfx_len > 0 && key_i[0] != 'h')
+                //     cout << "?" << endl;
                 pfxitem.prefix.addr = key_i;
                 pfxitem.prefix.size = pfx_len;
                 pfxitem.prefix.newallocated = true;
@@ -478,11 +486,15 @@ void apply_prefix_optimization(NodeDB2 *node) {
         }
         WritePfxDB2Page(newbase, pfx_top, pfxitem, pfx_size);
 
+        // node->space_top = memusage;
+        // node->pfx_top = pfx_top;
+        // node->pfx_size = pfx_size;
+
+        UpdateBase(node, newbase);
+
         node->space_top = memusage;
         node->pfx_top = pfx_top;
         node->pfx_size = pfx_size;
-
-        UpdateBase(node, newbase);
     }
     else {
         prefixOptimization *expand = prefix_expand(node);
@@ -510,6 +522,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
                 DB2pfxhead *p_i = GetPfxInPageDB2(expand, i);
                 DB2pfxhead *newhead = (DB2pfxhead *)(buf + MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead));
                 strcpy(buf + MAX_SIZE_IN_BYTES + new_pfx_top, GetPfxDB2(expand, p_i->pfx_offset));
+                // if (p_i->pfx_len > 0 && strncmp(buf + MAX_SIZE_IN_BYTES + new_pfx_top, "h", 1) != 0)
+                //     cout << "wrong expand" << endl;
                 newhead->low = p_i->low;
                 newhead->high = p_i->high;
                 newhead->pfx_len = p_i->pfx_len;
@@ -521,6 +535,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
             node->space_top = new_top;
             UpdateBase(node, buf);
             // UpdatePfx(node, newpfx);
+            // if (strlen(node->base) == 0 && strlen(node->base + 4608) == 0)
+            //     cout << "wrong base opt 2" << endl;
         }
         else {
             // Do prefix_merge
@@ -556,6 +572,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
                 DB2pfxhead *newhead = (DB2pfxhead *)(buf + MAX_SIZE_IN_BYTES + DB2_PFX_MAX_SIZE - (i + 1) * sizeof(DB2pfxhead));
                 strcpy(buf + MAX_SIZE_IN_BYTES + new_pfx_top, GetPfxDB2(expand, p_i->pfx_offset));
                 memcpy(newhead, p_i, sizeof(DB2pfxhead));
+                // if (p_i->pfx_len > 0 && strncmp(buf + MAX_SIZE_IN_BYTES + new_pfx_top, "h", 1) != 0)
+                //     cout << "wrong merge" << endl;
                 newhead->pfx_offset = new_pfx_top;
                 new_pfx_top += p_i->pfx_len + 1;
             }
@@ -566,6 +584,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
             node->pfx_top = new_pfx_top;
             // UpdatePfx(node, newpfx);
         }
+        // if (strlen(node->base) == 0 && strlen(node->base + 4608) == 0)
+        //     cout << "wrong base opt" << endl;
         delete expand;
         delete merge;
     }

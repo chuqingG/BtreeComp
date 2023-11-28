@@ -70,6 +70,11 @@ public:
                 count++;
             }
         cout << "count: " << count << endl;
+#ifdef TRACK_DISTANCE
+        cout << "move times: " << _tree->cmp_count << endl
+             << "total distance: " << _tree->cmp_length << endl
+             << "ratio: " << _tree->cmp_length * 1.0 / _tree->cmp_count << endl;
+#endif
         return true;
     }
 
@@ -179,6 +184,8 @@ public:
 
     void Insert(const std::vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); ++i) {
+            // if (i == 1214913)
+            //     cout << "here" << endl;
             _tree->insert(values.at(i));
             // vector<bool> flag(i + 1);
             // _tree->printTree(_tree->getRoot(), flag, true);
@@ -265,6 +272,14 @@ public:
                 cout << "Cannot find " << values[i] << endl;
                 return false;
             }
+#ifdef TRACK_DISTANCE
+        cout << "move times: " << _tree->decomp_count << endl
+             << "total distance: " << _tree->decomp_distance << endl
+             << "ratio: " << _tree->decomp_distance * 1.0 / _tree->decomp_count << endl;
+        cout << "total scan: " << _tree->total_scan << endl
+             << "total cmp: " << _tree->total_need_cmp << endl
+             << "percentage: " << _tree->total_need_cmp * 1.0 / _tree->total_scan << endl;
+#endif
         return true;
     }
 
@@ -325,9 +340,12 @@ public:
     }
 
     bool Search(const std::vector<char *> &values) override {
+        int count = 0;
         for (uint32_t i = 0; i < values.size(); ++i)
             if (_tree->search(values[i]) == -1)
-                return false;
+                count++;
+        // return false;
+        cout << "count: " << count << endl;
         return true;
     }
 

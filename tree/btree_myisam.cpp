@@ -6,6 +6,12 @@ BPTreeMyISAM::BPTreeMyISAM(bool non_leaf_compression) {
     _root = new NodeMyISAM();
     max_level = 1;
     non_leaf_comp = non_leaf_compression;
+#ifdef TRACK_DISTANCE
+    decomp_count = 0;
+    decomp_distance = 0;
+    total_need_cmp = 0;
+    total_scan = 0;
+#endif
 }
 
 void deletefrom(NodeMyISAM *node) {
@@ -115,6 +121,9 @@ int BPTreeMyISAM::prefix_search(NodeMyISAM *cursor, const char *key, int keylen)
     while (idx < cursor->size) {
         MyISAMhead *head = GetHeaderMyISAM(cursor, idx);
         len = head->pfx_len + head->key_len;
+#ifdef TRACK_DISTANCE
+        total_scan++;
+#endif
 
         if (matched >= head->pfx_len) {
             /* We have to compare. But we can still skip part of the key */
@@ -137,6 +146,13 @@ int BPTreeMyISAM::prefix_search(NodeMyISAM *cursor, const char *key, int keylen)
                     break;
                 common++;
             }
+#ifdef TRACK_DISTANCE
+            if (left)
+                decomp_count++;
+            decomp_distance += common;
+
+            total_need_cmp++;
+#endif
 
             if (cmp_result > 0) /* mismatch */
                 break;

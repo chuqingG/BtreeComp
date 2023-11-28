@@ -7,6 +7,10 @@ BPTree::BPTree(bool head_compression, bool tail_compression) {
     max_level = 1;
     head_comp = head_compression;
     tail_comp = tail_compression;
+#ifdef TRACK_DISTANCE
+    cmp_count = 0;
+    cmp_length = 0;
+#endif
 }
 
 void deletefrom(Node *node) {
@@ -648,14 +652,39 @@ Node *BPTree::search_leaf_node_for_insert(Node *searchroot, const char *key, int
     return cursor;
 }
 
+#ifdef TRACK_DISTANCE
+int BPTree::char_cmp_count(const char *a, const char *b, int alen, int blen) {
+    // 1 : a > b
+    // const size_t min_len = (alen < blen) ? alen : blen;
+    cmp_count++;
+    int cmp_len = min(alen, blen);
+    // int idx = *matchp;
+    for (int idx = 0; idx < cmp_len; ++idx) {
+        int cmp = a[idx] - b[idx];
+        if (cmp != 0) {
+            cmp_length += idx;
+            return cmp;
+        }
+    }
+    /* Contents are equal up to the smallest length. */
+    cmp_length += cmp_len;
+    return (alen - blen);
+}
+#endif
+
 // TODO:merge these search function
 int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
                            int low, int high, bool isleaf) {
     while (low <= high) {
         int mid = low + (high - low) / 2;
         Stdhead *header = GetHeaderStd(cursor, mid);
+#ifndef TRACK_DISTANCE
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
+#else
+        int cmp = char_cmp_count(key, PageOffset(cursor, header->key_offset),
+                                 keylen, header->key_len);
+#endif
         if (cmp == 0)
             return isleaf ? mid : mid + 1;
         else if (cmp > 0)
@@ -689,9 +718,11 @@ void BPTree::getSize(Node *cursor, int &numNodes, int &numNonLeaf, int &numKeys,
             currSize += header->key_len + sizeof(Stdhead);
         }
 #endif
-        totalKeySize += currSize + cursor->prefix->size;
+        int pfxsize = cursor->prefix->size + sizeof(cursor->prefix->size);
         numKeys += cursor->size;
-        totalPrefixSize += cursor->prefix->size;
+        totalPrefixSize += this->head_comp * pfxsize;
+        totalKeySize += currSize + this->head_comp * pfxsize;
+
         numNodes += 1;
         if (!cursor->IS_LEAF) {
             totalBranching += cursor->ptr_cnt;

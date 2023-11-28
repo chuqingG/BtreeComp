@@ -28,6 +28,11 @@ public:
     Node *getRoot();
     void printTree(Node *x, vector<bool> flag, bool compressed = true,
                    int depth = 0, bool isLast = false);
+#ifdef TRACK_DISTANCE
+    int cmp_count;
+    uint64_t cmp_length;
+    int char_cmp_count(const char *a, const char *b, int alen, int blen);
+#endif
 
 private:
     Node *_root;

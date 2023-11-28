@@ -23,11 +23,18 @@ public:
     NodeMyISAM *getRoot();
     void printTree(NodeMyISAM *x, vector<bool> flag, bool compressed = false,
                    int depth = 0, bool isLast = false);
+#ifdef TRACK_DISTANCE
+    int decomp_count;
+    int decomp_distance;
+    int total_scan;
+    int total_need_cmp;
+#endif
 
 private:
     NodeMyISAM *_root;
     bool non_leaf_comp;
     int max_level;
+
     int prefix_insert(NodeMyISAM *cursor, const char *key, int keylen, bool &equal);
     int prefix_search(NodeMyISAM *node, const char *key, int keylen);
     void insert_leaf(NodeMyISAM *leaf, NodeMyISAM **path, int path_level, char *key, int keylen);

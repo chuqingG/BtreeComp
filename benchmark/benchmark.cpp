@@ -421,7 +421,7 @@ void TreeStatisticBenchmarkResults(
 
 void RunBenchmark() {
     cout << "Starting [" << BenchmarkToString() << "]: size=" << key_numbers
-         << ", iter=" << iterations << endl;
+         << ", iter=" << iterations << ", pagesize=" << MAX_SIZE_IN_BYTES << endl;
 
     std::vector<map<BenchmarkTypes, vector<double>>> structure_benchmark_times(
         kIndexStructures.size());

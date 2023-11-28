@@ -128,6 +128,7 @@ struct WThead {
     uint16_t key_offset;
     uint16_t key_len;
     uint16_t pfx_len;
+    bool isinitialized = false;
 } __attribute__((packed));
 #endif
 

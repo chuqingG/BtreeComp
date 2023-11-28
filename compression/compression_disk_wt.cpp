@@ -306,13 +306,23 @@ void get_full_key(NodeWT *node, int idx, Item &key) {
 }
 #else
 // Store the decompressed key into key
-void get_full_key(NodeWT *node, int idx, Item &key) {
+void get_full_key(NodeWT *node, int idx, Item &key, Cache *cache) {
     WThead *header = GetHeaderWT(node, idx);
     key.addr = PageOffset(node, header->key_offset);
     key.size = header->key_len;
     int pfx_len = header->pfx_len;
 
     if (key.size != 0 && pfx_len == 0) { // no prefix
+        return;
+    }
+
+    if (header->isinitialized) {
+        cout << "cache hit" << endl;
+        // keyloc *k = new keyloc(node, idx);
+        key.addr = cache->get(header);
+        key.size = APPROX_KEY_SIZE;
+        // delete k;
+        cout << "get idx = " << idx << ", return:" << key.addr << endl;
         return;
     }
 
@@ -333,6 +343,12 @@ void get_full_key(NodeWT *node, int idx, Item &key) {
     key.addr = decomp_key;
     key.size += pfx_len;
     key.newallocated = true;
+
+    // write into cache
+    keyloc *k = new keyloc(node, idx);
+    int pos_in_cache = cache->put(header);
+    cache->write(pos_in_cache, key.addr);
+    delete k;
     return;
 }
 #endif

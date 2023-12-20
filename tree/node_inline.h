@@ -2,11 +2,18 @@
 #include "node.h"
 // #include "../utils/config.h"
 
+// hard code
+#define STD_HEAD_SIZE 33
+
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
 #define BufTop(nptr) (nptr->base + nptr->space_top)
-
 #define PageOffset(nptr, off) (char *)(nptr->base + off)
+
+/*
+Add for new page header layout
+*/
+#define NextWritePos(datastart, pagehead) (datastart + pagehead->space_top)
 
 #define UpdateBase(node, newbase) \
     {                             \
@@ -29,26 +36,47 @@
 /*
 ================For standard==============
 */
-#define UpdatePfxItem(nptr, addr, size, newallo)      \
-    {                                                 \
-        delete nptr->prefix;                          \
-        nptr->prefix = new Item(addr, size, newallo); \
+#define NewPageStd() (new char[MAX_SIZE_IN_BYTES + STD_HEAD_SIZE])
+#define SetEmptyPageStd(p) memset(p, 0, sizeof(char) * (MAX_SIZE_IN_BYTES + STD_HEAD_SIZE))
+#define GetStdPageHead(nptr) ((StdPageHead *)(nptr->base))
+#define GetStdPageData(nptr) (nptr->base + STD_HEAD_SIZE)
+#define GetfromStd(nptr, off) (char *)(GetStdPageData(nptr) + off)
+#define isLeafStd(nptr) GetStdPageHead(nptr)->IS_LEAF
+
+#define InsertNodeStd(nptr, pos, newnode)                      \
+    {                                                          \
+        nptr->ptrs.emplace(nptr->ptrs.begin() + pos, newnode); \
+        GetStdPageHead(nptr)->ptr_cnt += 1;                    \
     }
 
-#define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
+#define UpdateBaseStd(node, newbase)                                                                   \
+    {                                                                                                  \
+        memcpy(node->base + STD_HEAD_SIZE, newbase + STD_HEAD_SIZE, sizeof(char) * MAX_SIZE_IN_BYTES); \
+        delete[] newbase;                                                                              \
+    }
+
+#define UpdatePfxItem(nptr, addr, size, newallo)     \
+    {                                                \
+        StdPageHead *hdr = GetStdPageHead(nptr);     \
+        delete hdr->prefix;                          \
+        hdr->prefix = new Item(addr, size, newallo); \
+    }
+
+#define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + STD_HEAD_SIZE + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
 
 inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
-    strcpy(BufTop(nptr), k);
+    StdPageHead *pagehead = GetStdPageHead(nptr);
+    strcpy(NextWritePos(GetStdPageData(nptr), pagehead), k);
     // shift the headers
-    for (int i = nptr->size; i > pos; i--) {
+    for (int i = pagehead->size; i > pos; i--) {
         memcpy(GetHeaderStd(nptr, i), GetHeaderStd(nptr, i - 1), sizeof(Stdhead));
     }
     // Set the new header
     Stdhead *header = GetHeaderStd(nptr, pos);
-    header->key_offset = nptr->space_top;
+    header->key_offset = pagehead->space_top;
     header->key_len = klen;
-    nptr->space_top += klen + 1;
-    nptr->size += 1;
+    pagehead->space_top += klen + 1;
+    pagehead->size += 1;
 }
 
 // with cutoff
@@ -56,9 +84,9 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
     for (int i = low; i < high; i++) {
         int newidx = i - low;
         Stdhead *oldhead = GetHeaderStd(nptr, i);
-        Stdhead *newhead = (Stdhead *)(newbase + MAX_SIZE_IN_BYTES
+        Stdhead *newhead = (Stdhead *)(newbase + STD_HEAD_SIZE + MAX_SIZE_IN_BYTES
                                        - (newidx + 1) * sizeof(Stdhead));
-        strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
+        strcpy(newbase + STD_HEAD_SIZE + top, GetfromStd(nptr, oldhead->key_offset) + cutoff);
         newhead->key_len = oldhead->key_len - cutoff;
         newhead->key_offset = top;
         top += newhead->key_len + 1;

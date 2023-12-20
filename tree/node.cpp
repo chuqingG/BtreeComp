@@ -4,29 +4,37 @@
 
 // Constructor of Node
 Node::Node() {
-    size = 0;
-    ptr_cnt = 0;
-    space_top = 0;
-    base = NewPage();
-    SetEmptyPage(base);
+    // size = 0;
+    // ptr_cnt = 0;
+    // space_top = 0;
+    base = NewPageStd();
+    SetEmptyPageStd(base);
 
-    lowkey = new Item(true);
-    highkey = new Item(); // this hk will be deallocated automatically
-    // highkey->addr = new char[9];
-    // strcpy(highkey->addr, MAXHIGHKEY);
-    // highkey->newallocated = true;
-    highkey->size = 0;
-    prefix = new Item(true);
-    IS_LEAF = true;
+    StdPageHead *pagehead = (StdPageHead *)base;
+    pagehead->size = 0;
+    pagehead->ptr_cnt = 0;
+    pagehead->space_top = 0;
+    pagehead->lowkey = new Item(true);
+    pagehead->highkey = new Item(); // this hk will be deallocated automatically
+    pagehead->highkey->size = 0;
+    pagehead->prefix = new Item(true);
+    pagehead->IS_LEAF = true;
+    // lowkey = new Item(true);
+    // highkey = new Item(); // this hk will be deallocated automatically
+    // // highkey->addr = new char[9];
+    // // strcpy(highkey->addr, MAXHIGHKEY);
+    // // highkey->newallocated = true;
+
     prev = nullptr;
     next = nullptr;
 }
 
 // Destructor of Node
 Node::~Node() {
-    delete lowkey;
-    delete highkey;
-    delete prefix;
+    StdPageHead *pagehead = (StdPageHead *)base;
+    delete pagehead->lowkey;
+    delete pagehead->highkey;
+    delete pagehead->prefix;
     delete[] base;
 }
 
@@ -110,15 +118,16 @@ NodePkB::~NodePkB() {
 }
 
 void printKeys(Node *node, bool compressed) {
-    if (compressed && node->prefix->addr)
-        cout << node->prefix->addr << ": ";
-    for (int i = 0; i < node->size; i++) {
+    StdPageHead *pagehead = (StdPageHead *)(node->base);
+    if (compressed && pagehead->prefix->addr)
+        cout << pagehead->prefix->addr << ": ";
+    for (int i = 0; i < pagehead->size; i++) {
         Stdhead *head = GetHeaderStd(node, i);
-        if (compressed && node->prefix->addr) {
-            cout << PageOffset(node, head->key_offset) << ",";
+        if (compressed && pagehead->prefix->addr) {
+            cout << GetfromStd(node, head->key_offset) << ",";
         }
         else {
-            cout << node->prefix->addr << PageOffset(node, head->key_offset) << ",";
+            cout << pagehead->prefix->addr << GetfromStd(node, head->key_offset) << ",";
         }
     }
 }

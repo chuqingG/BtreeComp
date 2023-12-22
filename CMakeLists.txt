@@ -25,6 +25,36 @@ endif()
 set(CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE}   -fvisibility=default")
 set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} -fvisibility=default")
 
+### dependencies
+# art
+set(ART_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/art/include)
+# add_library(art_inner STATIC ${ART_INCLUDE_DIR}/art.hpp
+#                             ${ART_INCLUDE_DIR}/art/art.hpp
+#                             ${ART_INCLUDE_DIR}/art/child_it.hpp
+#                             ${ART_INCLUDE_DIR}/art/inner_node.hpp
+#                             ${ART_INCLUDE_DIR}/art/leaf_node.hpp
+#                             ${ART_INCLUDE_DIR}/art/node_4.hpp
+#                             ${ART_INCLUDE_DIR}/art/node_16.hpp
+#                             ${ART_INCLUDE_DIR}/art/node_48.hpp
+#                             ${ART_INCLUDE_DIR}/art/node_256.hpp
+#                             ${ART_INCLUDE_DIR}/art/node.hpp
+#                             ${ART_INCLUDE_DIR}/art/tree_it.hpp)
+add_library(art INTERFACE)
+target_include_directories(art INTERFACE ${ART_INCLUDE_DIR})
+
+
+
+# add_library(art ${PROJECT_SOURCE_DIR}/third_party/art/include/art.hpp)
+# target_include_directories(art PUBLIC ${ART_INCLUDE_DIR})
+# add_library(art INTERFACE)
+
+# target_include_directories(
+#     art
+#     INTERFACE
+#     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/art/include>"
+#     "$<INSTALL_INTERFACE:third_party/art/include>"
+# )
+
 add_subdirectory(tree)
 add_subdirectory(tree_mt)
 add_subdirectory(tree_disk)
@@ -33,6 +63,6 @@ add_executable("Benchmark" "benchmark/benchmark.cpp")
 add_executable("BenchmarkMT" "benchmark/benchmark_mt.cpp")
 add_executable("BenchmarkDSK" "benchmark/benchmark_disk.cpp")
 
-target_link_libraries("Benchmark" btree)
+target_link_libraries("Benchmark" btree art)
 target_link_libraries("BenchmarkMT" btree_mt)
 target_link_libraries("BenchmarkDSK" btree_disk)

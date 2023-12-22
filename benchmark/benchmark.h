@@ -11,6 +11,7 @@
 #include "../tree/btree_myisam.cpp"
 #include "../tree/btree_wt.cpp"
 #include "../tree/btree_pkb.cpp"
+#include "art.hpp"
 
 struct TreeStatistics {
     double avgNodeSize = 0;
@@ -445,4 +446,51 @@ public:
 
 private:
     BPTreePkB *_tree;
+};
+
+/*
+External tester
+*/
+
+class ARTBenchmark : public Benchmark {
+public:
+    ~ARTBenchmark() override {
+    }
+
+    virtual void InitializeStructure() override {
+    }
+
+    void DeleteStructure() override {
+    }
+
+    void Insert(const vector<char *> &keys) override {
+        int v = 1;
+        for (uint32_t i = 0; i < keys.size(); i++) {
+            _tree.set(keys[i], v);
+        }
+    }
+
+    bool Search(const std::vector<char *> &keys) override {
+        int count = 0;
+        for (uint32_t i = 0; i < keys.size(); i++)
+            if (_tree.get(keys[i]) == -1) {
+                // cout << "Cannot find " << values[i] << endl;
+                return false;
+            }
+        return true;
+    }
+
+    bool SearchRange(std::vector<char *> &sorted_values,
+                     std::vector<int> &minIdxs) override {
+        return true;
+    }
+
+    TreeStatistics CalcStatistics() override {
+        TreeStatistics statistics;
+        // TODO:
+        return statistics;
+    }
+
+protected:
+    art::art<int> _tree;
 };

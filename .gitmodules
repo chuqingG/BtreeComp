@@ -1,3 +1,1 @@
-[submodule "third_party/art"]
-	path = third_party/art
-	url = git@github.com:rafaelkallis/adaptive-radix-tree.git
+

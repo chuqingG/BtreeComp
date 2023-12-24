@@ -487,7 +487,10 @@ public:
 
     TreeStatistics CalcStatistics() override {
         TreeStatistics statistics;
-        // TODO:
+        statistics.height = _tree.getHeight();
+        _tree.getSize(statistics.numNodes, statistics.nonLeafNodes,
+                      statistics.totalBranching, statistics.numKeys, // numKeys->usedBranching
+                      statistics.totalKeySize);
         return statistics;
     }
 

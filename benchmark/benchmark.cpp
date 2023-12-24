@@ -398,13 +398,26 @@ void TreeStatisticBenchmarkResults(
         const double avg_branch_degree = sum_avg_branch_degree / statistics.size();
 
         std::cout << name << "\t";
-
-        std::cout << "|" << FormatStatistic(avg_height)
-                  << FormatStatistic(avg_key_size)
-                  << FormatStatistic(avg_prefix_size)
-                  << FormatStatistic(avg_branch_degree)
-                  << FormatStatistic(avg_nodes)
-                  << FormatStatistic(avg_non_leaf_nodes) << std::endl;
+        double sum_used_branch_degree = 0;
+        if (name == "Other-ART") {
+            for (auto statistic : statistics) {
+                sum_used_branch_degree += statistic.numKeys / (double)statistic.nonLeafNodes;
+            }
+            std::cout << "|" << FormatStatistic(avg_height)
+                      << FormatStatistic(avg_key_size)
+                      << "   act: " << sum_used_branch_degree / statistics.size() << "\t|"
+                      << FormatStatistic(avg_branch_degree)
+                      << FormatStatistic(avg_nodes)
+                      << FormatStatistic(avg_non_leaf_nodes) << std::endl;
+        }
+        else {
+            std::cout << "|" << FormatStatistic(avg_height)
+                      << FormatStatistic(avg_key_size)
+                      << FormatStatistic(avg_prefix_size)
+                      << FormatStatistic(avg_branch_degree)
+                      << FormatStatistic(avg_nodes)
+                      << FormatStatistic(avg_non_leaf_nodes) << std::endl;
+        }
         if (write_to_file) {
             output_row << name << "\t" << avg_height << "\t" << avg_key_size << "\t"
                        << avg_prefix_size << "\t" << avg_branch_degree << "\t"

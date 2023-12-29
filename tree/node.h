@@ -26,23 +26,18 @@ struct Stdhead {
     uint16_t key_len;
 } __attribute__((packed));
 
-struct StdPageHead {
-    bool IS_LEAF;
-    int size; // num of keys
-
-    uint16_t space_top;
-    uint16_t ptr_cnt;
-    Item *lowkey; // size=8 bytes
-    Item *highkey;
-    Item *prefix;
-
-} __attribute__((packed));
-
 class Node {
 public:
+    bool IS_LEAF;
+    int size;
     char *base;
+    uint16_t space_top;
     vector<Node *> ptrs;
+    uint16_t ptr_cnt;
 
+    Item *lowkey;
+    Item *highkey;
+    Item *prefix;
     Node *prev; // Prev node pointer
     Node *next; // Next node pointer
     Node();

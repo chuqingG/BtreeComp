@@ -30,6 +30,40 @@ Node::~Node() {
     delete[] base;
 }
 
+int findk(Node *n, const char *key, int keylen) {
+    // return the pos of the key, 0 for not found, size for this node too small
+    int low = 0, high = n->size;
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+        Stdhead *header = GetHeaderStd(n, mid);
+
+        int cmp = char_cmp_new(key, PageOffset(n, header->key_offset),
+                               keylen, header->key_len);
+        if (cmp == 0)
+            return mid;
+        else if (cmp > 0)
+            low = mid + 1;
+        else
+            high = mid - 1;
+    }
+    return n->IS_LEAF ? -1 : high + 1;
+}
+
+void Node::erase(const char *k, int keylen, int idx = -1) {
+    if (idx < 0) // uninitialized
+        idx = findk(this, k, keylen);
+    if (idx < 0)
+        cout << "[Not found] The key doesn't exist in the tree" << endl;
+    if (idx < this->size) {
+        // Found the key in the current node
+        if (IS_LEAF) {
+            // Remove from the leaf
+        }
+        else {
+        }
+    }
+}
+
 //===============Below for DB2===========
 
 NodeDB2::NodeDB2() {

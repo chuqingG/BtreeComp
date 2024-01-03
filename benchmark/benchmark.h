@@ -12,6 +12,7 @@
 #include "../tree/btree_wt.cpp"
 #include "../tree/btree_pkb.cpp"
 #include "art.hpp"
+// using namespace std;
 
 struct TreeStatistics {
     double avgNodeSize = 0;

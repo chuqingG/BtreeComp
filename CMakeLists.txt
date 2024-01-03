@@ -28,19 +28,9 @@ set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} -fvisibility=default")
 ### dependencies
 # art
 set(ART_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third_party/art/include)
-# add_library(art_inner STATIC ${ART_INCLUDE_DIR}/art.hpp
-#                             ${ART_INCLUDE_DIR}/art/art.hpp
-#                             ${ART_INCLUDE_DIR}/art/child_it.hpp
-#                             ${ART_INCLUDE_DIR}/art/inner_node.hpp
-#                             ${ART_INCLUDE_DIR}/art/leaf_node.hpp
-#                             ${ART_INCLUDE_DIR}/art/node_4.hpp
-#                             ${ART_INCLUDE_DIR}/art/node_16.hpp
-#                             ${ART_INCLUDE_DIR}/art/node_48.hpp
-#                             ${ART_INCLUDE_DIR}/art/node_256.hpp
-#                             ${ART_INCLUDE_DIR}/art/node.hpp
-#                             ${ART_INCLUDE_DIR}/art/tree_it.hpp)
 add_library(art INTERFACE)
 target_include_directories(art INTERFACE ${ART_INCLUDE_DIR})
+
 
 
 

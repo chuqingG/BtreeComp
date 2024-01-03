@@ -8,7 +8,7 @@
 #include <cstring>
 #include "../utils/config.h"
 #include "../utils/item.hpp"
-
+#include "../utils/compare.cpp"
 using namespace std;
 
 int MAX_NODE_SIZE = 4;
@@ -42,6 +42,8 @@ public:
     Node *next; // Next node pointer
     Node();
     ~Node();
+    void erase(const char *k, int keylen, int idx);
+    // int findk(const char *k, int keylen);
 };
 
 struct DB2head {

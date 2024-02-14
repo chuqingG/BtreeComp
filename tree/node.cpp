@@ -7,6 +7,7 @@ Node::Node() {
     size = 0;
     ptr_cnt = 0;
     space_top = 0;
+    invalid_len = 0;
     base = NewPage();
     SetEmptyPage(base);
 
@@ -58,9 +59,56 @@ void Node::erase(const char *k, int keylen, int idx = -1) {
         // Found the key in the current node
         if (IS_LEAF) {
             // Remove from the leaf
+            RemoveKeyStd(this, idx, keylen);
         }
         else {
+            // Remove from the nonleaf node
+            if (ptrs[idx]->invalid_len >= ptrs[idx]->space_top / 2) {
+                // get predecessor
+                Node *cur = ptrs[idx];
+                while (!cur->IS_LEAF) {
+                    cur = cur->ptrs[cur->size];
+                }
+                Stdhead *h_pred = GetHeaderStd(cur, cur->size - 1);
+                Stdhead *h_old = GetHeaderStd(this, idx);
+                char *k_pred = PageOffset(cur, h_pred->key_offset);
+                if (keylen >= h_pred->key_len) {
+                    memmove(PageOffset(this, h_old->key_offset),
+                            k_pred, sizeof(char) * h_pred->key_len + 1);
+                }
+                else {
+                    cout << "WARNING: no enough space to update" << endl;
+                    return;
+                }
+                ptrs[idx]->erase(k_pred, h_pred->key_len);
+            }
+            else if (ptrs[idx + 1]->invalid_len >= ptrs[idx + 1]->space_top / 2) {
+                // get successor
+                Node *cur = ptrs[idx + 1];
+                while (!cur->IS_LEAF) {
+                    cur = cur->ptrs[0];
+                }
+                Stdhead *h_succ = GetHeaderStd(cur, 0);
+                Stdhead *h_old = GetHeaderStd(this, idx);
+                char *k_succ = PageOffset(cur, h_succ->key_offset);
+                if (keylen >= h_succ->key_len) {
+                    memmove(PageOffset(this, h_old->key_offset),
+                            k_succ, sizeof(char) * h_succ->key_len + 1);
+                }
+                else {
+                    cout << "WARNING: no enough space to update" << endl;
+                    return;
+                }
+                ptrs[idx]->erase(k_succ, h_succ->key_len);
+            }
+            else {
+                // 1.merge 2. remove
+                ptrs[idx]->erase(k, keylen);
+            }
         }
+    }
+    else {
+        bool lastchild = idx == this->size;
     }
 }
 

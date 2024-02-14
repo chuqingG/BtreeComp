@@ -411,8 +411,8 @@ void apply_prefix_optimization(NodeDB2 *node) {
         int memusage = 0, pfx_top = 0;
         int pfx_size = 0;
 
-        if (strlen(node->base + DB2_PFX_MAX_SIZE) >= 32)
-            cout << "pfxbuf corrupt" << endl;
+        // if (strlen(node->base + DB2_PFX_MAX_SIZE) >= 32)
+        //     cout << "pfxbuf corrupt" << endl;
         prefixItem pfxitem;
 
         int prevprefix_len = 0;

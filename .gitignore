@@ -5,6 +5,7 @@ build
 build2
 build3
 builddebug
+builddsk
 buildnew
 builddebugnew
 benchmark/test*

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libbtree_wt.a CMakeFiles/btree_wt.dir/btree_wt.cpp.o
+/usr/bin/ranlib libbtree_wt.a

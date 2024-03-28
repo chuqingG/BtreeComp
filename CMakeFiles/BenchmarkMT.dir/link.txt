@@ -1,0 +1,1 @@
+/usr/bin/c++  -msse2 CMakeFiles/BenchmarkMT.dir/benchmark/benchmark_mt.cpp.o -o BenchmarkMT  tree_mt/libbtree_std_mt.a 

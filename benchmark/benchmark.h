@@ -11,7 +11,7 @@
 #include "../tree/btree_myisam.cpp"
 #include "../tree/btree_wt.cpp"
 #include "../tree/btree_pkb.cpp"
-#include "art.hpp"
+// #include "art.hpp"
 // using namespace std;
 
 struct TreeStatistics {
@@ -495,6 +495,6 @@ public:
         return statistics;
     }
 
-protected:
-    art::art<int> _tree;
+// protected:
+//     art::art<int> _tree;
 };

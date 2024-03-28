@@ -1,0 +1,2 @@
+/usr/bin/ar qc libbtree_disk_std.a CMakeFiles/btree_disk_std.dir/btree_disk_std.cpp.o
+/usr/bin/ranlib libbtree_disk_std.a

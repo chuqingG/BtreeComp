@@ -57,13 +57,13 @@ const std::map<std::string, BenchmarkTypes> strBenchmarksMap{
     {"backward", BenchmarkTypes::BACKWARDSCAN}};
 
 const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
-    {"Btree-Std", new BPTreeStdBenchmark()},
-    {"Btree-Head", new BPTreeHeadCompBenchmark()},
-    {"Btree-Tail", new BPTreeTailCompBenchmark()},
-    {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
-    // {"Btree-WT", new BPTreeWTBenchmark()},
-    {"Btree-My", new BPTreeMyISAMBenchmark()},
-    {"Btree-PkB", new BPTreePkBBenchmark()},
+    // {"Btree-Std", new BPTreeStdBenchmark()},
+    // {"Btree-Head", new BPTreeHeadCompBenchmark()},
+    // {"Btree-Tail", new BPTreeTailCompBenchmark()},
+    // {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
+    {"Btree-WT", new BPTreeWTBenchmark()},
+    // {"Btree-My", new BPTreeMyISAMBenchmark()},
+    // {"Btree-PkB", new BPTreePkBBenchmark()},
     // {"Btree-DB2", new BPTreeDB2Benchmark()},
 };
 
@@ -259,22 +259,14 @@ void PerformanceBenchmarkResults(
         std::cout << "============================================================="
                      "===================================================="
                   << std::endl;
-
-        if (benchmark == BenchmarkTypes::RANGE) {
-            double r = key_numbers * RANGE_SCOPE;
-            std::cout << "\t\t\t\t\tPERFORMANCE BENCHMARK RESULTS - "
-                      << benchmarkStrMap.at(benchmark) << "num:" << r << std::endl;
-        }
-        else
-            std::cout << "\t\t\t\t\tPERFORMANCE BENCHMARK RESULTS - "
-                      << benchmarkStrMap.at(benchmark) << std::endl;
+        std::cout << "\t\t\t\t\tPERFORMANCE BENCHMARK RESULTS - "
+                  << benchmarkStrMap.at(benchmark) << std::endl;
         std::cout << "============================================================="
                      "===================================================="
                   << std::endl;
-
         if (benchmark == BenchmarkTypes::RANGE) {
             std::cout << "Index Structure\t|      Min\t|      Max\t|      Avg\t|      "
-                         "Med\t| K Ops/s (Avg)\t| K Ops/s (Med)\t|"
+                         "Med\t| M Ops/s (Avg)\t| K Ops/s (Med)\t|"
                       << std::endl;
         }
         else {

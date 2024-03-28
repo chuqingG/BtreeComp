@@ -52,14 +52,18 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
 }
 
 // TODO:
-inline void RemoveKeyStd(Node *nptr, int pos, uint16_t klen) {
+inline void RemoveKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
+    strcpy(BufTop(nptr), k);
     // shift the headers
-    for (int i = pos; i < nptr->size; i++) {
-        memmove(GetHeaderStd(nptr, i), GetHeaderStd(nptr, i + 1), sizeof(Stdhead));
+    for (int i = nptr->size; i > pos; i--) {
+        memcpy(GetHeaderStd(nptr, i), GetHeaderStd(nptr, i - 1), sizeof(Stdhead));
     }
     // Set the new header
-    nptr->invalid_len += klen + 1;
-    nptr->size -= 1;
+    Stdhead *header = GetHeaderStd(nptr, pos);
+    header->key_offset = nptr->space_top;
+    header->key_len = klen;
+    nptr->space_top += klen + 1;
+    nptr->size += 1;
 }
 
 // with cutoff

@@ -32,7 +32,6 @@ public:
     int size;
     char *base;
     uint16_t space_top;
-    uint16_t invalid_len;
     vector<Node *> ptrs;
     uint16_t ptr_cnt;
 

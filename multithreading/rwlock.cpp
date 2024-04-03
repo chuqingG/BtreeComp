@@ -12,10 +12,11 @@ void ReadWriteLock::readLock()
 {
     unique_lock<mutex> lock(mLock);
     // Wait till there is no writer
-    while (writer)
-    {
-        cond.wait(lock);
-    }
+    cond_.wait(lock, [this] { return !writer; });
+    // while (writer)
+    // {
+    //     cond.wait(lock);
+    // }
     readers++;
 }
 
@@ -33,10 +34,11 @@ void ReadWriteLock::writeLock()
 {
     unique_lock<mutex> lock(mLock);
     // Wait till there is no reader or writer
-    while (readers > 0 || writer)
-    {
-        cond.wait(lock);
-    }
+    cv_.wait(lock, [this] { return readers_ == 0 && !writer; });
+    // while (readers > 0 || writer)
+    // {
+    //     cond.wait(lock);
+    // }
     writer = true;
 }
 

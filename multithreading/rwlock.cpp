@@ -34,7 +34,7 @@ void ReadWriteLock::writeLock()
 {
     unique_lock<mutex> lock(mLock);
     // Wait till there is no reader or writer
-    cv_.wait(lock, [this] { return readers_ == 0 && !writer; });
+    cond_.wait(lock, [this] { return readers == 0 && !writer; });
     // while (readers > 0 || writer)
     // {
     //     cond.wait(lock);

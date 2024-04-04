@@ -11,6 +11,9 @@
 #include "../utils/config.h"
 #include "../utils/util.h"
 
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/atomic.hpp>
 using namespace std;
 
 enum class BenchmarkTypes {
@@ -131,12 +134,14 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
                         / 1e9;
         cout << "Finish Warmup: " << time_gap << " (s)" << endl;
 #endif
+        sort(values.begin(), values.end());
 
         for (BenchmarkTypes benchmark : benchmarks) {
 #ifdef TIMEDEBUG
             double prefix_update = 0.0;
             double prefix_calc = 0.0;
 #endif
+            
             switch (benchmark) {
             case BenchmarkTypes::INSERT:
                 t1 = std::chrono::system_clock::now();
@@ -153,6 +158,7 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
                      << "Finish" << endl;
                 break;
             case BenchmarkTypes::SEARCH:
+ 
                 t1 = std::chrono::system_clock::now();
                 // TODO(chuqing): more accurate correctness check, e.g. generate new search set
                 if (structure->Search(values))
@@ -165,6 +171,7 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
                                                      std::chrono::nanoseconds>(std::chrono::system_clock::now() - t1)
                                                      .count())
                              / 1e9;
+
                 break;
             }
             structure_times[i].insert({benchmark, time_spent});

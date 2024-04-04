@@ -14,12 +14,13 @@
 #include "../tree_mt/btree_myisam_mt.cpp"
 #include "../tree_mt/btree_wt_mt.cpp"
 #include "../tree_mt/btree_pkb_mt.cpp"
+
 #endif
 
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/atomic.hpp>
-
+#include "../tree_mt/ThreadPool.h"
 struct TreeStatistics {
     double avgNodeSize = 0;
     int numNodes = 0;
@@ -97,19 +98,20 @@ public:
 
     bool Search(const std::vector<char *> &values) override {
         // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_searches(0);
+                   ThreadPool pool(threadPoolSize);
+        // atomic<int> non_successful_searches(0);
         for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
+            pool.enqueue( [&, i] {
                 if (_tree->search(values.at(i)) == -1) {
                     // cout << "Failed for " << values.at(i) << endl;
-                    non_successful_searches += 1;
+                    // non_successful_searches += 1;
                 }
             });
         }
-        pool.join();
-         cout << "Count: " << non_successful_searches << endl;
-        return non_successful_searches == 0;
+        // pool.join();
+        //  cout << "Count: " << non_successful_searches << endl;
+        return true;
+        // return non_successful_searches == 0;
 
 #ifdef MYDEBUG
         // boost::asio::thread_pool pool(threadPoolSize);

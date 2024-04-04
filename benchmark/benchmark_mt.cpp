@@ -469,7 +469,7 @@ int main(int argc, char *argv[]) {
     if (thread_arg != nullptr) {
         const string thread_str{thread_arg};
         thread_num = std::stoul(thread_str);
-        set_thread(thread_num);
+        
     }
     else {
         thread_num = 16; // default

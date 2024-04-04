@@ -90,7 +90,7 @@ public:
             });
         }
         // Wait for all tasks to be completed
-        pool.wait();
+        pool.join();
         // vector<bool> flag(values.size());
         // tree_->printTree(tree_->getRoot(), flag, true)
     }
@@ -107,7 +107,7 @@ public:
                 }
             });
         }
-        pool.wait();
+        pool.join();
          cout << "Count: " << non_successful_searches << endl;
         return non_successful_searches == 0;
 

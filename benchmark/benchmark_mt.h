@@ -102,12 +102,13 @@ public:
         for (uint32_t i = 0; i < values.size(); ++i) {
             boost::asio::post(pool, [&, i] {
                 if (_tree->search(values.at(i)) == -1) {
-                    cout << "Failed for " << values.at(i) << endl;
+                    // cout << "Failed for " << values.at(i) << endl;
                     non_successful_searches += 1;
                 }
             });
         }
         pool.wait();
+         cout << "Count: " << non_successful_searches << endl;
         return non_successful_searches == 0;
 
 #ifdef MYDEBUG

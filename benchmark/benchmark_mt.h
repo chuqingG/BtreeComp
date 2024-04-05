@@ -102,16 +102,17 @@ public:
           std::vector<std::thread> threads;
         int totalKeys = values.size();
         int keysPerThread = totalKeys / threadPoolSize;
-        
+
         for (int i = 0; i < threadPoolSize; ++i) {
-            int start = i * keysPerThread + 1;
+            int start = i * keysPerThread;
             int end = (i + 1) * keysPerThread;
-            threads.emplace_back(&BPTreeStdBenchmark::searchWork, this, values, start, end /*, &non_successful_searches */);
+            threads.emplace_back(&BPTreeStdBenchmark::searchWork, this, values, start, end, i /*, &non_successful_searches */);
         }
 
         // Wait for all threads to finish
         for (auto& thread : threads) {
             thread.join();
+
         }
         //  cout << "Count: " << non_successful_searches << endl;
         return true;
@@ -152,7 +153,7 @@ public:
         return statistics;
     }
 private:
-    void searchWork(const std::vector<char *> &values, int start, int end /*,  atomic<int> *failure*/) {
+    void searchWork(const std::vector<char *> &values, int start, int end, int key/*,  atomic<int> *failure*/) {
         for (uint32_t i = start; i < end; i++) {
             if (_tree->search(values.at(i)) == -1) {
                 // cout << i << "\n";
@@ -160,6 +161,7 @@ private:
                 //*failure += 1;
             }
         };
+        cout << key << " from " << start << " to " << end << " exited\n";
     }
     
 protected:

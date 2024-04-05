@@ -98,17 +98,17 @@ public:
     bool Search(const std::vector<char *> &values) override {
         // create a thread pool with threadPoolSize threads
 
-        atomic<int> non_successful_searches(0);
+        // atomic<int> non_successful_searches(0);
           std::vector<std::thread> threads;
         for (int i = 0; i < threadPoolSize; ++i) {
-            threads.emplace_back(&BPTreeStdBenchmark::searchWork, this, values, i, &non_successful_searches);
+            threads.emplace_back(&BPTreeStdBenchmark::searchWork, this, values, i /*, &non_successful_searches */);
         }
 
         // Wait for all threads to finish
         for (auto& thread : threads) {
             thread.join();
         }
-         cout << "Count: " << non_successful_searches << endl;
+        //  cout << "Count: " << non_successful_searches << endl;
         return true;
         // return non_successful_searches == 0;
 
@@ -147,12 +147,12 @@ public:
         return statistics;
     }
 private:
-    void searchWork(const std::vector<char *> &values, int key,  atomic<int> *failure) {
+    void searchWork(const std::vector<char *> &values, int key /*,  atomic<int> *failure*/) {
         for (uint32_t i = key; i < values.size(); i += threadPoolSize) {
             if (_tree->search(values.at(i)) == -1) {
                 // cout << i << "\n";
                 // cout << "Failed for " << values.at(i) << endl;
-                *failure += 1;
+                //*failure += 1;
             }
         };
     }

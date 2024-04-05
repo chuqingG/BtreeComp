@@ -14,13 +14,12 @@
 #include "../tree_mt/btree_myisam_mt.cpp"
 #include "../tree_mt/btree_wt_mt.cpp"
 #include "../tree_mt/btree_pkb_mt.cpp"
-
 #endif
 
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/atomic.hpp>
-#include "../tree_mt/ThreadPool.h"
+
 struct TreeStatistics {
     double avgNodeSize = 0;
     int numNodes = 0;
@@ -55,7 +54,7 @@ public:
     virtual void InitializeStructure(int thread_num, int col = 1) = 0;
     virtual void DeleteStructure() = 0;
     virtual void Insert(const std::vector<char *> &numbers) = 0;
-    virtual bool Search(const std::vector<char *> &numbers, ThreadPool*) = 0;
+    virtual bool Search(const std::vector<char *> &numbers, boost::asio::thread_pool *) = 0;
     virtual TreeStatistics CalcStatistics() = 0;
     int threadPoolSize = 16;
     int column_num = 1;
@@ -96,19 +95,19 @@ public:
         // tree_->printTree(tree_->getRoot(), flag, true)
     }
 
-    bool Search(const std::vector<char *> &values, ThreadPool* pool) override {
+    bool Search(const std::vector<char *> &values, boost::asio::thread_pool *pool) override {
         // create a thread pool with threadPoolSize threads
 
         // atomic<int> non_successful_searches(0);
         for (uint32_t i = 0; i < values.size(); ++i) {
-            pool->enqueue( [&, i] {
+            boost::asio::post(*pool, [&, i] {
                 if (_tree->search(values.at(i)) == -1) {
                     // cout << "Failed for " << values.at(i) << endl;
                     // non_successful_searches += 1;
                 }
             });
         }
-        // pool.join();
+         pool->join();
         //  cout << "Count: " << non_successful_searches << endl;
         return true;
         // return non_successful_searches == 0;

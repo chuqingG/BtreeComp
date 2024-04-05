@@ -158,7 +158,7 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
                      << "Finish" << endl;
                 break;
             case BenchmarkTypes::SEARCH:
-                ThreadPool *pool = new ThreadPool(thread_num);
+                boost::asio::thread_pool *pool = new boost::asio::thread_pool(thread_num);
                 t1 = std::chrono::system_clock::now();
                 // TODO(chuqing): more accurate correctness check, e.g. generate new search set
                 if (structure->Search(values, pool))

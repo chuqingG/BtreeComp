@@ -100,8 +100,13 @@ public:
 
         // atomic<int> non_successful_searches(0);
           std::vector<std::thread> threads;
+        int totalKeys = values.size();
+        int keysPerThread = totalKeys / threadPoolSize;
+        
         for (int i = 0; i < threadPoolSize; ++i) {
-            threads.emplace_back(&BPTreeStdBenchmark::searchWork, this, values, i /*, &non_successful_searches */);
+            int start = i * keysPerThread + 1;
+            int end = (i + 1) * keysPerThread;
+            threads.emplace_back(&BPTreeStdBenchmark::searchWork, this, values, start, end /*, &non_successful_searches */);
         }
 
         // Wait for all threads to finish
@@ -147,8 +152,8 @@ public:
         return statistics;
     }
 private:
-    void searchWork(const std::vector<char *> &values, int key /*,  atomic<int> *failure*/) {
-        for (uint32_t i = key; i < values.size(); i += threadPoolSize) {
+    void searchWork(const std::vector<char *> &values, int start, int end /*,  atomic<int> *failure*/) {
+        for (uint32_t i = start; i < end; i++) {
             if (_tree->search(values.at(i)) == -1) {
                 // cout << i << "\n";
                 // cout << "Failed for " << values.at(i) << endl;

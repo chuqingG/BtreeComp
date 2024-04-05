@@ -158,10 +158,10 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
                      << "Finish" << endl;
                 break;
             case BenchmarkTypes::SEARCH:
- 
+                ThreadPool *pool = new ThreadPool(thread_num);
                 t1 = std::chrono::system_clock::now();
                 // TODO(chuqing): more accurate correctness check, e.g. generate new search set
-                if (structure->Search(values))
+                if (structure->Search(values, pool))
                     cout << name << "\t:"
                          << "No errors happen during search" << endl;
                 else

@@ -55,7 +55,7 @@ public:
     virtual void InitializeStructure(int thread_num, int col = 1) = 0;
     virtual void DeleteStructure() = 0;
     virtual void Insert(const std::vector<char *> &numbers) = 0;
-    virtual bool Search(const std::vector<char *> &numbers) = 0;
+    virtual bool Search(const std::vector<char *> &numbers, ThreadPool*) = 0;
     virtual TreeStatistics CalcStatistics() = 0;
     int threadPoolSize = 16;
     int column_num = 1;
@@ -96,12 +96,12 @@ public:
         // tree_->printTree(tree_->getRoot(), flag, true)
     }
 
-    bool Search(const std::vector<char *> &values) override {
+    bool Search(const std::vector<char *> &values, ThreadPool* pool) override {
         // create a thread pool with threadPoolSize threads
-                   ThreadPool pool(threadPoolSize);
+
         // atomic<int> non_successful_searches(0);
         for (uint32_t i = 0; i < values.size(); ++i) {
-            pool.enqueue( [&, i] {
+            pool->enqueue( [&, i] {
                 if (_tree->search(values.at(i)) == -1) {
                     // cout << "Failed for " << values.at(i) << endl;
                     // non_successful_searches += 1;

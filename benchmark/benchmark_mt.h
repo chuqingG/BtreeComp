@@ -80,17 +80,22 @@ public:
     }
 
     void Insert(const vector<char *> &values) override {
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                _tree->insert(values.at(i));
-                // vector<bool> flag(i + 1);
-                // _tree->printTree(_tree->getRoot(), flag, true);
-            });
+        // atomic<int> non_successful_searches(0);
+        std::vector<std::thread> threads;
+        int totalKeys = values.size();
+        int keysPerThread = totalKeys / threadPoolSize;
+
+        for (int i = 0; i < threadPoolSize; ++i) {
+            int start = i * keysPerThread;
+            int end = (i + 1) * keysPerThread;
+            threads.emplace_back(&BPTreeStdBenchmark::insertWork, this, values, start, end, i /*, &non_successful_searches */);
         }
-        // Wait for all tasks to be completed
-        pool.join();
+
+        // Wait for all threads to finish
+        for (auto& thread : threads) {
+            thread.join();
+
+        }
         // vector<bool> flag(values.size());
         // tree_->printTree(tree_->getRoot(), flag, true)
     }
@@ -161,7 +166,14 @@ private:
                 //*failure += 1;
             }
         };
-        cout << key << " from " << start << " to " << end << " exited\n";
+        // cout << key << " from " << start << " to " << end << " exited\n";
+    }
+
+    void insertWork(const std::vector<char *> &values, int start, int end, int key/*,  atomic<int> *failure*/) {
+        for (uint32_t i = start; i < end; i++) {
+            _tree->insert(values.at(i));
+        };
+        // cout << key << " from " << start << " to " << end << " exited\n";
     }
     
 protected:

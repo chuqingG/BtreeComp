@@ -64,9 +64,9 @@ const std::map<std::string, BenchmarkTypes> strBenchmarksMap{
     {"backward", BenchmarkTypes::BACKWARDSCAN}};
 
 const std::vector<std::tuple<std::string, Benchmark_c *>> kIndexStructures{
-    {"BPTree-std", new BPTreeStdBenchmark()},
+    // {"BPTree-std", new BPTreeStdBenchmark()},
     // {"BPTree-head", new BPTreeHeadCompBenchmark()},
-    // {"BPTree-tail", new BPTreeTailCompBenchmark()},
+    {"BPTree-tail", new BPTreeTailCompBenchmark()},
     // {"BPTree-headtail", new BPTreeHeadTailCompBenchmark()},
     // {"BPTree-DB2", new BPTreeDB2Benchmark()},
     // {"BPTree-MyISAM", new BPTreeMyISAMBenchmark()},

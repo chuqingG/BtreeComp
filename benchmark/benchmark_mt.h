@@ -96,8 +96,8 @@ public:
             thread.join();
 
         }
-        // vector<bool> flag(values.size());
-        tree_->printTree(tree_->getRoot(), flag, true)
+        vector<bool> flag(values.size());
+        tree_->printTree(_tree->getRoot(), flag, true)
     }
 
     bool Search(const std::vector<char *> &values) override {

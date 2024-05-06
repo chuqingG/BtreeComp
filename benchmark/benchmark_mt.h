@@ -97,7 +97,7 @@ public:
 
         }
         // vector<bool> flag(values.size());
-        // tree_->printTree(tree_->getRoot(), flag, true)
+        tree_->printTree(tree_->getRoot(), flag, true)
     }
 
     bool Search(const std::vector<char *> &values) override {

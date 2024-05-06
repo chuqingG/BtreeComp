@@ -98,7 +98,7 @@ void BPTreeMT::insert_nonleaf(Node *node, Node **path,
             InsertNode(newRoot, 1, currsplit.right);
 
             newRoot->IS_LEAF = false;
-            newRoot->level = node->level + 1;
+            newRoot->level = node->level + 1;//?????????????
             _root = newRoot;
             max_level++;
             currsplit.right->unlock(WRITE);
@@ -235,8 +235,8 @@ int BPTreeMT::split_point(Node *node) {
     int size = node->size;
     int bestsplit = size / 2;
     if (this->tail_comp) {
-        int split_range_low = size * (1 / 2 - TAIL_SPLIT_WIDTH);
-        int split_range_high = size * (1 / 2 + TAIL_SPLIT_WIDTH);
+        int split_range_low = size * (1.0 / 2 - TAIL_SPLIT_WIDTH);
+        int split_range_high = size * (1.0 / 2 + TAIL_SPLIT_WIDTH);
         // Representing 16 bytes of the integer
         int minlen = INT16_MAX;
         for (int i = split_range_low; i < split_range_high - 1; i++) {
@@ -555,7 +555,7 @@ bool BPTreeMT::check_split_condition(Node *node, int keylen) {
     // double the key size to split safely
     // only works when the S_newkey <= S_prevkey + S_limit
     int currspace = node->space_top + node->size * sizeof(Stdhead);
-    int splitcost = 2 * keylen + sizeof(Stdhead);
+    int splitcost = 2 * max(keylen, APPROX_KEY_SIZE) + sizeof(Stdhead);
     if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
     else
@@ -572,6 +572,22 @@ int BPTreeMT::search_insert_pos(Node *cursor, const char *key, int keylen, int l
                                keylen, header->key_len);
         if (cmp == 0) {
             equal = true;
+            
+            while (mid < high) {
+
+                Stdhead *header = GetHeaderStd(cursor, mid + 1);
+
+                if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
+
+                                 keylen, header->key_len))
+
+                    // return the last one if keys are equal
+
+                    break;
+
+                mid++;
+
+            }
             return mid + 1;
         }
         else if (cmp > 0)

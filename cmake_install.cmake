@@ -1,4 +1,4 @@
-# Install script for directory: /homes/sun1017/research/MultiThreadBTree
+# Install script for directory: /home/sun1017/MultiThreadBTree
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -12,7 +12,7 @@ if(NOT DEFINED CMAKE_INSTALL_CONFIG_NAME)
     string(REGEX REPLACE "^[^A-Za-z0-9_]+" ""
            CMAKE_INSTALL_CONFIG_NAME "${BUILD_TYPE}")
   else()
-    set(CMAKE_INSTALL_CONFIG_NAME "")
+    set(CMAKE_INSTALL_CONFIG_NAME "DEBUG")
   endif()
   message(STATUS "Install configuration: \"${CMAKE_INSTALL_CONFIG_NAME}\"")
 endif()
@@ -44,9 +44,9 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/homes/sun1017/research/MultiThreadBTree/tree/cmake_install.cmake")
-  include("/homes/sun1017/research/MultiThreadBTree/tree_mt/cmake_install.cmake")
-  include("/homes/sun1017/research/MultiThreadBTree/tree_disk/cmake_install.cmake")
+  include("/home/sun1017/MultiThreadBTree/tree/cmake_install.cmake")
+  include("/home/sun1017/MultiThreadBTree/tree_mt/cmake_install.cmake")
+  include("/home/sun1017/MultiThreadBTree/tree_disk/cmake_install.cmake")
 
 endif()
 
@@ -58,5 +58,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/homes/sun1017/research/MultiThreadBTree/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/sun1017/MultiThreadBTree/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

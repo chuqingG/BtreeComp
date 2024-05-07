@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/homes/sun1017/research/MultiThreadBTree/third_party/art/include
+CXX_INCLUDES = -I/home/sun1017/MultiThreadBTree/third_party/art/include
 
-CXX_FLAGS =  -msse2 -std=gnu++20
+CXX_FLAGS =  -O0 -Wall -g2 -ggdb  -O0 -Wall -g2 -ggdb -std=gnu++20
 

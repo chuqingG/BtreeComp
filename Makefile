@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /homes/sun1017/research/MultiThreadBTree
+CMAKE_SOURCE_DIR = /home/sun1017/MultiThreadBTree
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /homes/sun1017/research/MultiThreadBTree
+CMAKE_BINARY_DIR = /home/sun1017/MultiThreadBTree
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /homes/sun1017/research/MultiThreadBTree/CMakeFiles /homes/sun1017/research/MultiThreadBTree//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sun1017/MultiThreadBTree/CMakeFiles /home/sun1017/MultiThreadBTree//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /homes/sun1017/research/MultiThreadBTree/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sun1017/MultiThreadBTree/CMakeFiles 0
 .PHONY : all
 
 # The main clean target

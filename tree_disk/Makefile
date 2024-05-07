@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /homes/sun1017/research/MultiThreadBTree
+CMAKE_SOURCE_DIR = /home/sun1017/MultiThreadBTree
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /homes/sun1017/research/MultiThreadBTree
+CMAKE_BINARY_DIR = /home/sun1017/MultiThreadBTree
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,14 +87,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /homes/sun1017/research/MultiThreadBTree && $(CMAKE_COMMAND) -E cmake_progress_start /homes/sun1017/research/MultiThreadBTree/CMakeFiles /homes/sun1017/research/MultiThreadBTree/tree_disk//CMakeFiles/progress.marks
-	cd /homes/sun1017/research/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tree_disk/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /homes/sun1017/research/MultiThreadBTree/CMakeFiles 0
+	cd /home/sun1017/MultiThreadBTree && $(CMAKE_COMMAND) -E cmake_progress_start /home/sun1017/MultiThreadBTree/CMakeFiles /home/sun1017/MultiThreadBTree/tree_disk//CMakeFiles/progress.marks
+	cd /home/sun1017/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tree_disk/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sun1017/MultiThreadBTree/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /homes/sun1017/research/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tree_disk/clean
+	cd /home/sun1017/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tree_disk/clean
 .PHONY : clean
 
 # The main clean target
@@ -103,22 +103,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /homes/sun1017/research/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tree_disk/preinstall
+	cd /home/sun1017/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tree_disk/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /homes/sun1017/research/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tree_disk/preinstall
+	cd /home/sun1017/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tree_disk/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /homes/sun1017/research/MultiThreadBTree && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/sun1017/MultiThreadBTree && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 tree_disk/CMakeFiles/btree_disk_std.dir/rule:
-	cd /homes/sun1017/research/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tree_disk/CMakeFiles/btree_disk_std.dir/rule
+	cd /home/sun1017/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tree_disk/CMakeFiles/btree_disk_std.dir/rule
 .PHONY : tree_disk/CMakeFiles/btree_disk_std.dir/rule
 
 # Convenience name for target.
@@ -127,7 +127,7 @@ btree_disk_std: tree_disk/CMakeFiles/btree_disk_std.dir/rule
 
 # fast build rule for target.
 btree_disk_std/fast:
-	cd /homes/sun1017/research/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f tree_disk/CMakeFiles/btree_disk_std.dir/build.make tree_disk/CMakeFiles/btree_disk_std.dir/build
+	cd /home/sun1017/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f tree_disk/CMakeFiles/btree_disk_std.dir/build.make tree_disk/CMakeFiles/btree_disk_std.dir/build
 .PHONY : btree_disk_std/fast
 
 btree_disk_std.o: btree_disk_std.cpp.o
@@ -135,7 +135,7 @@ btree_disk_std.o: btree_disk_std.cpp.o
 
 # target to build an object file
 btree_disk_std.cpp.o:
-	cd /homes/sun1017/research/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f tree_disk/CMakeFiles/btree_disk_std.dir/build.make tree_disk/CMakeFiles/btree_disk_std.dir/btree_disk_std.cpp.o
+	cd /home/sun1017/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f tree_disk/CMakeFiles/btree_disk_std.dir/build.make tree_disk/CMakeFiles/btree_disk_std.dir/btree_disk_std.cpp.o
 .PHONY : btree_disk_std.cpp.o
 
 btree_disk_std.i: btree_disk_std.cpp.i
@@ -143,7 +143,7 @@ btree_disk_std.i: btree_disk_std.cpp.i
 
 # target to preprocess a source file
 btree_disk_std.cpp.i:
-	cd /homes/sun1017/research/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f tree_disk/CMakeFiles/btree_disk_std.dir/build.make tree_disk/CMakeFiles/btree_disk_std.dir/btree_disk_std.cpp.i
+	cd /home/sun1017/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f tree_disk/CMakeFiles/btree_disk_std.dir/build.make tree_disk/CMakeFiles/btree_disk_std.dir/btree_disk_std.cpp.i
 .PHONY : btree_disk_std.cpp.i
 
 btree_disk_std.s: btree_disk_std.cpp.s
@@ -151,7 +151,7 @@ btree_disk_std.s: btree_disk_std.cpp.s
 
 # target to generate assembly for a file
 btree_disk_std.cpp.s:
-	cd /homes/sun1017/research/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f tree_disk/CMakeFiles/btree_disk_std.dir/build.make tree_disk/CMakeFiles/btree_disk_std.dir/btree_disk_std.cpp.s
+	cd /home/sun1017/MultiThreadBTree && $(MAKE) $(MAKESILENT) -f tree_disk/CMakeFiles/btree_disk_std.dir/build.make tree_disk/CMakeFiles/btree_disk_std.dir/btree_disk_std.cpp.s
 .PHONY : btree_disk_std.cpp.s
 
 # Help Target
@@ -177,6 +177,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /homes/sun1017/research/MultiThreadBTree && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/sun1017/MultiThreadBTree && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

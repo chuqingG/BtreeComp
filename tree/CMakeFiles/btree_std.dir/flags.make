@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = 
 
-CXX_FLAGS =  -msse2 -std=gnu++20
+CXX_FLAGS =  -O0 -Wall -g2 -ggdb  -O0 -Wall -g2 -ggdb -std=gnu++20
 

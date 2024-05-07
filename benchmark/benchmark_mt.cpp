@@ -67,7 +67,7 @@ const std::vector<std::tuple<std::string, Benchmark_c *>> kIndexStructures{
     // {"BPTree-std", new BPTreeStdBenchmark()},
     // {"BPTree-head", new BPTreeHeadCompBenchmark()},
     {"BPTree-tail", new BPTreeTailCompBenchmark()},
-    // {"BPTree-headtail", new BPTreeHeadTailCompBenchmark()},
+    {"BPTree-headtail", new BPTreeHeadTailCompBenchmark()},
     // {"BPTree-DB2", new BPTreeDB2Benchmark()},
     // {"BPTree-MyISAM", new BPTreeMyISAMBenchmark()},
     // {"BPTree-WT", new BPTreeWTBenchmark()},

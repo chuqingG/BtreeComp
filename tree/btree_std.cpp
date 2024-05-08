@@ -728,8 +728,8 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
 long BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
     char word[8] = {0};
     char prefix[8] = {0};
-    memcpy((prefix, header->key_prefix, PV_SIZE);
-    memcpy((word, key, min(keylen, PV_SIZE));
+    memcpy(prefix, header->key_prefix, PV_SIZE);
+    memcpy(word, key, min(keylen, PV_SIZE));
     return *(long*)word - *(long*)prefix;
 }
 #endif

@@ -44,7 +44,7 @@ private:
                         splitReturn_new *childsplit);
     int search_insert_pos(Node *cursor, const char *key, int keylen, int low, int high,
                           bool &equal);
-    int word_cmp(Stdhead* header,const char* key, int keylen);
+    long word_cmp(Stdhead* header,const char* key, int keylen);
 
     long search_in_node(Node *cursor, const char *key, int keylen, int low, int high, bool isleaf);
     Node *search_leaf_node(Node *root, const char *key, int keylen);

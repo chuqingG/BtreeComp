@@ -82,7 +82,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
         newhead->key_offset = top;
         #ifdef PV
         memset(newhead->key_prefix, 0, PV_SIZE); //doesn't need b/c base is cleared to zero
-        strncpy(newhead->key_prefix, PageOffset(nptr, newhead->key_offset), min(PV_SIZE, (int)newhead->key_len));
+        strncpy(newhead->key_prefix, PageOffset(newbase, newhead->key_offset), min(PV_SIZE, (int)newhead->key_len));
         #endif
         top += newhead->key_len + 1;
         // if (newhead->key_len > 32)

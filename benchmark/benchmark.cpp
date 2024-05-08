@@ -113,9 +113,9 @@ auto RunBenchmarkIteration(std::vector<char *> values,
 
         // Insert values for warmup
         structure->Insert(values_warmup);
-            bool noerror_s = structure->Search(values_warmup);
-             cout << name << "\t:"
-                         << "Warmup check, should be 0" << endl;
+            // bool noerror_s = structure->Search(values_warmup);
+            //  cout << name << "\t:" //check if insertions are correct by search through them
+            //              << "Warmup check, should be 0" << endl;
 #ifdef SINGLE_DEBUG
         auto time_gap = static_cast<double>(
                             std::chrono::duration_cast<std::chrono::nanoseconds>(

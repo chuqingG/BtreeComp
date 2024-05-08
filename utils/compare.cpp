@@ -32,7 +32,8 @@ int char_cmp_new(const char *a, const char *b, int alen, int blen) { // gaurunte
     // 1 : a > b
     // const size_t min_len = (alen < blen) ? alen : blen;
     #ifdef PV
-    return char_cmp_skip(a, b, alen, blen, (uint16_t*)&PV_SIZE);
+    uint16_t size = PV_SIZE;
+    return char_cmp_skip(a, b, alen, blen, (uint16_t*)&size);
     #else
     int cmp_len = min(alen, blen);
     // int idx = *matchp;

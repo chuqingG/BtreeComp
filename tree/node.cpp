@@ -149,7 +149,7 @@ void printKeys(Node *node, bool compressed) {
     for (int i = 0; i < node->size; i++) {
         Stdhead *head = GetHeaderStd(node, i);
         if (compressed && node->prefix->addr) {
-            cout << PageOffset(node, head->key_offset) << ",";
+            cout << head->key_prefix << PageOffset(node, head->key_offset) << ",";
         }
         else {
             cout << node->prefix->addr << PageOffset(node, head->key_offset) << ",";

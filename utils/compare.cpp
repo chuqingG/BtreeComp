@@ -32,19 +32,7 @@ int char_cmp_new(const char *a, const char *b, int alen, int blen) { // gaurunte
     // 1 : a > b
     // const size_t min_len = (alen < blen) ? alen : blen;
     #ifdef PV
-    const char* aa = a + 4;
-    const char* bb = b + 4;
-    alen -= 4;
-    blen -= 4;   
-    int cmp_len = min(alen, blen);
-    // int idx = *matchp;
-    for (int idx = 0; idx < cmp_len; ++idx) {
-        int cmp = aa[idx] - bb[idx];
-        if (cmp != 0)
-            return cmp;
-    }
-    /* Contents are equal up to the smallest length. */
-    return (alen - blen);
+    return char_cmp_skip(a, b, alen, blen, PV_SIZE);
     #else
     int cmp_len = min(alen, blen);
     // int idx = *matchp;

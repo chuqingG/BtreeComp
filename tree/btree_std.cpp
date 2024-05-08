@@ -726,15 +726,11 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
 }
 #ifdef PV
 long BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
-    char word[PV_SIZE] = {0};
-    char prefix[PV_SIZE];
-    memcpy(prefix, header->key_prefix, PV_SIZE);
-    memcpy(word, key, min(keylen, PV_SIZE));
-    #if PV_SIZE == 4
-    return (int)*word - (int)*prefix;
-    #else
-    return (long)*word - (long)*prefix;
-    #endif
+    long word = 0;
+    long prefix = 0;
+    memcpy(&prefix, header->key_prefix, PV_SIZE);
+    memcpy(&word, key, min(keylen, PV_SIZE));
+    return word - prefix;
 }
 #endif
 /*

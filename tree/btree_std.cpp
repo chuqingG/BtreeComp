@@ -724,7 +724,7 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     }
     return isleaf ? -1 : high + 1;
 }
-
+#ifdef PV
 int BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
     char word[PV_SIZE] = {0};
     char prefix[PV_SIZE];
@@ -736,6 +736,7 @@ int BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
     return (unsigned long)*word - (unsignedlong)*prefix;
     #endif
 }
+#endif
 /*
 ================================================
 =============statistic function & printer=======

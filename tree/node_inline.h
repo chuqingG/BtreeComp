@@ -45,6 +45,10 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     }
     // Set the new header
     Stdhead *header = GetHeaderStd(nptr, pos);
+    #ifdef PV
+    memset(header->key_prefix, 0, PV_SIZE);
+    strncpy(header->key_prefix, k, min(PV_SIZE, klen));
+    #endif
     header->key_offset = nptr->space_top;
     header->key_len = klen;
     nptr->space_top += klen + 1;

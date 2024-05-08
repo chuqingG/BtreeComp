@@ -13,6 +13,7 @@
 // #define WTCACHE
 // #define DUPKEY
 // #define TOFIX  // enable to fix some skipped problem
+#define PV //prefix vector
 
 // Setup
 #define SPLIT_STRATEGY_SPACE
@@ -24,6 +25,7 @@
 #define DEFAULT_DATASET_SIZE 100
 #define APPROX_KEY_SIZE 32
 #define WT_CACHE_KEY_NUM 1000
+#define PV_SIZE 4 //4 or 8
 
 #define PKB_LEN 2
 // #define TRACK_DISTANCE // distance to decompress for delta compression

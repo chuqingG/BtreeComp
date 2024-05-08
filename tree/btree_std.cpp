@@ -580,16 +580,37 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
         int mid = low + (high - low) / 2;
 
         Stdhead *header = GetHeaderStd(cursor, mid);
+
+        #ifdef PV
+        int cmp = word_cmp(header, key, keylen);
+        if (cmp == 0) {
+            cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                               keylen, header->key_len);
+        }
+        #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
+        #endif
+
         if (cmp == 0) {
             equal = true;
             while (mid < high) {
                 Stdhead *header = GetHeaderStd(cursor, mid + 1);
+
+                #ifdef PV
+                int cmp = word_cmp(header, key, keylen);
+                if (cmp != 0) break;
+                else if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                                    keylen, header->key_len);) {
+                    break;
+                }
+                #else
                 if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                  keylen, header->key_len))
                     // return the last one if keys are equal
                     break;
+                #endif
+
                 mid++;
             }
             return mid + 1;
@@ -678,9 +699,18 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     while (low <= high) {
         int mid = low + (high - low) / 2;
         Stdhead *header = GetHeaderStd(cursor, mid);
+        
 #ifndef TRACK_DISTANCE
+    #ifdef PV
+        int cmp = word_cmp(header, key, keylen);
+        if (cmp == 0) {
+            cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                               keylen, header->key_len);
+        }
+    #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
+    #endif
 #else
         int cmp = char_cmp_count(key, PageOffset(cursor, header->key_offset),
                                  keylen, header->key_len);
@@ -695,6 +725,16 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     return isleaf ? -1 : high + 1;
 }
 
+int BPTree::word_cmp(stdhead* header, char* key, int keylen) {
+    char word[PV_SIZE] = 0;
+    char prefix[PV_SIZE] = header->key_prefix;
+    memset(&word, key, min(keylen, PV_SIZE));
+    #if PV_SIZE == 4
+    return (unsigned int)word - (unsigned int)prefix;
+    #else
+    return (unsigned long) word - (unsignedlong) prefix;
+    #endif
+}
 /*
 ================================================
 =============statistic function & printer=======

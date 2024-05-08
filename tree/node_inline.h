@@ -51,7 +51,7 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
             nptr->space_top += klen - PV_SIZE + 1;
         }
         else {
-            strncpy(BufTop(nptr), "\0");
+            strcpy(BufTop(nptr), "\0");
             nptr->space_top += 1;
         }
         memset(header->key_prefix, 0, PV_SIZE);
@@ -87,6 +87,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
         Stdhead *oldhead = GetHeaderStd(nptr, i);
         Stdhead *newhead = (Stdhead *)(newbase + MAX_SIZE_IN_BYTES
                                        - (newidx + 1) * sizeof(Stdhead));
+        int key_len = oldhead->key_len;
         #ifdef PV
             char *presuf = new char[oldhead->key_len + 1]; //extract entire key
             presuf[oldhead->key_len + 1] = '\0';
@@ -101,7 +102,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
                 top += newhead->key_len + 1 - PV_SIZE;
             }
             else {
-                strncpy(newbase + top, "\0"); //may be edge case
+                strcpy(newbase + top, "\0"); //may be edge case
                 top++; //if key can fit into prefix, then there will be a null_byte place holder
             }
         #else

@@ -731,9 +731,9 @@ int BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
     memset(prefix, header->key_prefix, PV_SIZE);
     memset(word, key, min(keylen, PV_SIZE));
     #if PV_SIZE == 4
-    return (unsigned int)word - (unsigned int)prefix;
+    return (unsigned int)*word - (unsigned int)*prefix;
     #else
-    return (unsigned long) word - (unsignedlong) prefix;
+    return (unsigned long)*word - (unsignedlong)*prefix;
     #endif
 }
 /*

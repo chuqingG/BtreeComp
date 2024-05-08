@@ -38,20 +38,30 @@
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
 
 inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
-    strcpy(BufTop(nptr), k);
     // shift the headers
     for (int i = nptr->size; i > pos; i--) {
         memcpy(GetHeaderStd(nptr, i), GetHeaderStd(nptr, i - 1), sizeof(Stdhead));
     }
     // Set the new header
     Stdhead *header = GetHeaderStd(nptr, pos);
-    #ifdef PV
-    memset(header->key_prefix, 0, PV_SIZE);
-    strncpy(header->key_prefix, k, min(PV_SIZE, (int)klen));
-    #endif
     header->key_offset = nptr->space_top;
+    #ifdef PV
+        if (klen > PV_SIZE) {
+            strcpy(BufTop(nptr), k + PV_SIZE);
+            nptr->space_top += klen - PV_SIZE + 1;
+        }
+        else {
+            strncpy(BufTop(nptr), "\0");
+            nptr->space_top += 1;
+        }
+        memset(header->key_prefix, 0, PV_SIZE);
+        strncpy(header->key_prefix, k, min(PV_SIZE, (int)klen));
+    #else
+        strcpy(BufTop(nptr), k);
+        nptr->space_top += klen + 1;
+    #endif
+
     header->key_len = klen;
-    nptr->space_top += klen + 1;
     nptr->size += 1;
 }
 
@@ -71,20 +81,36 @@ inline void RemoveKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
 }
 
 // with cutoff
-inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint16_t cutoff, uint16_t &top) {
+inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint16_t cutoff, uint16_t &top) {//cutoff is potential head_comp ignored bytes
     for (int i = low; i < high; i++) {
         int newidx = i - low;
         Stdhead *oldhead = GetHeaderStd(nptr, i);
         Stdhead *newhead = (Stdhead *)(newbase + MAX_SIZE_IN_BYTES
                                        - (newidx + 1) * sizeof(Stdhead));
-        strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
-        newhead->key_len = oldhead->key_len - cutoff;
-        newhead->key_offset = top;
         #ifdef PV
-        memset(newhead->key_prefix, 0, PV_SIZE); //doesn't need b/c base is cleared to zero
-        strncpy(newhead->key_prefix, newbase + newhead->key_offset, min(PV_SIZE, (int)newhead->key_len));
+            char *presuf = new char[oldhead->key_len + 1]; //extract entire key
+            presuf[oldhead->key_len + 1] = '\0';
+            strncpy(presuf, oldhead->key_prefix, PV_SIZE);
+            if (key_len > PV_SIZE) strcpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset));
+            newhead->key_len = oldhead->key_len - cutoff;
+            newhead->key_offset = top;
+            memset(newhead->key_prefix, 0, PV_SIZE); 
+            strncpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
+            if (key_len > PV_SIZE) {
+                strcpy(newbase + top, presuf + cutoff + PV_SIZE); //ends at nullbyte
+                top += newhead->key_len + 1 - PV_SIZE;
+            }
+            else {
+                strncpy(newbase + top, "\0"); //may be edge case
+                top++; //if key can fit into prefix, then there will be a null_byte place holder
+            }
+        #else
+            strcpy(BufTop(nptr), k);
+            strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
+            newhead->key_len = oldhead->key_len - cutoff;
+            newhead->key_offset = top;
+            top += newhead->key_len + 1;
         #endif
-        top += newhead->key_len + 1;
         // if (newhead->key_len > 32)
         //     cout << "wrong update" << endl;
     }

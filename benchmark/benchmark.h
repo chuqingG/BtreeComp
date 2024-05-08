@@ -59,15 +59,19 @@ public:
             // vector<bool> flag(i + 1);
             // _tree->printTree(_tree->getRoot(), flag, true);
         }
-        // vector<bool> flag(values.size() * 1.25);
-        // _tree->printTree(_tree->getRoot(), flag, true);
+        #ifdef PRINT
+        vector<bool> flag(values.size() * 1.25);
+        _tree->printTree(_tree->getRoot(), flag, true);
+        #endif
     }
 
     bool Search(const std::vector<char *> &values) override {
         int count = 0;
         for (uint32_t i = 0; i < values.size(); i++)
             if (_tree->search(values.at(i)) == -1) {
+                #ifdef PRINT
                 cout << "Cannot find " << values[i] << "; " << i << "th value" <<endl;
+                #endif
                 // return false;
                 count++;
             }

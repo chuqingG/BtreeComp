@@ -725,10 +725,10 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     return isleaf ? -1 : high + 1;
 }
 
-int BPTree::word_cmp(Stdhead* header, char* key, int keylen) {
+int BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
     char word[PV_SIZE] = {0};
     char prefix[PV_SIZE];
-    memset(prefix, prefixheader->key_prefix, PV_SIZE);
+    memset(prefix, header->key_prefix, PV_SIZE);
     memset(word, key, min(keylen, PV_SIZE));
     #if PV_SIZE == 4
     return (unsigned int)word - (unsigned int)prefix;

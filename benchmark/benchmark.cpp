@@ -58,8 +58,8 @@ const std::map<std::string, BenchmarkTypes> strBenchmarksMap{
 const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
     {"Btree-Std", new BPTreeStdBenchmark()},
     {"Btree-Head", new BPTreeHeadCompBenchmark()},
-    {"Btree-Tail", new BPTreeTailCompBenchmark()},
-    {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
+    // {"Btree-Tail", new BPTreeTailCompBenchmark()},
+    // {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
     // {"Btree-WT", new BPTreeWTBenchmark()},
     // {"Btree-My", new BPTreeMyISAMBenchmark()},
     // {"Btree-PkB", new BPTreePkBBenchmark()},
@@ -113,7 +113,9 @@ auto RunBenchmarkIteration(std::vector<char *> values,
 
         // Insert values for warmup
         structure->Insert(values_warmup);
-
+            bool noerror_s = structure->Search(values_warmup);
+             cout << name << "\t:"
+                         << "Warmup check, should be 0" << endl;
 #ifdef SINGLE_DEBUG
         auto time_gap = static_cast<double>(
                             std::chrono::duration_cast<std::chrono::nanoseconds>(

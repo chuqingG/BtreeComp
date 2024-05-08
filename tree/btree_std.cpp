@@ -730,7 +730,7 @@ long BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
     long prefix = 0;
     memcpy(&prefix, header->key_prefix, PV_SIZE);
     memcpy(&word, key, min(keylen, PV_SIZE));
-    return prefix - word;
+    return word - prefix;
 }
 #endif
 /*

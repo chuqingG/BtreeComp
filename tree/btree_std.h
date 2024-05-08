@@ -46,7 +46,7 @@ private:
                           bool &equal);
     long word_cmp(Stdhead* header,const char* key, int keylen);
 
-    long search_in_node(Node *cursor, const char *key, int keylen, int low, int high, bool isleaf);
+    int search_in_node(Node *cursor, const char *key, int keylen, int low, int high, bool isleaf);
     Node *search_leaf_node(Node *root, const char *key, int keylen);
     Node *search_leaf_node_for_insert(Node *root, const char *key, int keylen,
                                       Node **path, int &path_level);

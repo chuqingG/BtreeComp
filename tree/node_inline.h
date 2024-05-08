@@ -80,7 +80,8 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
         strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
         newhead->key_len = oldhead->key_len - cutoff;
         newhead->key_offset = top;
-        newhead->key_prefix = oldhead->key_prefix;
+        memset(newheader->key_prefix, 0, PV_SIZE);
+        strncpy(newheader->key_prefix, oldhead->key_prefix, min(PV_SIZE, oldhead->key_len));
         top += newhead->key_len + 1;
         // if (newhead->key_len > 32)
         //     cout << "wrong update" << endl;

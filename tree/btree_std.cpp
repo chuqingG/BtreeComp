@@ -582,7 +582,7 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
         Stdhead *header = GetHeaderStd(cursor, mid);
 
         #ifdef PV
-        int cmp = word_cmp(header, key, keylen);
+        long cmp = word_cmp(header, key, keylen);
         if (cmp == 0) {
             cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
@@ -598,7 +598,7 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
                 Stdhead *header = GetHeaderStd(cursor, mid + 1);
 
                 #ifdef PV
-                    int cmp = word_cmp(header, key, keylen);
+                    long cmp = word_cmp(header, key, keylen);
                     if (cmp != 0) break;
                     else if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                         keylen, header->key_len)) {
@@ -702,7 +702,7 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
         
 #ifndef TRACK_DISTANCE
     #ifdef PV
-        int cmp = word_cmp(header, key, keylen);
+        long cmp = word_cmp(header, key, keylen);
         if (cmp == 0) {
             cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
@@ -725,15 +725,15 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     return isleaf ? -1 : high + 1;
 }
 #ifdef PV
-int BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
+long BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
     char word[PV_SIZE] = {0};
     char prefix[PV_SIZE];
     memcpy(prefix, header->key_prefix, PV_SIZE);
     memcpy(word, key, min(keylen, PV_SIZE));
     #if PV_SIZE == 4
-    return (unsigned int)*word - (unsigned int)*prefix;
+    return (int)*word - (int)*prefix;
     #else
-    return (unsigned long)*word - (unsignedlong)*prefix;
+    return (long)*word - (long)*prefix;
     #endif
 }
 #endif

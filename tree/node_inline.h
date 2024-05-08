@@ -93,10 +93,12 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
             presuf[oldhead->key_len + 1] = '\0';
             strncpy(presuf, oldhead->key_prefix, PV_SIZE);
             if (key_len > PV_SIZE) strcpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset));
+
             newhead->key_len = oldhead->key_len - cutoff;
             newhead->key_offset = top;
             memset(newhead->key_prefix, 0, PV_SIZE); 
             strncpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
+
             if (key_len > PV_SIZE) {
                 strcpy(newbase + top, presuf + cutoff + PV_SIZE); //ends at nullbyte
                 top += newhead->key_len + 1 - PV_SIZE;

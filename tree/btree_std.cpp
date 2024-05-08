@@ -598,16 +598,16 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
                 Stdhead *header = GetHeaderStd(cursor, mid + 1);
 
                 #ifdef PV
-                int cmp = word_cmp(header, key, keylen);
-                if (cmp != 0) break;
-                else if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
-                                    keylen, header->key_len);) {
-                    break;
-                }
+                    int cmp = word_cmp(header, key, keylen);
+                    if (cmp != 0) break;
+                    else if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                                        keylen, header->key_len)) {
+                        break;
+                    }
                 #else
-                if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
-                                 keylen, header->key_len))
-                    // return the last one if keys are equal
+                    if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                                    keylen, header->key_len))
+                        // return the last one if keys are equal
                     break;
                 #endif
 
@@ -725,7 +725,7 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     return isleaf ? -1 : high + 1;
 }
 
-int BPTree::word_cmp(stdhead* header, char* key, int keylen) {
+int BPTree::word_cmp(Stdhead* header, char* key, int keylen) {
     char word[PV_SIZE] = 0;
     char prefix[PV_SIZE] = header->key_prefix;
     memset(&word, key, min(keylen, PV_SIZE));

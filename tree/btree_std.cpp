@@ -771,7 +771,7 @@ long BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
     // for (int i = 0; i < min(keylen, PV_SIZE); i++)
     //     word[i] = key[min(keylen, PV_SIZE) - 1 - i];
     // return *(long*)word - *(long*)prefix;
-    int cmp_len = min(PV_SIZE, key_len);
+    int cmp_len = min(PV_SIZE, keylen);
     // int idx = *matchp;
     for (int idx = 0; idx < cmp_len; ++idx) {
         int cmp = header->key_prefix[idx] - key[idx];

@@ -467,7 +467,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
 
     // calculate the separator
     Stdhead *head_fr = GetHeaderStd(node, split);
-    char *firstright = PageOffset(node, head_fr->key_offset);
+    char *firstright = PageOffset(node, head_fr->key_offset); //this definitely needs change for PV
     char *s;
     int s_len;
     if (this->tail_comp) {
@@ -499,7 +499,12 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
         else {
             s_len = head_fr->key_len;
             s = new char[s_len + 1];
+            #ifdef PV
+            strncpy(s, head_fr->key_prefix,PV_SIZE);
+            strcpy(s + PV_SIZE, firstright);
+            #else
             strcpy(s, firstright);
+            #endif
         }
     }
     newsplit.promotekey.addr = s;

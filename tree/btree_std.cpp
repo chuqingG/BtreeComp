@@ -501,7 +501,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             s = new char[s_len + 1];
             #ifdef PV
             strncpy(s, head_fr->key_prefix,PV_SIZE);
-            strcpy(s + PV_SIZE, firstright);
+            strcpy(s + PV_SIZE, firstright); //copy until nullbyte
             #else
             strcpy(s, firstright);
             #endif

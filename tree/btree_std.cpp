@@ -500,7 +500,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             strncpy(s, node->prefix->addr, pfxlen);
             #ifdef PV
                 strncpy(s + pfxlen, head_fr->key_prefix, min(s_len, PV_SIZE));
-                 if (s_len > PV_SIZE) strncpy(s + pfxlen + PV_SIZE, firstright, s_len - PV_SIZE); 
+                if (s_len > PV_SIZE) strncpy(s + pfxlen + PV_SIZE, firstright, s_len - PV_SIZE); 
             #else
                 strncpy(s + pfxlen, firstright, s_len);
             #endif

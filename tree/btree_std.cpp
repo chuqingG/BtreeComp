@@ -287,9 +287,13 @@ int BPTree::split_point(Node *node) {
             if (i + 1 < size) {
                 Stdhead *h_i = GetHeaderStd(node, i);
                 Stdhead *h_i1 = GetHeaderStd(node, i + 1);
-                int cur_len = tail_compress_length(PageOffset(node, h_i->key_offset),
+#ifdef PV
+    int cur_len = tail_compress_length(h_i, h_i1, PageOffset(node, h_i->key_offset), PageOffset(node, h_i1->key_offset));
+#else
+    int cur_len = tail_compress_length(PageOffset(node, h_i->key_offset),
                                                    PageOffset(node, h_i1->key_offset),
                                                    h_i->key_len, h_i1->key_len);
+#endif
                 if (cur_len < minlen) {
                     minlen = cur_len;
                     bestsplit = i + 1;
@@ -483,9 +487,12 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     if (this->tail_comp) {
         Stdhead *head_ll = GetHeaderStd(node, split - 1);
         char *lastleft = PageOffset(node, head_ll->key_offset);
-
-        s_len = tail_compress_length(lastleft, firstright,
+#ifdef PV
+            s_len = tail_compress_length(heal_ll, head_fr, lastleft, firstright);
+#else
+            s_len = tail_compress_length(lastleft, firstright,
                                      head_ll->key_len, head_fr->key_len);
+#endif
         if (this->head_comp && node->prefix->size) {
             int pfxlen = node->prefix->size;
             s = new char[s_len + pfxlen + 1];
@@ -500,7 +507,12 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
         }
         else {
             s = new char[s_len + 1];
-            strncpy(s, firstright, s_len);
+            #ifdef PV
+                strncpy(s, head_fr->key_prefix,PV_SIZE);
+                strcpy(s + PV_SIZE, firstright); //copy until nullbyte
+            #else
+                strcpy(s, firstright);
+            #endif
         }
         s[s_len] = '\0';
     }

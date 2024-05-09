@@ -19,14 +19,14 @@ char *tail_compress(const char *lastleft, const char *firstright, int len_ll, in
 
     return separator;
 }
-char *tail_compress(Stdhead *lastleft, Stdhead *firstright, const char *leftsuffix, const char *rightsuffix) {
+char *tail_compress(char *leftprefix, char *rightprefix, const char *leftsuffix, const char *rightsuffix, int len_ll, int len_fr) {
     char *left = new char[lastleft->key_len + 1];
     char *right = new char[firstright->key_len + 1];
-    strncpy(left, lastleft->key_prefix, PV_SIZE);
+    strncpy(left, leftprefix, PV_SIZE);
     strcpy(left + PV_SIZE, leftsuffix);
-    strncpy(right, firstright->key_prefix, PV_SIZE);
+    strncpy(right, rightprefix, PV_SIZE);
     strcpy(right + PV_SIZE, rightsuffix);
-    return tail_compress(left, right, lastleft->key_len, firstright->key_len);
+    return tail_compress(left, right, len_ll, len_fr);
 }
 
 int tail_compress_length(const char *lastleft, const char *firstright, int len_ll, int len_fr) {
@@ -37,14 +37,14 @@ int tail_compress_length(const char *lastleft, const char *firstright, int len_l
     return prefixlen;
 }
 
-int tail_compress_length(Stdhead *lastleft, Stdhead *firstright, const char *leftsuffix, const char *rightsuffix) {
+int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsuffix, const char *rightsuffix, int len_ll, int len_fr) {
     char *left = new char[lastleft->key_len + 1];
     char *right = new char[firstright->key_len + 1];
-    strncpy(left, lastleft->key_prefix, PV_SIZE);
+    strncpy(left, leftprefix, PV_SIZE);
     strcpy(left + PV_SIZE, leftsuffix);
-    strncpy(right, firstright->key_prefix, PV_SIZE);
+    strncpy(right, rightprefix, PV_SIZE);
     strcpy(right + PV_SIZE, rightsuffix);
-    return tail_compress_length(left, right, lastleft->key_len, firstright->key_len);
+    return tail_compress_length(left, right, len_ll, len_fr);
 }
 
 int head_compression_find_prefix_length(Item *low, Item *high) {

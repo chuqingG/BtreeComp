@@ -33,7 +33,7 @@ int char_cmp_new(const char *a, const char *b, int alen, int blen) { // gaurunte
     // const size_t min_len = (alen < blen) ? alen : blen;
     #ifdef PV
     uint16_t size = PV_SIZE;
-    return char_cmp_skip(a, b, alen, blen, (uint16_t*)&size);
+    return char_cmp_skip(a, b - PV_SIZE, alen, blen, (uint16_t*)&size); //insane pointer arithmatic
     #else
     int cmp_len = min(alen, blen);
     // int idx = *matchp;

@@ -488,7 +488,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
         Stdhead *head_ll = GetHeaderStd(node, split - 1);
         char *lastleft = PageOffset(node, head_ll->key_offset);
 #ifdef PV
-            s_len = tail_compress_length(heal_ll, head_fr, lastleft, firstright);
+            s_len = tail_compress_length(head_ll, head_fr, lastleft, firstright);
 #else
             s_len = tail_compress_length(lastleft, firstright,
                                      head_ll->key_len, head_fr->key_len);

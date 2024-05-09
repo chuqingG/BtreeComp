@@ -5,7 +5,7 @@
 #include <cstring>
 #include "../utils/item.hpp"
 #include "../utils/compare.cpp"
-#include "../tree/node.h"
+
 using namespace std;
 
 char *tail_compress(const char *lastleft, const char *firstright, int len_ll, int len_fr) {

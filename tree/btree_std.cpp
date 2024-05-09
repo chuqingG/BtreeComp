@@ -336,11 +336,16 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     char *firstright = PageOffset(node, head_fr->key_offset);
     int pkey_len;
     char *pkey_buf;
-    if (this->head_comp && node->prefix->size) {
+    if (this->head_comp && node->prefix->size) { //promote key
         pkey_len = node->prefix->size + head_fr->key_len;
         pkey_buf = new char[pkey_len + 1];
         strncpy(pkey_buf, node->prefix->addr, node->prefix->size);
-        strcpy(pkey_buf + node->prefix->size, firstright);
+        #ifdef PV
+            strncpy(pkey_buf + node->prefix->size, head_fr->key_prefix, PV_SIZE);
+            strcpy(pkey_buf + PV_SIZE + node->prefix->size, firstright);
+        #else
+            strcpy(pkey_buf + node->prefix->size, firstright);
+        #endif
     }
     else {
         pkey_len = head_fr->key_len;
@@ -480,7 +485,12 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             int pfxlen = node->prefix->size;
             s = new char[s_len + pfxlen + 1];
             strncpy(s, node->prefix->addr, pfxlen);
-            strncpy(s + pfxlen, firstright, s_len);
+            #ifdef PV
+                strncpy(s + pfxlen, head_fr->key_prefix, PV_SIZE);
+                strcpy(s + PV_SIZE + pfxlen, firstright);
+            #else
+                strncpy(s + pfxlen, firstright, s_len);
+            #endif
             s_len += pfxlen;
         }
         else {
@@ -494,16 +504,21 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             s_len = node->prefix->size + head_fr->key_len;
             s = new char[s_len + 1];
             strncpy(s, node->prefix->addr, node->prefix->size);
-            strcpy(s + node->prefix->size, firstright);
+            #ifdef PV
+                strncpy(s + node->prefix->size, head_fr->key_prefix, PV_SIZE); //prefix
+                strcpy(s + PV_SIZE + node->prefix->size, firstright); //suffix
+            #else
+                strcpy(s + node->prefix->size, firstright);
+            #endif
         }
         else {
             s_len = head_fr->key_len;
             s = new char[s_len + 1];
             #ifdef PV
-            strncpy(s, head_fr->key_prefix,PV_SIZE);
-            strcpy(s + PV_SIZE, firstright); //copy until nullbyte
+                strncpy(s, head_fr->key_prefix,PV_SIZE);
+                strcpy(s + PV_SIZE, firstright); //copy until nullbyte
             #else
-            strcpy(s, firstright);
+                strcpy(s, firstright);
             #endif
         }
     }

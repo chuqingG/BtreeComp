@@ -288,7 +288,7 @@ int BPTree::split_point(Node *node) {
                 Stdhead *h_i = GetHeaderStd(node, i);
                 Stdhead *h_i1 = GetHeaderStd(node, i + 1);
 #ifdef PV
-    int cur_len = tail_compress_length(h_i, h_i1, PageOffset(node, h_i->key_offset), PageOffset(node, h_i1->key_offset), h_i->key_len, h_i1->key_len);
+    int cur_len = tail_compress_length(h_i->key_prefix, h_i1->key_prefix, PageOffset(node, h_i->key_offset), PageOffset(node, h_i1->key_offset), h_i->key_len, h_i1->key_len);
 #else
     int cur_len = tail_compress_length(PageOffset(node, h_i->key_offset),
                                                    PageOffset(node, h_i1->key_offset),

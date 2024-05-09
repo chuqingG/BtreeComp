@@ -20,8 +20,8 @@ char *tail_compress(const char *lastleft, const char *firstright, int len_ll, in
     return separator;
 }
 char *tail_compress(char *leftprefix, char *rightprefix, const char *leftsuffix, const char *rightsuffix, int len_ll, int len_fr) {
-    char *left = new char[lastleft->key_len + 1];
-    char *right = new char[firstright->key_len + 1];
+    char *left = new char[len_ll + 1];
+    char *right = new char[len_lr + 1];
     strncpy(left, leftprefix, PV_SIZE);
     strcpy(left + PV_SIZE, leftsuffix);
     strncpy(right, rightprefix, PV_SIZE);
@@ -38,8 +38,8 @@ int tail_compress_length(const char *lastleft, const char *firstright, int len_l
 }
 
 int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsuffix, const char *rightsuffix, int len_ll, int len_fr) {
-    char *left = new char[lastleft->key_len + 1];
-    char *right = new char[firstright->key_len + 1];
+    char *left = new char[len_ll + 1];
+    char *right = new char[len_fr + 1];
     strncpy(left, leftprefix, PV_SIZE);
     strcpy(left + PV_SIZE, leftsuffix);
     strncpy(right, rightprefix, PV_SIZE);

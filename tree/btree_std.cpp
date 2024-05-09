@@ -764,13 +764,22 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
 }
 #ifdef PV
 long BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
-    char word[8] = {0};
-    char prefix[8] = {0};
-    for (int i = 0; i < PV_SIZE; i++) 
-        prefix[i] = header->key_prefix[PV_SIZE - 1 - i];
-    for (int i = 0; i < min(keylen, PV_SIZE); i++)
-        word[i] = key[min(keylen, PV_SIZE) - 1 - i];
-    return *(long*)word - *(long*)prefix;
+    // char word[8] = {0};
+    // char prefix[8] = {0};
+    // for (int i = 0; i < PV_SIZE; i++) 
+    //     prefix[i] = header->key_prefix[PV_SIZE - 1 - i];
+    // for (int i = 0; i < min(keylen, PV_SIZE); i++)
+    //     word[i] = key[min(keylen, PV_SIZE) - 1 - i];
+    // return *(long*)word - *(long*)prefix;
+    int cmp_len = min(PV_SIZE, key_len);
+    // int idx = *matchp;
+    for (int idx = 0; idx < cmp_len; ++idx) {
+        int cmp = header->key_prefix[idx] - key[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    /* Contents are equal up to the smallest length. */
+    return (header->key_len - key_len);
 }
 #endif
 /*

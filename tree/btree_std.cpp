@@ -779,7 +779,7 @@ long BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
             return cmp;
     }
     /* Contents are equal up to the smallest length. */
-    return (header->key_len - key_len);
+    return (header->key_len - keylen);
 }
 #endif
 /*

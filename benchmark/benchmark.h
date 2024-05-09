@@ -70,6 +70,7 @@ public:
         for (uint32_t i = 0; i < values.size(); i++)
             if (_tree->search(values.at(i)) == -1) {
                 #ifdef PRINT
+                if (count < 100)
                 cout << "Cannot find " << values[i] << "; " << i << "th value" <<endl;
                 #endif
                 // return false;

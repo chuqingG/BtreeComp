@@ -499,8 +499,8 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             s = new char[s_len + pfxlen + 1];
             strncpy(s, node->prefix->addr, pfxlen);
             #ifdef PV
-                strncpy(s + pfxlen, head_fr->key_prefix, PV_SIZE);
-                strcpy(s + PV_SIZE + pfxlen, firstright);
+                strncpy(s + pfxlen, head_fr->key_prefix, min(s_len, PV_SIZE));
+                 if (s_len > PV_SIZE) strncpy(s + pfxlen + PV_SIZE, firstright, s_len - PV_SIZE); 
             #else
                 strncpy(s + pfxlen, firstright, s_len);
             #endif
@@ -509,10 +509,10 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
         else {
             s = new char[s_len + 1];
             #ifdef PV
-                strncpy(s, head_fr->key_prefix,PV_SIZE);
-                strcpy(s + PV_SIZE, firstright); //copy until nullbyte
+                strncpy(s, head_fr->key_prefix, min(s_len, PV_SIZE));
+                if (s_len > PV_SIZE) strncpy(s + PV_SIZE, firstright, s_len - PV_SIZE); //copy until nullbyte
             #else
-                strcpy(s, firstright);
+                strncpy(s, firstright, s_len);
             #endif
         }
         s[s_len] = '\0';

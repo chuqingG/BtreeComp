@@ -21,13 +21,13 @@ int MAX_NODE_SIZE = 4;
 
 const char MAXHIGHKEY[] = "infinity";
 
-struct Stdhead {
+typedef struct {
     #ifdef PV
     char key_prefix[PV_SIZE]; 
     #endif
     uint16_t key_offset;
     uint16_t key_len;
-} __attribute__((packed));
+} __attribute__((packed)) Stdhead;
 
 class Node {
 public:

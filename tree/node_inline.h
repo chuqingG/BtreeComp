@@ -1,6 +1,7 @@
 #pragma once
 #include "node.h"
 // #include "../utils/config.h"
+#include "..utils/compare.cpp"
 
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
@@ -36,6 +37,14 @@
     }
 
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
+
+inline void calculateBSMetaData(Node *node) {
+    int n = node->size;
+    uint16_t k = sizeof(uint16_t) * 8 - __builtin_clz(n) - 1;
+    node->I = 1 << k;
+    uint16_t l = sizeof(uint16_t) * 8 - __builtin_clz(n) - 1 + ((n & (n - 1)) ? 1 : 0);
+    node->Ip = n + 1 - (1 << l);
+}
 
 inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     // shift the headers
@@ -191,13 +200,8 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     cout << "Unrolled Binary Search Exceeds Upperbound";
     return curPos;
 }
-inline void calculateBSMetaData(Node *node) {
-    int n = node->size;
-    uint16_t k = sizeof(uint16_t) * 8 - __builtin_clz(n) - 1;
-    node->I = 1 << k;
-    uint16_t l = sizeof(uint16_t) * 8 - __builtin_clz(n) - 1 + ((n & (n - 1)) ? 1 : 0);
-    node->Ip = n + 1 - (1 << l);
-}
+
+
 /*
 ===============For DB2=============
 */

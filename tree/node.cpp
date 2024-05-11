@@ -20,6 +20,11 @@ Node::Node() {
     IS_LEAF = true;
     prev = nullptr;
     next = nullptr;
+
+#ifdef UBS
+    I = 0;
+    Ip = 0;
+#endif
 }
 
 // Destructor of Node

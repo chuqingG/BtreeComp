@@ -47,6 +47,10 @@ public:
     ~Node();
     void erase(const char *k, int keylen, int idx);
     // int findk(const char *k, int keylen);
+#ifdef UBS
+    uint16_t I;
+    uint16_t Ip;
+#endif
 };
 
 struct DB2head {

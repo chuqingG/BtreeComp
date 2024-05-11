@@ -432,7 +432,10 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     node->size = split;
     node->space_top = left_top;
     UpdateBase(node, left_base);
-
+#ifdef UBS
+    calculateBSMetaData(node);
+    calculateBSMetaData(right);
+#endif
     node->ptrs = leftptrs;
     node->ptr_cnt = split + 1;
 
@@ -581,6 +584,10 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     node->space_top = left_top;
     UpdateBase(node, left_base);
 
+#ifdef UBS
+    calculateBSMetaData(node);
+    calculateBSMetaData(right);
+#endif
     // set key bound
     right->highkey = new Item(*node->highkey);
     node->highkey = new Item(newsplit.promotekey);
@@ -614,17 +621,27 @@ bool BPTree::check_split_condition(Node *node, int keylen) {
 
 int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low, int high,
                               bool &equal) {
+#ifdef UBS
+    long cmp = 0;
+    int pos =  unrolledBinarySearch(cursor, key, keylen, &cmp);
+    if (cmp == 0) {
+       equal = true;
+        while (pos < high) { //linear search
+            Stdhead *header = GetHeaderStd(cursor, pos + 1);
+            if (pvComp(ki, key, keylen, cursor)) break;
+            pos++;
+        }
+        return pos + 1;
+    } 
+    else return pos + 1;
+#else
     while (low <= high) {
         int mid = low + (high - low) / 2;
 
         Stdhead *header = GetHeaderStd(cursor, mid);
 
         #ifdef PV
-        long cmp = word_cmp(header, key, keylen);
-        if (cmp == 0) {
-            cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
-                               keylen, header->key_len);
-        }
+        long cmp = pvComp(ki, key, keylen, cursor);
         #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
@@ -659,6 +676,7 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
             high = mid - 1;
     }
     return high + 1;
+#endif
 }
 
 Node *BPTree::search_leaf_node(Node *searchroot, const char *key, int keylen) {
@@ -734,17 +752,19 @@ int BPTree::char_cmp_count(const char *a, const char *b, int alen, int blen) {
 // TODO:merge these search function
 int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
                            int low, int high, bool isleaf) {
+#ifdef UBS
+    long cmp = 0;
+    int pos =  unrolledBinarySearch(cursor, key, keylen, &cmp);
+    if (cmp == 0) return isleaf ? pos : pos + 1; //right node of key
+    else return isleaf ? -1 : pos + 1; //not found in leaf, or branch node right child
+#else
     while (low <= high) {
         int mid = low + (high - low) / 2;
         Stdhead *header = GetHeaderStd(cursor, mid);
         
 #ifndef TRACK_DISTANCE
     #ifdef PV
-        long cmp = word_cmp(header, key, keylen);
-        if (cmp == 0) {
-            cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
-                               keylen, header->key_len);
-        }
+        long cmp = pvComp(ki, key, keylen, cursor);
     #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
@@ -761,27 +781,9 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
             high = mid - 1;
     }
     return isleaf ? -1 : high + 1;
-}
-#ifdef PV
-long BPTree::word_cmp(Stdhead* header,const char* key, int keylen) {
-    // char word[8] = {0};
-    // char prefix[8] = {0};
-    // for (int i = 0; i < PV_SIZE; i++) 
-    //     prefix[i] = header->key_prefix[PV_SIZE - 1 - i];
-    // for (int i = 0; i < min(keylen, PV_SIZE); i++)
-    //     word[i] = key[min(keylen, PV_SIZE) - 1 - i];
-    // return *(long*)word - *(long*)prefix;
-    int cmp_len = min(PV_SIZE, keylen);
-    // int idx = *matchp;
-    for (int idx = 0; idx < cmp_len; ++idx) {
-        int cmp = key[idx] - header->key_prefix[idx];
-        if (cmp != 0)
-            return cmp;
-    }
-    /* Contents are equal up to the smallest length. */
-    return 0;
-}
 #endif
+}
+
 /*
 ================================================
 =============statistic function & printer=======

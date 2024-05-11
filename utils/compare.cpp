@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stack>
 #include <string>
+#include "../tree/node.h"
 using namespace std;
 
 int get_common_prefix_len(const char *a, const char *b, int alen, int blen) {

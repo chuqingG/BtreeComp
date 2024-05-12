@@ -164,7 +164,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
         for (i = 0; i < cursor->size; i++) {
             Stdhead *ki = GetHeaderStd(cursor, i);
             int cmp = pvComp(ki, key, keylen, cursor);
-            if (cmp > 0) return i;
+            if (cmp < 0) return i;
         }
         return cursor->size - 1; //key is the larger than all keys
     }

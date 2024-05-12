@@ -183,10 +183,9 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     else curPos -= delta;
 
     while (delta != 0) {
-        delta /= 2;
         ki = GetHeaderStd(cursor, curPos); //2
         cmp = pvComp(ki, key, keylen, cursor); 
-        delta = delta >> 1;
+        delta /= 2;
         if (cmp == 0) return curPos;
         else if (cmp > 0) curPos += delta;
         else curPos -= delta;

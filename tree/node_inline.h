@@ -2,6 +2,8 @@
 #include "node.h"
 // #include "../utils/config.h"
 #include "../utils/compare.cpp"
+void word_conv_store(const char* src, const char* dest);
+long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen);
 
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
@@ -56,7 +58,7 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     // Set the new header
     Stdhead *header = GetHeaderStd(nptr, pos);
     header->key_offset = nptr->space_top;
-    #ifdef PV
+    #if PV
         if (klen > PV_SIZE) {
             strcpy(BufTop(nptr), k + PV_SIZE);
             nptr->space_top += klen - PV_SIZE + 1;
@@ -130,32 +132,85 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
 }
 
 #ifdef PV
-inline long word_cmp(Stdhead* header,const char* key, int keylen) {
-    // char word[8] = {0};
-    // char prefix[8] = {0};
-    // for (int i = 0; i < PV_SIZE; i++) 
-    //     prefix[i] = header->key_prefix[PV_SIZE - 1 - i];
-    // for (int i = 0; i < min(keylen, PV_SIZE); i++)
-    //     word[i] = key[min(keylen, PV_SIZE) - 1 - i];
-    // return *(long*)word - *(long*)prefix;
-    int cmp_len = min(PV_SIZE, keylen);
-    // int idx = *matchp;
-    for (int idx = 0; idx < cmp_len; ++idx) {
-        int cmp = key[idx] - header->key_prefix[idx];
-        if (cmp != 0)
-            return cmp;
+
+inline void word_conv_store(const char* src, const char* dest) { //int length only for now
+    char c3 = src[3];
+    char c2 = src[2];
+    dest[3] = src[0];
+    dest[0] = c3;
+    dest[2] = src[1];
+    dest[1] = c2;
+}
+
+inline char* string_conv(const char* key, int keylen) {
+    char *result = new char[keylen + 1];
+    char *pointer = result;
+    for (keylen >= PV_SIZE) {
+        word_conv_store(key, pointer);
+        keylen -= PV_SIZE;
+        pointer += PV_SIZE;
+        key += PV_SIZE;
     }
-    /* Contents are equal up to the smallest length. */
-    return 0;
+    for (int i = 0; i < keylen; i++) {
+        pointer[i] = key[i];//should cover s
+    }
+    result[keylen] = '\0';
+    return result;
+}
+
+inline long word_cmp(Stdhead* header,const char* key, int keylen) {
+    if (keylen < PV_SIZE) {
+        int cmp_len = min(PV_SIZE, keylen);
+        // int idx = *matchp;
+        for (int idx = 0; idx < cmp_len; ++idx) {
+            int cmp = key[idx] - header->key_prefix[idx];
+            if (cmp != 0)
+                return cmp;
+        }
+        return 0;
+    }
+#if PV_SIZE == 4
+    return *(int*)key - *(int*)header->key_prefix;
+#else 
+    return *(long*)key - *(long*)header->key_prefix;
+#endif
 }
 
 inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
     if (cmp == 0) {
+#ifdef KN
+        cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len, key + PV_SIZE, keylen - PV_SIZE);
+#else
         cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                             keylen, header->key_len);
+#endif
     }
     return cmp;
+}
+
+inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
+    long cmp = 0;
+    while (min(suffixlen, keylen) >= PV_SIZE) {
+#if PV_SIZE == 4
+        cmp = *(int*)key - *(int*)suffix;
+#else 
+        cmp = *(long*)key - *(long*)suffix;
+#endif
+        if (cmp != 0) return cmp;
+        suffixlen -= PV_SIZE;
+        keylen = PV_SIZE;
+        suffix += PV_SIZE;
+        key += PV_SIZE;
+    }
+    int cmp_len = min(PV_SIZE, keylen);
+    // int idx = *matchp;
+    for (int idx = 0; idx < cmp_len; ++idx) {
+        cmp = key[idx] - header->key_prefix[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    return 0;
 }
 #endif
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes

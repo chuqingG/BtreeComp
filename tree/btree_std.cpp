@@ -39,7 +39,7 @@ Node *BPTree::getRoot() {
 // in B+ Tree
 int BPTree::search(const char *key) {
     int keylen = strlen(key);
-#if KN
+#ifdef KN
     key = string_conv(key, keylen); //automatically freed should be
 #endif
     Node *leaf = search_leaf_node(_root, key, keylen);
@@ -146,7 +146,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
 
 void BPTree::insert(char *x) {
     int keylen = strlen(x);
-#if KN
+#ifdef KN
     key = string_conv(key, keylen);
 #endif
     Node *search_path[max_level];

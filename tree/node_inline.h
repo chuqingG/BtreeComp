@@ -159,7 +159,7 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 }
 #endif
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
-    if (cursor->size <= 4) {
+    if (cursor->size <= 8) {
         int i;
         for (i = 0; i < cursor->size; i++) {
             Stdhead *ki = GetHeaderStd(cursor, i);

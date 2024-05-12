@@ -56,8 +56,11 @@ public:
     void Insert(const vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); i++) {
             _tree->insert(values[i]);
-            // vector<bool> flag(i + 1);
-            // _tree->printTree(_tree->getRoot(), flag, true);
+                #ifdef PRINT
+                cout << "after " << values[i] << "\n";
+                vector<bool> flag(values.size() * 1.25);
+                _tree->printTree(_tree->getRoot(), flag, true);
+                #endif
         }
         #ifdef PRINT
         vector<bool> flag(values.size() * 1.25);

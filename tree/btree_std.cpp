@@ -147,7 +147,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
 void BPTree::insert(char *x) {
     int keylen = strlen(x);
 #ifdef KN
-    key = string_conv(key, keylen);
+    x = string_conv(key, keylen);
 #endif
     Node *search_path[max_level];
     int path_level = 0;

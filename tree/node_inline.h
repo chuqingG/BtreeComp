@@ -146,7 +146,7 @@ inline char* string_conv(const char* key, int keylen) {
     char *result = new char[keylen + 1];
     char *pointer = result;
     while (keylen >= PV_SIZE) {
-        word_conv_store(key, pointer);
+        word_conv_store((char*)key, pointer);
         keylen -= PV_SIZE;
         pointer += PV_SIZE;
         key += PV_SIZE;

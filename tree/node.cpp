@@ -159,7 +159,7 @@ void printKeys(Node *node, bool compressed) {
             #ifdef KN
             char *prefix = new char[head->key_len + 1];
             strncpy(prefix, head->key_prefix, PV_SIZE);
-            strncpy(prefix + PV_SIZE, PageOffset(node, head->offset), head->key_len - PV_SIZE);
+            strncpy(prefix + PV_SIZE, PageOffset(node, head->key_offset), head->key_len - PV_SIZE);
             cout << string_conv(prefix, head->key_len);
             #elif defined PV 
             char prefix[PV_SIZE + 1] = {0};

@@ -58,7 +58,7 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     // Set the new header
     Stdhead *header = GetHeaderStd(nptr, pos);
     header->key_offset = nptr->space_top;
-    #if PV
+    #ifdef PV
         if (klen > PV_SIZE) {
             strcpy(BufTop(nptr), k + PV_SIZE);
             nptr->space_top += klen - PV_SIZE + 1;
@@ -133,7 +133,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
 
 #ifdef PV
 
-inline void word_conv_store(const char* src, const char* dest) { //int length only for now
+inline void word_conv_store(char* src, char* dest) { //int length only for now
     char c3 = src[3];
     char c2 = src[2];
     dest[3] = src[0];
@@ -145,7 +145,7 @@ inline void word_conv_store(const char* src, const char* dest) { //int length on
 inline char* string_conv(const char* key, int keylen) {
     char *result = new char[keylen + 1];
     char *pointer = result;
-    for (keylen >= PV_SIZE) {
+    while (keylen >= PV_SIZE) {
         word_conv_store(key, pointer);
         keylen -= PV_SIZE;
         pointer += PV_SIZE;
@@ -180,7 +180,7 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
     if (cmp == 0) {
 #ifdef KN
-        cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len, key + PV_SIZE, keylen - PV_SIZE);
+        cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len, (char*)key + PV_SIZE, keylen - PV_SIZE);
 #else
         cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                             keylen, header->key_len);
@@ -203,10 +203,10 @@ inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
         suffix += PV_SIZE;
         key += PV_SIZE;
     }
-    int cmp_len = min(PV_SIZE, keylen);
+    int cmp_len = min(keylen, suffixlen);
     // int idx = *matchp;
     for (int idx = 0; idx < cmp_len; ++idx) {
-        cmp = key[idx] - header->key_prefix[idx];
+        cmp = key[idx] - suffix[idx];
         if (cmp != 0)
             return cmp;
     }

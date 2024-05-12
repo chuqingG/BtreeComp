@@ -24,6 +24,7 @@ Node::Node() {
 #ifdef UBS
     I = 0;
     Ip = 0;
+    firstL = 0;
 #endif
 }
 

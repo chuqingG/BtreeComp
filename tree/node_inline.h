@@ -43,8 +43,8 @@ inline void calculateBSMetaData(Node *node) {
     int k = sizeof(int) * 8 - __builtin_clz(n) - 1;
     node->I = (uint16_t) 1 << k;
     int l_aux= n - node->I + 1;
-    int ceiling = l_aux == 0 ? 0 : ((l_aux & (l_aux - 1)) ? 1 : 0);//check on zero
-    int l = sizeof(int) * 8 - __builtin_clz(l_aux) - 1 + ceiling;
+    int l = sizeof(int) * 8 - __builtin_clz(l_aux) - 1 + ((l_aux & (l_aux - 1)) ? 1 : 0);
+    node->firstL = l >> 1;
     node->Ip = (uint16_t) n + 1 - (1 << l);
 }
 
@@ -168,6 +168,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     if (cmp == 0 || delta == 0) return curPos;
     else if (cmp > 0) { //if K > Ki
             curPos = cursor->Ip - 1;
+            delta = cursor->firstL;
             curPos += delta;
     }
     else curPos -= delta;

@@ -50,6 +50,7 @@ public:
 #ifdef UBS
     uint16_t I;
     uint16_t Ip;
+    uint16_t firstL;
 #endif
 };
 

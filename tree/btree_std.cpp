@@ -757,7 +757,7 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     long cmp = 0;
     int pos =  unrolledBinarySearch(cursor, key, keylen, cmp);
     if (cmp == 0) return isleaf ? pos : pos + 1; //right node of key
-    else return isleaf ? -1 : pos; //not found in leaf, or branch node right child
+    else return isleaf ? -1 : cmp > 0 ? pos + 1 : pos; //not found in leaf, or branch node right child
 #else
     while (low <= high) {
         int mid = low + (high - low) / 2;

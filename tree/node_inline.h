@@ -2,7 +2,7 @@
 #include "node.h"
 // #include "../utils/config.h"
 #include "../utils/compare.cpp"
-extern long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor);
+
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
 #define BufTop(nptr) (nptr->base + nptr->space_top)
@@ -127,6 +127,35 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
     }
 }
 
+#ifdef PV
+inline long word_cmp(Stdhead* header,const char* key, int keylen) {
+    // char word[8] = {0};
+    // char prefix[8] = {0};
+    // for (int i = 0; i < PV_SIZE; i++) 
+    //     prefix[i] = header->key_prefix[PV_SIZE - 1 - i];
+    // for (int i = 0; i < min(keylen, PV_SIZE); i++)
+    //     word[i] = key[min(keylen, PV_SIZE) - 1 - i];
+    // return *(long*)word - *(long*)prefix;
+    int cmp_len = min(PV_SIZE, keylen);
+    // int idx = *matchp;
+    for (int idx = 0; idx < cmp_len; ++idx) {
+        int cmp = key[idx] - header->key_prefix[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    /* Contents are equal up to the smallest length. */
+    return 0;
+}
+
+inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
+    long cmp = word_cmp(header, key, keylen);
+    if (cmp == 0) {
+        cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                            keylen, header->key_len);
+    }
+    return cmp;
+}
+#endif
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
     int curPos = cursor->I; //2^k, where k is floor(log cursor->size);
     Stdhead *ki = GetHeaderStd(cursor, curPos);

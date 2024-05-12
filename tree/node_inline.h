@@ -41,9 +41,9 @@
 inline void calculateBSMetaData(Node *node) {
     int n = node->size;
     int k = sizeof(int) * 8 - __builtin_clz(n) - 1;
-    node->I = 1 << k;
+    node->I = (uint16_t) 1 << k;
     int l = sizeof(int) * 8 - __builtin_clz(n) - 1 + ((n & (n - 1)) ? 1 : 0);
-    node->Ip = n + 1 - (1 << l);
+    node->Ip = (uint16_t) n + 1 - (1 << l);
 }
 
 inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {

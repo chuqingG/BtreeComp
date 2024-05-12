@@ -57,7 +57,7 @@ public:
         for (uint32_t i = 0; i < values.size(); i++) {
             _tree->insert(values[i]);
                 #ifdef PRINT
-                cout << "after " << values[i] << "\n";
+                cout << "   after " << values[i] << "\n";
                 vector<bool> flag(values.size() * 1.25);
                 _tree->printTree(_tree->getRoot(), flag, true);
                 #endif

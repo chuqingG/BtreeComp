@@ -201,7 +201,7 @@ inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
 #endif
         if (cmp != 0) return cmp;
         suffixlen -= PV_SIZE;
-        keylen = PV_SIZE;
+        keylen -= PV_SIZE;
         suffix += PV_SIZE;
         key += PV_SIZE;
     }
@@ -212,7 +212,7 @@ inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
         if (cmp != 0)
             return cmp;
     }
-    return 0;
+    return keylen - suffixlen;
 }
 #endif
 #ifdef UBS

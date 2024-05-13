@@ -157,18 +157,22 @@ void printKeys(Node *node, bool compressed) {
 
         if (compressed && node->prefix->addr) {
             #ifdef KN
-            char *prefix = new char[head->key_len + 1];
-            strncpy(prefix, head->key_prefix, PV_SIZE);
-            strncpy(prefix + PV_SIZE, PageOffset(node, head->key_offset), head->key_len - PV_SIZE);
-            cout << string_conv(prefix, head->key_len);
+                cout << "KN";
+                char *prefix = new char[head->key_len + 1];
+                strncpy(prefix, head->key_prefix, PV_SIZE);
+                strncpy(prefix + PV_SIZE, PageOffset(node, head->key_offset), head->key_len - PV_SIZE);
+                cout << string_conv(prefix, head->key_len) << ",";
             #elif defined PV 
             char prefix[PV_SIZE + 1] = {0};
             strncpy(prefix, head->key_prefix, PV_SIZE);
             cout << prefix;
-            #endif
             cout  << PageOffset(node, head->key_offset) << ",";
+            #else
+            cout  << PageOffset(node, head->key_offset) << ",";
+            #endif
         }
         else {
+            
             cout << node->prefix->addr << PageOffset(node, head->key_offset) << ",";
         }
     }

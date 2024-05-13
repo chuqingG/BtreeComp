@@ -214,6 +214,7 @@ inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
     return 0;
 }
 #endif
+#ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
     // if (cursor->size <= 16) {
     //     int i;
@@ -248,8 +249,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     }
     return curPos;
 }
-
-
+#endif
 /*
 ===============For DB2=============
 */

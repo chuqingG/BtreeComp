@@ -39,7 +39,7 @@ long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen);
     }
 
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
-
+#ifdef UBS
 inline void calculateBSMetaData(Node *node) {
     int n = node->size;
     int k = sizeof(int) * 8 - __builtin_clz(n) - 1;
@@ -49,6 +49,7 @@ inline void calculateBSMetaData(Node *node) {
     node->firstL = 1 << (l - 1);
     node->Ip = (uint16_t) n + 1 - (1 << l);
 }
+#endif
 
 inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     // shift the headers

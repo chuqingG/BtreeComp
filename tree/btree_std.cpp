@@ -770,7 +770,7 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
         
 #ifndef TRACK_DISTANCE
     #ifdef PV
-        long cmp = pvComp(ki, key, keylen, cursor);
+        long cmp = pvComp(header, key, keylen, cursor);
     #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);

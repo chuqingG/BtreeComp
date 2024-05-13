@@ -144,6 +144,7 @@ inline void word_conv_store(char* src, char* dest) { //int length only for now
 
 inline char* string_conv(const char* key, int keylen) {
     char *result = new char[keylen + 1];
+    int originalKeylen = keylen;
     char *pointer = result;
     while (keylen >= PV_SIZE) {
         word_conv_store((char*)key, pointer);
@@ -154,7 +155,7 @@ inline char* string_conv(const char* key, int keylen) {
     for (int i = 0; i < keylen; i++) {
         pointer[i] = key[i];//should cover s
     }
-    result[keylen] = '\0';
+    result[originalKeylen] = '\0';
     return result;
 }
 

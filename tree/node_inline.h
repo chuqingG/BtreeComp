@@ -182,7 +182,7 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
     if (cmp == 0) {
 #ifdef KN
-        cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len, (char*)key + PV_SIZE, keylen - PV_SIZE);
+        cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len - 4, (char*)key + PV_SIZE, keylen - PV_SIZE);
 #else
         cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                             keylen, header->key_len);

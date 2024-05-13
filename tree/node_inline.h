@@ -4,7 +4,7 @@
 #include "../utils/compare.cpp"
 void word_conv_store(const char* src, const char* dest);
 long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen);
-
+#define STDGUARD
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
 #define BufTop(nptr) (nptr->base + nptr->space_top)

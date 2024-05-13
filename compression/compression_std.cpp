@@ -37,7 +37,7 @@ int tail_compress_length(const char *lastleft, const char *firstright, int len_l
     }
     return prefixlen;
 }
-
+#ifdef STDGUARD
 int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsuffix, \
                         const char *rightsuffix, int len_ll, int len_fr) { //overloading def
 #ifdef KN
@@ -54,7 +54,7 @@ int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsu
     strcpy(right + PV_SIZE, rightsuffix);
     return tail_compress_length(left, right, len_ll, len_fr);
 }
-
+#endif
 int head_compression_find_prefix_length(Item *low, Item *high) {
     int prefixlen = get_common_prefix_len(low->addr, high->addr, low->size, high->size);
     if (high->size == prefixlen + 1 && low->size >= prefixlen + 1 && ((high->addr)[prefixlen] - (low->addr)[prefixlen] == 1)) {

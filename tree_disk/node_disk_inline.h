@@ -82,34 +82,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
         //     cout << "wrong update" << endl;
     }
 }
-#ifdef PV
 
-inline void word_conv_store(char* src, char* dest) { //int length only for now
-    char c3 = src[3]; //supports in-place
-    char c2 = src[2];
-    dest[3] = src[0];
-    dest[0] = c3;
-    dest[2] = src[1];
-    dest[1] = c2;
-}
-
-inline char* string_conv(const char* key, int keylen) {
-    char *result = new char[keylen + 1];
-    int originalKeylen = keylen;
-    char *pointer = result;
-    while (keylen >= PV_SIZE) {
-        word_conv_store((char*)key, pointer);
-        keylen -= PV_SIZE;
-        pointer += PV_SIZE;
-        key += PV_SIZE;
-    }
-    for (int i = 0; i < keylen; i++) {
-        pointer[i] = key[i];//should cover s
-    }
-    result[originalKeylen] = '\0';
-    return result;
-}
-#endif
 /*
 ===============For DB2=============
 */

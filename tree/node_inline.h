@@ -1,6 +1,5 @@
 #pragma once
 #include "node.h"
-// #include "../utils/config.h"
 #include "../utils/compare.cpp"
 void word_conv_store(const char* src, const char* dest);
 long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen);

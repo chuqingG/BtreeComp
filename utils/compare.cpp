@@ -8,10 +8,6 @@ using namespace std;
 extern char* string_conv(const char* key, int keylen);
 
 int get_common_prefix_len(const char *a, const char *b, int alen, int blen) {
-#ifdef KN
-    a = string_conv(a, alen);
-    b = string_conv(b, blen);
-#endif
     int idx = 0;
     while (idx < alen && idx < blen && a[idx] == b[idx]) {
         idx++;

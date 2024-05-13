@@ -5,6 +5,7 @@
 #include <cstring>
 #include "../utils/item.hpp"
 #include "../utils/compare.cpp"
+#include "../tree/node_inline.h"
 
 using namespace std;
 
@@ -37,7 +38,14 @@ int tail_compress_length(const char *lastleft, const char *firstright, int len_l
     return prefixlen;
 }
 
-int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsuffix, const char *rightsuffix, int len_ll, int len_fr) {
+int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsuffix, \
+                        const char *rightsuffix, int len_ll, int len_fr) { //overloading def
+#ifdef KN
+    word_conv_store(leftprefix, leftprefix);
+    word_conv_store(rightprefix, rightprefix);
+    leftsuffix = string_conv(leftsuffix, len_ll);
+    rightsuffix = string_conv(rightsuffix, len_fr);
+#endif
     char *left = new char[len_ll + 1];
     char *right = new char[len_fr + 1];
     strncpy(left, leftprefix, PV_SIZE);

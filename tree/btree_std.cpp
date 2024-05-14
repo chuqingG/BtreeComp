@@ -331,7 +331,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     // The promotekey has already been compressed
     if (this->head_comp) {
 #ifdef KN //normalizing if more than 0
-        newkey = string_conv(newkey + node->prefix->size, newkey_len - node->prefix->size), 0; //newkey has been cutoff
+        newkey = string_conv(newkey + node->prefix->size, newkey_len - node->prefix->size, 0); //newkey has been cutoff
         InsertKeyStd(node, insertpos, newkey, newkey_len - node->prefix->size);
 #else
         InsertKeyStd(node, insertpos, newkey + node->prefix->size, newkey_len - node->prefix->size);
@@ -352,7 +352,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     char *rightprefix= new char[PV_SIZE + 1];
     strncpy(rightprefix, head_fr->key_prefix, PV_SIZE);
     word_conv_store(rightprefix, rightprefix);
-    char *rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE); //unnormalize prefix and suffix
+    char *rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE, 0); //unnormalize prefix and suffix
 #endif
     int pkey_len;
     char *pkey_buf;

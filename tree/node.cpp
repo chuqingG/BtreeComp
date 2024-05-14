@@ -157,7 +157,7 @@ void printKeys(Node *node, bool compressed) {
 
         if (compressed && node->prefix->addr) {
             #ifdef KN 
-                int l = head->key_len < PV_SIZE ? PV_SIZE + head->key_len;
+                int l = head->key_len < PV_SIZE ? PV_SIZE : head->key_len;
                 char *prefix = new char[l + 1]; prefix[l] = '\0';
                 memcpy(prefix, head->key_prefix, PV_SIZE);
                 strncpy(prefix + PV_SIZE, PageOffset(node, head->key_offset), head->key_len - PV_SIZE < 0 ? 0 : head->key_len - PV_SIZE);

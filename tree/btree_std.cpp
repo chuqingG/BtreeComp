@@ -168,6 +168,9 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
             Node *newRoot = new Node();
 
             InsertNode(newRoot, 0, currsplit.left);
+#ifdef KN
+            currsplit.promotekey.addr = string_conv(currsplit.promotekey.addr, currsplit.promotekey.size, 0);
+#endif
             InsertKeyStd(newRoot, 0, currsplit.promotekey.addr, currsplit.promotekey.size);
             InsertNode(newRoot, 1, currsplit.right);
 
@@ -216,6 +219,9 @@ void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int
             Node *newRoot = new Node();
 
             InsertNode(newRoot, 0, split.left);
+#ifdef KN
+            currsplit.promotekey.addr = string_conv(currsplit.promotekey.addr, currsplit.promotekey.size, 0);
+#endif
             InsertKeyStd(newRoot, 0, split.promotekey.addr, split.promotekey.size);
             InsertNode(newRoot, 1, split.right);
 
@@ -605,6 +611,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
         CopyToNewPageStd(node, 0, split, left_base, 0, left_top);
         CopyToNewPageStd(node, split, node->size, right->base, 0, right->space_top);
     }
+
     right->size = node->size - split;
     right->IS_LEAF = true;
 

@@ -40,7 +40,7 @@ Node *BPTree::getRoot() {
 int BPTree::search(const char *key) {
     int keylen = strlen(key);
 #ifdef KN
-    key = string_conv(key, keylen); //automatically freed should be
+    key = string_conv(key, keylen, 0); //automatically freed should be
 #endif
     Node *leaf = search_leaf_node(_root, key, keylen);
     if (leaf == nullptr)
@@ -147,7 +147,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
 void BPTree::insert(char *x) {
     int keylen = strlen(x);
 #ifdef KN
-    x = string_conv(x, keylen);
+    x = string_conv(x, keylen, 0);
 #endif
     Node *search_path[max_level];
     int path_level = 0;
@@ -331,7 +331,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     // The promotekey has already been compressed
     if (this->head_comp) {
 #ifdef KN //normalizing if more than 0
-        newkey = string_conv(newkey + node->prefix->size, newkey_len - node->prefix->size); //newkey has been cutoff
+        newkey = string_conv(newkey + node->prefix->size, newkey_len - node->prefix->size), 0; //newkey has been cutoff
         InsertKeyStd(node, insertpos, newkey, newkey_len - node->prefix->size);
 #else
         InsertKeyStd(node, insertpos, newkey + node->prefix->size, newkey_len - node->prefix->size);
@@ -505,7 +505,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     char *rightprefix= new char[PV_SIZE + 1];
     strncpy(rightprefix, head_fr->key_prefix, PV_SIZE);
     word_conv_store(rightprefix, rightprefix);
-    char *rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE);
+    char *rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE, 0);
 #endif
     char *s;
     int s_len;
@@ -517,7 +517,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             char *leftprefix= new char[PV_SIZE + 1];
             strncpy(leftprefix, head_ll->key_prefix, PV_SIZE);
             word_conv_store(leftprefix, leftprefix);
-            char *leftsuffix = string_conv(lastleft, head_ll->key_len - PV_SIZE);
+            char *leftsuffix = string_conv(lastleft, head_ll->key_len - PV_SIZE, 0);
 
             s_len = tail_compress_length(leftprefix, rightprefix, leftsuffix, rightsuffix,
                                         head_ll->key_len, head_fr->key_len);    

@@ -754,7 +754,7 @@ Node *BPTree::search_leaf_node_for_insert(Node *searchroot, const char *key, int
         int pos;
         if (this->head_comp) {
 #ifdef KN
-        char* norm_key = original;
+        char* norm_key = key;
         if (cursor->prefix->size) {
             norm_key = string_conv(original, keylen, cursor->prefix->size);
         }

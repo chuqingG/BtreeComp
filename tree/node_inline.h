@@ -70,9 +70,8 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
             strcpy(BufTop(nptr), "\0");
             nptr->space_top += 1;
         }
-        // memset(header->key_prefix, 0, PV_SIZE);
-
-        strncpy(header->key_prefix, k, PV_SIZE);
+        // memset(header->key_prefix, 0, PV_SIZbE);
+        memcpy(header->key_prefix, k, PV_SIZE);
     #else
         strcpy(BufTop(nptr), k);
         nptr->space_top += klen + 1;

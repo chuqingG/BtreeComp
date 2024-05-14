@@ -505,7 +505,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     char *rightprefix= new char[PV_SIZE + 1];
     strncpy(rightprefix, head_fr->key_prefix, PV_SIZE);
     word_conv_store(rightprefix, rightprefix);
-    char *rightsuffix = string_conv(firstright, header_fr->key_len - PV_SIZE);
+    char *rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE);
 #endif
     char *s;
     int s_len;

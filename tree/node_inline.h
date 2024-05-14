@@ -118,17 +118,17 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
             newhead->key_offset = top;
             memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
 #ifdef KN
-            presuf = string_conv(presuf, l, 0); //convert forward
-            presuf = string_conv(presuf + cutoff, l - cutoff, 0); //and back with cutoff
-            strncpy(newhead->key_prefix, presuf, PV_SIZE); //at least PV_SIZE long. cutoff not in presuf
+            char *forward = string_conv(presuf, l, 0); //convert forward
+            char *backward = string_conv(forward, l, cutoff); delete[] forward//and back with cutoff
+            strncpy(newhead->key_prefix, backward, PV_SIZE); //at least PV_SIZE long. cutoff not in presuf
             int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0; //for nullbyte
-            strncpy(newbase + top, presuf + PV_SIZE, sufLength); //ends at nullbyte, even if 0
+            strncpy(newbase + top, backward + PV_SIZE, sufLength); //ends at nullbyte, even if 0
+            delete[] backward;
 #else
             strncpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
             int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
             strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
 #endif
-          
             top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
             delete[] presuf;
 #else

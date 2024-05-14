@@ -40,18 +40,12 @@ int tail_compress_length(const char *lastleft, const char *firstright, int len_l
 #ifdef STDGUARD
 int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsuffix, \
                         const char *rightsuffix, int len_ll, int len_fr) { //overloading def
-#ifdef KN
-    word_conv_store(leftprefix, leftprefix);
-    word_conv_store(rightprefix, rightprefix);
-    leftsuffix = string_conv(leftsuffix, len_ll);
-    rightsuffix = string_conv(rightsuffix, len_fr);
-#endif
     char *left = new char[len_ll + 1];
     char *right = new char[len_fr + 1];
     strncpy(left, leftprefix, PV_SIZE);
-    strcpy(left + PV_SIZE, leftsuffix);
+    strncpy(left + PV_SIZE, leftsuffix, len_ll - PV_SIZE); // somehow doesn't break if length < PV_SIZE
     strncpy(right, rightprefix, PV_SIZE);
-    strcpy(right + PV_SIZE, rightsuffix);
+    strncpy(right + PV_SIZE, rightsuffix, len_fr - PV_SIZE);
     return tail_compress_length(left, right, len_ll, len_fr);
 }
 #endif

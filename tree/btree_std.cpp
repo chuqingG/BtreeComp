@@ -352,7 +352,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     char *rightprefix= new char[PV_SIZE + 1];
     strncpy(rightprefix, head_fr->key_prefix, PV_SIZE);
     word_conv_store(rightprefix, rightprefix);
-    char *rightsuffix = string_conv(firstright, len_fr - PV_SIZE); //unnormalize prefix and suffix
+    char *rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE); //unnormalize prefix and suffix
 #endif
     int pkey_len;
     char *pkey_buf;
@@ -517,7 +517,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             char *leftprefix= new char[PV_SIZE + 1];
             strncpy(leftprefix, head_ll->key_prefix, PV_SIZE);
             word_conv_store(leftprefix, leftprefix);
-            char *leftsuffix = string_conv(lastleft, len_ll - PV_SIZE);
+            char *leftsuffix = string_conv(lastleft, head_ll->key_len - PV_SIZE);
 
             s_len = tail_compress_length(leftprefix, rightprefix, leftsuffix, rightsuffix,
                                         head_ll->key_len, head_fr->key_len);    
@@ -709,7 +709,7 @@ Node *BPTree::search_leaf_node(Node *searchroot, const char *key, int keylen) {
         if (this->head_comp) {
 #ifdef KN
         char* norm_key = original;
-        if (curosr->prefix->size) {
+        if (cursor->prefix->size) {
             norm_key = string_conv(original, keylen, cursor->prefix->size);
         }
          pos = search_in_node(cursor, norm_key, keylen - cursor->prefix->size, 0,
@@ -748,7 +748,7 @@ Node *BPTree::search_leaf_node_for_insert(Node *searchroot, const char *key, int
         if (this->head_comp) {
 #ifdef KN
         char* norm_key = original;
-        if (curosr->prefix->size) {
+        if (cursor->prefix->size) {
             norm_key = string_conv(original, keylen, cursor->prefix->size);
         }
          pos = search_in_node(cursor, norm_key, keylen - cursor->prefix->size, 0,

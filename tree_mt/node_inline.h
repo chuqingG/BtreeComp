@@ -73,6 +73,100 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
     }
 }
 
+#ifdef PV
+
+inline void word_conv_store(char* src, char* dest) { //int length only for now
+    char c3 = src[3]; //supports in-place
+    char c2 = src[2];
+    dest[3] = src[0];
+    dest[0] = c3;
+    dest[2] = src[1];
+    dest[1] = c2;
+}
+
+inline char* string_conv(const char* key, int keylen, int cutoff) {//unnormalized to normalized
+    keylen -= cutoff;
+    key += cutoff;
+    if (keylen <= 0) return "\0";
+    if (keylen <= PV_SIZE) { //keylen
+        char* result = new char[PV_SIZE + 1];
+        memset(result, 0, PV_SIZE + 1);
+        strncpy(result, key, PV_SIZE);
+        word_conv_store(result, result);
+        return result;
+    }
+    char *result = new char[keylen + 1];
+    int originalKeylen = keylen;
+    char *pointer = result;
+    while (keylen >= PV_SIZE) {
+        word_conv_store((char*)key, pointer);
+        keylen -= PV_SIZE;
+        pointer += PV_SIZE;
+        key += PV_SIZE;
+    }
+    for (int i = 0; i < keylen; i++) {
+        pointer[i] = key[i];//should cover s
+    }
+    result[originalKeylen] = '\0';
+    return result;
+}
+
+inline long word_cmp(Stdhead* header,const char* key, int keylen) {
+    if (keylen < PV_SIZE) {
+        int cmp_len = min(PV_SIZE, keylen);
+        // int idx = *matchp;
+        for (int idx = 0; idx < cmp_len; ++idx) {
+            int cmp = key[idx] - header->key_prefix[idx];
+            if (cmp != 0)
+                return cmp;
+        }
+        return 0;
+    }
+#if PV_SIZE == 4
+    return *(int*)key - *(int*)header->key_prefix;
+#else 
+    return *(long*)key - *(long*)header->key_prefix;
+#endif
+}
+
+inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
+    long cmp = word_cmp(header, key, keylen);
+    if (cmp == 0) {
+#ifdef KN
+        cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len - 4, (char*)key + PV_SIZE, keylen - PV_SIZE);
+#else
+        cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                            keylen, header->key_len);
+#endif
+    }
+    return cmp;
+}
+
+inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
+    long cmp = 0;
+    while (min(suffixlen, keylen) >= PV_SIZE) {
+#if PV_SIZE == 4
+        cmp = *(int*)key - *(int*)suffix;
+#else 
+        cmp = *(long*)key - *(long*)suffix;
+#endif
+        if (cmp != 0) return cmp;
+        suffixlen -= PV_SIZE;
+        keylen -= PV_SIZE;
+        suffix += PV_SIZE;
+        key += PV_SIZE;
+    }
+    int cmp_len = min(keylen, suffixlen);
+    // int idx = *matchp;
+    for (int idx = 0; idx < cmp_len; ++idx) {
+        cmp = key[idx] - suffix[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    return keylen - suffixlen;
+}
+
+#endif
 /*
 ===============For DB2=============
 */

@@ -156,7 +156,7 @@ void printKeys(Node *node, bool compressed) {
         Stdhead *head = GetHeaderStd(node, i);
 
         if (compressed && node->prefix->addr) {
-            #ifdef KN
+            #ifdef KN 
                 char *prefix = new char[head->key_len + 1];
                 strncpy(prefix, head->key_prefix, PV_SIZE);
                 strncpy(prefix + PV_SIZE, PageOffset(node, head->key_offset), head->key_len - PV_SIZE);

@@ -5,7 +5,9 @@
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
 #define BufTop(nptr) (nptr->base + nptr->space_top)
-
+void word_conv_store(const char* src, const char* dest);
+long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen);
+char* string_conv(const char* key, int keylen, int cutoff);
 #define PageOffset(nptr, off) (char *)(nptr->base + off)
 
 #define UpdateBase(node, newbase) \

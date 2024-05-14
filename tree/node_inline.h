@@ -160,7 +160,7 @@ inline char* string_conv(const char* key, int keylen, int cutoff) {//unnormalize
     if (keylen <= PV_SIZE) { //keylen
         char* result = new char[PV_SIZE + 1];
         memset(result, 0, PV_SIZE + 1);
-        strncpy(result, key, PV_SIZE);
+        strncpy(result, key, min(keylen, PV_SIZE));
         word_conv_store(result, result);
         return result;
     }

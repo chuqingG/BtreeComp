@@ -355,7 +355,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     Stdhead *head_fr = GetHeaderStd(node, split);
     char *firstright = PageOffset(node, head_fr->key_offset); // a node
 #ifdef KN
-    char *rightprefix= new char[PV_SIZE + 1];
+    char *rightprefix= new char[PV_SIZE + 1]; rightprefix[PV_SIZE] = '\0';
     strncpy(rightprefix, head_fr->key_prefix, PV_SIZE);
     word_conv_store(rightprefix, rightprefix);
     char *rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE, 0); //unnormalize prefix and suffix
@@ -508,7 +508,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     Stdhead *head_fr = GetHeaderStd(node, split);
     char *firstright = PageOffset(node, head_fr->key_offset); //this definitely needs change for PV
 #ifdef KN
-    char *rightprefix= new char[PV_SIZE + 1];
+    char *rightprefix= new char[PV_SIZE + 1]; rightprefix[PV_SIZE] = '\0';
     strncpy(rightprefix, head_fr->key_prefix, PV_SIZE);
     word_conv_store(rightprefix, rightprefix);
     char *rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE, 0);
@@ -520,7 +520,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
         char *lastleft = PageOffset(node, head_ll->key_offset);
 
 #ifdef KN 
-            char *leftprefix= new char[PV_SIZE + 1];
+            char *leftprefix= new char[PV_SIZE + 1]; leftprefix[PV_SIZE] = '\0';
             strncpy(leftprefix, head_ll->key_prefix, PV_SIZE);
             word_conv_store(leftprefix, leftprefix);
             char *leftsuffix = string_conv(lastleft, head_ll->key_len - PV_SIZE, 0);

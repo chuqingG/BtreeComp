@@ -118,8 +118,8 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
             newhead->key_offset = top;
             memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
 #ifdef KN
-            presuf = string_conv(presuf, oldhead->key_len, 0); //convert forward
-            presuf = string_conv(presuf + cutoff, oldhead->key_len - cutoff, 0); //and back with cutoff
+            presuf = string_conv(presuf, l, 0); //convert forward
+            presuf = string_conv(presuf + cutoff, l - cutoff, 0); //and back with cutoff
             strncpy(newhead->key_prefix, presuf, PV_SIZE); //at least PV_SIZE long. cutoff not in presuf
             int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0; //for nullbyte
             strncpy(newbase + top, presuf + PV_SIZE, sufLength); //ends at nullbyte, even if 0

@@ -729,6 +729,9 @@ bool BPTree::check_split_condition(Node *node, int keylen) {
 
 int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low, int high,
                               bool &equal) {
+#ifdef KN
+    if (keylen < PV_SIZE) keylen = PV_SIZE;
+#endif
     while (low <= high) {
         int mid = low + (high - low) / 2;
 
@@ -870,6 +873,9 @@ int BPTree::char_cmp_count(const char *a, const char *b, int alen, int blen) {
 // TODO:merge these search function
 int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
                            int low, int high, bool isleaf) {
+#ifdef KN
+    if (keylen < PV_SIZE) keylen = PV_SIZE; //in PV, key can't be less than 4 bytes
+#endif
     while (low <= high) {
         int mid = low + (high - low) / 2;
         Stdhead *header = GetHeaderStd(cursor, mid);

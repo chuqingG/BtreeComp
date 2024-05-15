@@ -55,10 +55,10 @@ int BPTree::search(const char *key) {
         }
         result = search_in_node(leaf, key, keylen - leaf->prefix->size,
                               0, leaf->size - 1, true);
-#endif
+#else
         result = search_in_node(leaf, key + leaf->prefix->size, keylen - leaf->prefix->size,
                               0, leaf->size - 1, true);
-#else
+#endif
     }
     else {
         result = search_in_node(leaf, key, keylen, 0, leaf->size - 1, true);

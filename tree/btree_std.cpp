@@ -318,15 +318,21 @@ int BPTree::split_point(Node *node) {
 
 splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *childsplit) {
     splitReturn_new newsplit;
-    const char *newkey = childsplit->promotekey.addr;  //unnormalized
+    const char *newkey = string_conv(childsplit->promotekey.addr, childsplit->promotekey.size, node->prefix->size); //unnormalized on input
     uint16_t newkey_len = childsplit->promotekey.size;
     int insertpos;
     bool equal = false;
 
     if (this->head_comp) {
+#ifdef KN
+        insertpos = search_insert_pos(node, newkey,
+                                      newkey_len - node->prefix->size,
+                                      0, node->size - 1, equal);
+#else
         insertpos = search_insert_pos(node, newkey + node->prefix->size,
                                       newkey_len - node->prefix->size,
                                       0, node->size - 1, equal);
+#endif
     }
     else {
         insertpos = search_insert_pos(node, newkey, newkey_len, 0, node->size - 1, equal);
@@ -337,9 +343,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     // The promotekey has already been compressed
     if (this->head_comp) {
 #ifdef KN //normalizing if more than 0
-        newkey = string_conv(newkey + node->prefix->size, newkey_len - node->prefix->size, 0); //newkey has been cutoff
         InsertKeyStd(node, insertpos, newkey, newkey_len - node->prefix->size);
-        delete[] newkey;
 #else
         InsertKeyStd(node, insertpos, newkey + node->prefix->size, newkey_len - node->prefix->size);
 #endif
@@ -481,25 +485,40 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     return newsplit;
 }
 
-splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
+splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {//received normalized key
     splitReturn_new newsplit;
     Node *right = new Node();
     int insertpos;
     bool equal = false;
+
+#ifdef KN
+        char* original = string_conv(newkey, newkeylen, 0);
+#endif
     if (this->head_comp) {
+#ifdef KN
+        const char* norm_key = newkey;
+        if (cursor->prefix->size) norm_key = (const char*)string_conv(original, newkeylen, cursor->prefix->size);
+        insertpos = search_insert_pos(node, norm_key, newkey_len - node->prefix->size, 0,
+                                node->size - 1, equal);
+        if (cursor->prefix->size) delete[] norm_key;
+#else
         insertpos = search_insert_pos(node, newkey + node->prefix->size, newkey_len - node->prefix->size, 0,
                                       node->size - 1, equal);
+#endif
     }
     else {
         insertpos = search_insert_pos(node, newkey, newkey_len, 0, node->size - 1, equal);
     }
 
     // insert the new key into the page for split
-    if (this->head_comp) {
+    if (this->head_comp) { //newkey is already normalized
 #ifdef KN //normalizing if more than 0
-        newkey = string_conv(newkey, newkey_len, node->prefix->size); //newkey has been cutoff
-        InsertKeyStd(node, insertpos, newkey, newkey_len - node->prefix->size);
-        delete[] newkey;
+        char *localkey = newkey;
+        if (node->prefix->size) {
+            localkey = (const char*)string_conv(original, newkeylen, cursor->prefix->size);
+        }
+        InsertKeyStd(node, insertpos, localkey, newkey_len - node->prefix->size);
+        if(node->prefix->size) delete[] localkey;
 #else
         char *key_comp = newkey + node->prefix->size;
         InsertKeyStd(node, insertpos, key_comp, newkey_len - node->prefix->size);
@@ -765,8 +784,8 @@ Node *BPTree::search_leaf_node_for_insert(Node *searchroot, const char *key, int
         if (cursor->prefix->size) {
             norm_key = (const char*)string_conv(original, keylen, cursor->prefix->size);
         }
-         pos = search_in_node(cursor, norm_key, keylen - cursor->prefix->size, 0,
-                                 cursor->size - 1, false);
+         pos = search_insert_pos(cursor, norm_key, keylen - cursor->prefix->size, 0,
+                                 cursor->size - 1, equal);
 #else
         pos = search_insert_pos(cursor, key + cursor->prefix->size, keylen - cursor->prefix->size, 0,
                                     cursor->size - 1, equal);

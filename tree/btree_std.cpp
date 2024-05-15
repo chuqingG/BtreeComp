@@ -339,6 +339,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
 #ifdef KN //normalizing if more than 0
         newkey = string_conv(newkey + node->prefix->size, newkey_len - node->prefix->size, 0); //newkey has been cutoff
         InsertKeyStd(node, insertpos, newkey, newkey_len - node->prefix->size);
+        delete[] newkey;
 #else
         InsertKeyStd(node, insertpos, newkey + node->prefix->size, newkey_len - node->prefix->size);
 #endif
@@ -495,8 +496,14 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
 
     // insert the new key into the page for split
     if (this->head_comp) {
+#ifdef KN //normalizing if more than 0
+        newkey = string_conv(newkey, newkey_len, node->prefix->size); //newkey has been cutoff
+        InsertKeyStd(node, insertpos, newkey, newkey_len - node->prefix->size);
+        delete[] newkey;
+#else
         char *key_comp = newkey + node->prefix->size;
         InsertKeyStd(node, insertpos, key_comp, newkey_len - node->prefix->size);
+#endif
     }
     else {
         InsertKeyStd(node, insertpos, newkey, newkey_len);

@@ -156,7 +156,7 @@ void BPTree::insert(char *x) {
 }
 
 void BPTree::insert_nonleaf(Node *node, Node **path,
-                            int parentlevel, splitReturn_new *childsplit) {
+                            int parentlevel, splitReturn_new *childsplit) { //expects unnormalized
     if (check_split_condition(node, childsplit->promotekey.size)) {
         Node *parent = nullptr;
         if (parentlevel >= 0) {
@@ -189,18 +189,34 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
         Item *newkey = &(childsplit->promotekey);
         int insertpos;
         bool equal = false;
+
+#ifdef KN
+        char * newkey = string_conv(promotekey->addr, promote->size, node->prefix->size); //
+        promotekey->addr = newkey;
+#endif
         if (this->head_comp) {
+#ifdef KN
+            insertpos = search_insert_pos(node, newkey,
+                                          newkey->size - node->prefix->size,
+                                          0, node->size - 1, equal);
+#else
             insertpos = search_insert_pos(node, newkey->addr + node->prefix->size,
                                           newkey->size - node->prefix->size,
                                           0, node->size - 1, equal);
+#endif
         }
         else {
             insertpos = search_insert_pos(node, newkey->addr, newkey->size, 0, node->size - 1, equal);
         }
         // Insert promotekey into node->keys[insertpos]
         if (this->head_comp) {
+#ifdef KN
+            InsertKeyStd(node, insertpos, newkey,
+                         newkey->size - node->prefix->size);
+#else
             InsertKeyStd(node, insertpos, newkey->addr + node->prefix->size,
                          newkey->size - node->prefix->size);
+#endif
         }
         else {
             InsertKeyStd(node, insertpos, newkey->addr, newkey->size);
@@ -239,9 +255,21 @@ void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int
     else {
         int insertpos;
         bool equal = false;
+#ifdef KN
+        if (leaf->prefix->size) {//head comp recomputation
+            char* temp = string_conv(key, keylen, 0);
+            key = string_conv(temp, keylen, leaf->prefix->size);
+            delete[] temp;
+        }
+#endif
         if (this->head_comp) {
+#ifdef 
+            insertpos = search_insert_pos(leaf, key, keylen - leaf->prefix->size, 0,
+                                          leaf->size - 1, equal);
+#else
             insertpos = search_insert_pos(leaf, key + leaf->prefix->size, keylen - leaf->prefix->size, 0,
                                           leaf->size - 1, equal);
+#endif
         }
         else {
             insertpos = search_insert_pos(leaf, key, keylen, 0, leaf->size - 1, equal);
@@ -249,8 +277,13 @@ void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int
 
         // always insert no matter equal or not
         if (this->head_comp) {
+#ifdef KN
+            insertpos = search_insert_pos(leaf, key, keylen - leaf->prefix->size, 0,
+                                          leaf->size - 1, equal);
+#else
             char *key_comp = key + leaf->prefix->size;
             InsertKeyStd(leaf, insertpos, key_comp, keylen - leaf->prefix->size);
+#endif
         }
         else {
             InsertKeyStd(leaf, insertpos, key, keylen);

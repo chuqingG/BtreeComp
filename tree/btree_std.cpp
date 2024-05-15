@@ -191,8 +191,8 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
         bool equal = false;
 
 #ifdef KN
-        char * convkey = string_conv(childsplit->promotekey->addr, childsplit->promotekey->size, node->prefix->size); //
-        promotekey->addr = convkey;
+        char * convkey = string_conv(newkey->addr, newkey->size, node->prefix->size); //
+        newkey->addr = convkey;
 #endif
         if (this->head_comp) {
 #ifdef KN

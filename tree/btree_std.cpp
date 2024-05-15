@@ -278,8 +278,7 @@ void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int
         // always insert no matter equal or not
         if (this->head_comp) {
 #ifdef KN
-            insertpos = InsertKeyStd(leaf, key, keylen - leaf->prefix->size, 0,
-                                          leaf->size - 1, equal);
+            InsertKeyStd(leaf, insertpos, key, keylen - leaf->prefix->size);
 #else
             char *key_comp = key + leaf->prefix->size;
             InsertKeyStd(leaf, insertpos, key_comp, keylen - leaf->prefix->size);

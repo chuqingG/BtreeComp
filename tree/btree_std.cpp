@@ -513,7 +513,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {//
     // insert the new key into the page for split
     if (this->head_comp) { //newkey is already normalized
 #ifdef KN //normalizing if more than 0
-        char *localkey = newkey;
+        const char *localkey = newkey;
         if (node->prefix->size) {
             localkey = (const char*)string_conv(original, newkey_len, node->prefix->size);
         }

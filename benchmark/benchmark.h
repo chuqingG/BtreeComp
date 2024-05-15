@@ -62,7 +62,7 @@ public:
                 _tree->printTree(_tree->getRoot(), flag, true);
                 #endif
         }
-        #ifdef PRINT
+        #ifdef CHECK
         vector<bool> flag(values.size() * 1.25);
         _tree->printTree(_tree->getRoot(), flag, true);
         #endif
@@ -72,7 +72,7 @@ public:
         int count = 0;
         for (uint32_t i = 0; i < values.size(); i++)
             if (_tree->search(values.at(i)) == -1) {
-                #ifdef PRINT
+                #ifdef CHECK
                 if (count < 100)
                 cout << "Cannot find " << values[i] << "; " << i << "th value" <<endl;
                 #endif

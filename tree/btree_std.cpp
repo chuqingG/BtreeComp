@@ -40,7 +40,7 @@ Node *BPTree::getRoot() {
 int BPTree::search(const char *key) {
     int keylen = strlen(key);
 #ifdef KN
-    char * original = key;
+    const char * original = key;
     key = string_conv(key, keylen, 0); //automatically freed should be
 #endif
     Node *leaf = search_leaf_node(_root, key, keylen);
@@ -51,7 +51,7 @@ int BPTree::search(const char *key) {
 #ifdef KN
         if (leaf->prefix->size) {
             delete[] key;
-            key = string_conv(original, keylen, prefix->prefix->size);
+            key = string_conv(original, keylen, leaf->prefix->size);
         }
 #endif
         result = search_in_node(leaf, key + leaf->prefix->size, keylen - leaf->prefix->size,

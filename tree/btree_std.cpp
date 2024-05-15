@@ -40,18 +40,30 @@ Node *BPTree::getRoot() {
 int BPTree::search(const char *key) {
     int keylen = strlen(key);
 #ifdef KN
+    char * original = key;
     key = string_conv(key, keylen, 0); //automatically freed should be
 #endif
     Node *leaf = search_leaf_node(_root, key, keylen);
     if (leaf == nullptr)
         return -1;
+    int result;
     if (this->head_comp) {
-        return search_in_node(leaf, key + leaf->prefix->size, keylen - leaf->prefix->size,
+#ifdef KN
+        if (leaf->prefix->size) {
+            delete[] key;
+            key = string_conv(original, keylen, prefix->prefix->size);
+        }
+#endif
+        result = search_in_node(leaf, key + leaf->prefix->size, keylen - leaf->prefix->size,
                               0, leaf->size - 1, true);
     }
     else {
-        return search_in_node(leaf, key, keylen, 0, leaf->size - 1, true);
+        result = search_in_node(leaf, key, keylen, 0, leaf->size - 1, true);
     }
+#ifdef KN
+    delete[] key;
+#endif
+    return result;
 }
 
 // Function to peform range query on B+Tree

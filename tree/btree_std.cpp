@@ -51,11 +51,14 @@ int BPTree::search(const char *key) {
 #ifdef KN
         if (leaf->prefix->size) {
             delete[] key;
-            key = string_conv(original, keylen, leaf->prefix->size);
+            key = string_conv(original, keylen, leaf->prefix->size);   
         }
+        result = search_in_node(leaf, key, keylen - leaf->prefix->size,
+                              0, leaf->size - 1, true);
 #endif
         result = search_in_node(leaf, key + leaf->prefix->size, keylen - leaf->prefix->size,
                               0, leaf->size - 1, true);
+#else
     }
     else {
         result = search_in_node(leaf, key, keylen, 0, leaf->size - 1, true);

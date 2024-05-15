@@ -492,12 +492,12 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {//
     bool equal = false;
 
 #ifdef KN
-        char* original = string_conv(newkey, newkey)len, 0);
+        char* original = string_conv(newkey, newkey_len, 0);
 #endif
     if (this->head_comp) {
 #ifdef KN
         const char* norm_key = newkey;
-        if (node->prefix->size) norm_key = (const char*)string_conv(original, newkeylen, node->prefix->size);
+        if (node->prefix->size) norm_key = (const char*)string_conv(original, newkey_len, node->prefix->size);
         insertpos = search_insert_pos(node, norm_key, newkey_len - node->prefix->size, 0,
                                 node->size - 1, equal);
         if (node->prefix->size) delete[] norm_key;
@@ -515,7 +515,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {//
 #ifdef KN //normalizing if more than 0
         char *localkey = newkey;
         if (node->prefix->size) {
-            localkey = (const char*)string_conv(original, newkeylen, node->prefix->size);
+            localkey = (const char*)string_conv(original, newkey_len, node->prefix->size);
         }
         InsertKeyStd(node, insertpos, localkey, newkey_len - node->prefix->size);
         if(node->prefix->size) delete[] localkey;

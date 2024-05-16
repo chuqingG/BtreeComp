@@ -41,6 +41,7 @@ int BPTree::search(const char *key) {
     int keylen = strlen(key);
 #ifdef KN
     const char * original = key;
+    if (this->head_comp)
     key = string_conv(key, keylen, 0); //automatically freed should be
 #endif
     Node *leaf = search_leaf_node(_root, key, keylen);
@@ -539,7 +540,8 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {//
     bool equal = false;
 
 #ifdef KN
-        char* original = string_conv(newkey, newkey_len, 0);
+        char* original;
+        if (this->head_comp) original = string_conv(newkey, newkey_len, 0);
 #endif
     if (this->head_comp) {
 #ifdef KN

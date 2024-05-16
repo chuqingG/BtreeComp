@@ -198,7 +198,7 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
     if (cmp == 0 && keylen > PV_SIZE && header->key_len > PV_SIZE) {
 #ifdef KN
-        cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len - 4, (char*)key + PV_SIZE, keylen - PV_SIZE);
+        cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len - PV_SIZE, (char*)key + PV_SIZE, keylen - PV_SIZE);
 #else
         cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                             keylen, header->key_len);
@@ -209,24 +209,37 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 
 inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
     long cmp = 0;
-    while (min(suffixlen, keylen) >= PV_SIZE) {
+    int numOfWords = min(suffixlen, keylen) / PV_SIZE;
+    for (int i = 0; i < numOfWords; i++) {
 #if PV_SIZE == 4
         cmp = *(int*)key - *(int*)suffix;
 #else 
         cmp = *(long*)key - *(long*)suffix;
 #endif
         if (cmp != 0) return cmp;
-        suffixlen -= PV_SIZE;
-        keylen -= PV_SIZE;
         suffix += PV_SIZE;
         key += PV_SIZE;
     }
-    int cmp_len = min(keylen, suffixlen);
+    suffixlen -= numOfWords * PV_SIZE;
+    keylen -= numOfWords * PV_SIZE;
+
+
     // int idx = *matchp;
-    for (int idx = 0; idx < cmp_len; ++idx) {
-        cmp = key[idx] - suffix[idx];
-        if (cmp != 0)
-            return cmp;
+    if (keylen == sufflen) {//both unnorm
+        int cmp_len = min(keylen, suffixlen);
+        for (int idx = 0; idx < cmp_len; ++idx) {
+            cmp = key[idx] - suffix[idx];
+            if (cmp != 0)
+                return cmp;
+        }
+    }
+    else { //one is unnorm, the other is norm
+        int cmp_len = min(keylen, suffixlen);
+        for (int idx = 0; idx < cmp_len; ++idx) {
+            cmp = key[ keylen < sufflen ? idx : PV_SIZE - 1 - idx] - suffix[ keylen < sufflen ? PV_SIZE - 1 - idx : idx];
+            if (cmp != 0)
+                return cmp;
+        }
     }
     return keylen - suffixlen;
 }

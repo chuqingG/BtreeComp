@@ -73,7 +73,7 @@ public:
         for (uint32_t i = 0; i < values.size(); i++)
             if (_tree->search(values.at(i)) == -1) {
                 #ifdef CHECK
-                        if (i == 82) {
+                        if (i == 2204) {
                     vector<bool> flag(values.size());
                     _tree->printTree(_tree->getRoot(), flag, true);
             }

@@ -989,7 +989,7 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
             //      << " ";
         }
     }
-     cout << "\n\n";
+
     // Condition when the current
     // node is the rootnode
     if (depth == 0) {

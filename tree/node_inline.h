@@ -204,7 +204,8 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
                             keylen, header->key_len);
 #endif
     }
-    return cmp;
+    else if (cmp == 0) return keylen - header->key_len; //if max length < prefix
+    return cmp; //if different
 }
 
 inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {

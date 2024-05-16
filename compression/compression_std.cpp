@@ -49,7 +49,10 @@ int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsu
     memcpy(right, rightprefix, PV_SIZE);
     if (len_fr > PV_SIZE) memcpy(right + PV_SIZE, rightsuffix, len_fr - PV_SIZE);
 
-    return tail_compress_length(left, right, len_ll, len_fr);
+    int result = tail_compress_length(left, right, len_ll, len_fr);
+    delete[] left;
+    delete[] right;
+    return result;
 }
 #endif
 int head_compression_find_prefix_length(Item *low, Item *high) {

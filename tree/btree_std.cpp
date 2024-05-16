@@ -410,7 +410,9 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     char *rightprefix= new char[PV_SIZE + 1]; rightprefix[PV_SIZE] = '\0';
     memcpy(rightprefix, head_fr->key_prefix, PV_SIZE);
     word_conv_store(rightprefix, rightprefix);
-    char *rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE, 0); //unnormalize prefix and suffix
+    char *rightsuffix;
+    if (head_fr->key_len > PV_SIZE * 2) rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE, 0); //unnormalize prefix and suffix
+    else rightsuffix = firstright;
 #endif
     int pkey_len;
     char *pkey_buf;
@@ -420,20 +422,22 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
         strncpy(pkey_buf, node->prefix->addr, node->prefix->size);
         #ifdef KN
             memcpy(pkey_buf + node->prefix->size, rightprefix, min((int)head_fr->key_len, PV_SIZE)); //conerted, no nullbyte
-            strcpy(pkey_buf + PV_SIZE + node->prefix->size, rightsuffix);
+            if (head_fr->key_len > PV_SIZE) strcpy(pkey_buf + PV_SIZE + node->prefix->size, rightsuffix);
         #else
             strcpy(pkey_buf + node->prefix->size, firstright);
         #endif
+        pkey_buf[pkey_len] = '\0';
     }
     else {
         pkey_len = head_fr->key_len;
         pkey_buf = new char[pkey_len + 1];
         #ifdef KN
-            memcpy(pkey_buf, rightprefix, PV_SIZE);
-            strcpy(pkey_buf + PV_SIZE, rightsuffix);
+            memcpy(pkey_buf, rightprefix, min(pkey_len, PV_SIZE));
+            if (pkey_len > PV_SIZE) strcpy(pkey_buf + PV_SIZE, rightsuffix);
         #else
             strcpy(pkey_buf, firstright);
         #endif
+        pkey_buf[pkey_len] = '\0';
     }
     newsplit.promotekey.addr = pkey_buf; //unnormalized
     newsplit.promotekey.size = pkey_len;
@@ -584,7 +588,9 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {//
     char *rightprefix= new char[PV_SIZE + 1]; rightprefix[PV_SIZE] = '\0';
     memcpy(rightprefix, head_fr->key_prefix, PV_SIZE);
     word_conv_store(rightprefix, rightprefix);
-    char *rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE, 0);
+    char *rightsuffix;
+    if (head_fr->key_len > PV_SIZE * 2) rightsuffix = string_conv(firstright, head_fr->key_len - PV_SIZE, 0);
+    else rightsuffix = firstright; //has to be unnormalized. string_conv of key_len less than PV_SIZE will be normalized
 #endif
     char *s;
     int s_len;
@@ -596,7 +602,9 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {//
             char *leftprefix= new char[PV_SIZE + 1]; leftprefix[PV_SIZE] = '\0';
             memcpy(leftprefix, head_ll->key_prefix, PV_SIZE);
             word_conv_store(leftprefix, leftprefix);
-            char *leftsuffix = string_conv(lastleft, head_ll->key_len - PV_SIZE, 0);
+            char *leftsuffix;
+            if (head_ll->key_len > PV_SIZE * 2) leftsuffix = string_conv(lastleft, head_ll->key_len - PV_SIZE, 0);
+            else leftsuffix = lastleft;
 
             s_len = tail_compress_length(leftprefix, rightprefix, leftsuffix, rightsuffix,
                                         head_ll->key_len, head_fr->key_len);    

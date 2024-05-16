@@ -200,8 +200,8 @@ public:
             // vector<bool> flag(i + 1);
             // _tree->printTree(_tree->getRoot(), flag, true);
         }
-        // vector<bool> flag(values.size());
-        // _tree->printTree(_tree->getRoot(), flag, true);
+        vector<bool> flag(values.size());
+        _tree->printTree(_tree->getRoot(), flag, true);
     }
 
     // bool Search(const std::vector<char *> &values) override {

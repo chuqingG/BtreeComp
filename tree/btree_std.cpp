@@ -982,14 +982,14 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
         // Otherwise print
         // the blank spaces
         else {
-            cout << "\n\n";
+
             // cout << " "
             //      << " "
             //      << " "
             //      << " ";
         }
     }
-
+     cout << "\n\n";
     // Condition when the current
     // node is the rootnode
     if (depth == 0) {

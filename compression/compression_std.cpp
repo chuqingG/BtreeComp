@@ -41,13 +41,13 @@ int tail_compress_length(const char *lastleft, const char *firstright, int len_l
 int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsuffix, \
                         const char *rightsuffix, int len_ll, int len_fr) { //overloading def
     if (len_ll < PV_SIZE) len_ll = PV_SIZE;
-    if (len_lr < PV_SIZE) len_lr = PV_SIZE;
+    if (len_fr < PV_SIZE) len_lr = PV_SIZE;
     char *left = new char[len_ll + 1];
     char *right = new char[len_fr + 1];
     memcpy(left, leftprefix, PV_SIZE);
     if (len_ll > PV_SIZE) memcpy(left + PV_SIZE, leftsuffix, len_ll - PV_SIZE); // somehow doesn't break if length < PV_SIZE
     memcpy(right, rightprefix, PV_SIZE);
-    if (len_lr > PV_SIZE) memcpy(right + PV_SIZE, rightsuffix, len_fr - PV_SIZE);
+    if (len_fr > PV_SIZE) memcpy(right + PV_SIZE, rightsuffix, len_fr - PV_SIZE);
 
     return tail_compress_length(left, right, len_ll, len_fr);
 }

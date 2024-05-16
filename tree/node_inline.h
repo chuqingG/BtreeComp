@@ -225,7 +225,7 @@ inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
 
 
     // int idx = *matchp;
-    if (keylen == sufflen) {//both unnorm
+    if (keylen == suffixlen) {//both unnorm
         int cmp_len = min(keylen, suffixlen);
         for (int idx = 0; idx < cmp_len; ++idx) {
             cmp = key[idx] - suffix[idx];

@@ -609,7 +609,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {//
             s = new char[s_len + pfxlen + 1];
             strncpy(s, node->prefix->addr, pfxlen);
 #ifdef KN
-                memcpy(s + pfxlen, rightprefix, min(s_len, PV_SIZE)); //converted prefix
+                memcpy(s + pfxlen, rightprefix, min(s_len, PV_SIZE)); //converted/unnormalized prefix
                 if (s_len > PV_SIZE) strncpy(s + pfxlen + PV_SIZE, rightsuffix, s_len - PV_SIZE); 
 #else
                 strncpy(s + pfxlen, firstright, s_len);

@@ -73,10 +73,10 @@ public:
         for (uint32_t i = 0; i < values.size(); i++)
             if (_tree->search(values.at(i)) == -1) {
                 #ifdef CHECK
-            //             if (i == 17677) {
-            //         vector<bool> flag(values.size());
-            //         _tree->printTree(_tree->getRoot(), flag, true);
-            // }
+                        if (i == 369) {
+                    vector<bool> flag(values.size());
+                    _tree->printTree(_tree->getRoot(), flag, true);
+            }
                 if (count < 10)
                 cout << "Cannot find " << values[i] << "; " << i << "th value" <<endl;
                 #endif

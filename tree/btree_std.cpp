@@ -1001,9 +1001,9 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
         flag[depth] = false;
     }
     else {
-        cout << "+--- ";
+        //cout << "+--- ";
         printKeys(x, compressed);
-        cout << endl;
+       // cout << endl;
     }
 
     for (auto i = 0; i < x->ptr_cnt; i++)

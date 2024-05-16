@@ -182,15 +182,10 @@ inline char* string_conv(const char* key, int keylen, int cutoff) {//unnormalize
 }
 
 inline long word_cmp(Stdhead* header,const char* key, int keylen) {
-    if (keylen < PV_SIZE) {
-        int cmp_len = min(PV_SIZE, keylen);
-        // int idx = *matchp;
-        for (int idx = 0; idx < cmp_len; ++idx) {
-            int cmp = key[idx] - header->key_prefix[idx];
-            if (cmp != 0)
-                return cmp;
-        }
-        return 0;
+    if (keylen < PV_SIZE) { //key already normalized
+        char word[5] = {0};
+        memcpy(word, key, PV_SIZE);
+         return *(int*)word - *(int*)header->key_prefix;
     }
 #if PV_SIZE == 4
     return *(int*)key - *(int*)header->key_prefix;
@@ -201,7 +196,7 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
 
 inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
-    if (cmp == 0) {
+    if (cmp == 0 && keylen > PV_SIZE && header->key_len > PV_SIZE) {
 #ifdef KN
         cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len - 4, (char*)key + PV_SIZE, keylen - PV_SIZE);
 #else

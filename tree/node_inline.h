@@ -236,7 +236,7 @@ inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
     else { //one is unnorm, the other is norm
         int cmp_len = min(keylen, suffixlen);
         for (int idx = 0; idx < cmp_len; ++idx) {
-            cmp = key[ keylen < sufflen ? idx : PV_SIZE - 1 - idx] - suffix[ keylen < sufflen ? PV_SIZE - 1 - idx : idx];
+            cmp = key[ keylen < suffixlen ? idx : PV_SIZE - 1 - idx] - suffix[ keylen < suffixlen ? PV_SIZE - 1 - idx : idx];
             if (cmp != 0)
                 return cmp;
         }

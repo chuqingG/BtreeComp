@@ -62,7 +62,7 @@ public:
                 _tree->printTree(_tree->getRoot(), flag, true);
                 #endif
         }
-        #ifdef CHECK
+        #ifdef PRINT
         vector<bool> flag(values.size() * 1.25);
         _tree->printTree(_tree->getRoot(), flag, true);
         #endif

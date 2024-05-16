@@ -982,10 +982,10 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
         // Otherwise print
         // the blank spaces
         else {
-            cout << " "
-                 << " "
-                 << " "
-                 << " ";
+            // cout << " "
+            //      << " "
+            //      << " "
+            //      << " ";
         }
     }
 

@@ -151,7 +151,7 @@ NodePkB::~NodePkB() {
 
 void printKeys(Node *node, bool compressed) {
 #ifdef CHECK
-    if(node->isleaf) return;
+    if(node->IS_LEAF) return;
 #endif
     if (compressed && node->prefix->addr)
         cout << node->prefix->addr << ": ";

@@ -194,14 +194,12 @@ public:
 
     void Insert(const std::vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); ++i) {
-            // if (i == 1214913)
-            //     cout << "here" << endl;
             _tree->insert(values.at(i));
             // vector<bool> flag(i + 1);
             // _tree->printTree(_tree->getRoot(), flag, true);
         }
-        vector<bool> flag(values.size());
-        _tree->printTree(_tree->getRoot(), flag, true);
+        // vector<bool> flag(values.size());
+        // _tree->printTree(_tree->getRoot(), flag, true);
     }
 
     // bool Search(const std::vector<char *> &values) override {
@@ -213,8 +211,13 @@ public:
     bool Search(const std::vector<char *> &values) override {
         int count = 0;
         for (uint32_t i = 0; i < values.size(); ++i)
-            if (_tree->search(values.at(i)) == -1)
+            if (_tree->search(values.at(i)) == -1) {
+            if (i == 44874) {
+                    vector<bool> flag(values.size());
+                    _tree->printTree(_tree->getRoot(), flag, true);
+            }
                 count++;
+            }
         cout << "count:" << count << endl;
         return true;
     }

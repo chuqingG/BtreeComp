@@ -172,6 +172,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
             delta = cursor->firstL;
             low = GetHeaderStd2(low, delta);
     }
+    else delta /= 2;
     
     for (; delta != 0; delta /= 2) {
         if (cmp = pvComp(GetHeaderStd2(low, delta), key, keylen, cursor))

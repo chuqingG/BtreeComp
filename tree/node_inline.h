@@ -37,7 +37,7 @@
     }
 
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
-#define GetHeaderStd2(nptr, i) (Stdhead *)(nptr - (i + 1)) //delta is 1-th indexed
+#define GetHeaderStd2(nptr, i) (Stdhead *)(nptr - (i - 1)) //delta is 1-th indexed
 #define GetHeadBase(nptr) (Stdhead *) (nptr->base + MAX_SIZE_IN_BYTES - sizeof(Stdhead)) //points to first element
 
 inline void calculateBSMetaData(Node *node) {

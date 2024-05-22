@@ -162,21 +162,21 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 #endif
 //returns position
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
-    uint16_t delta = cursor->I - 1; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
+    uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
     Stdhead* low = GetHeadBase(cursor);
     char* org = (char*)low; //most right
-    cmp = pvComp(GetHeaderStd2(low, delta), key, keylen, cursor); //initial probe cost
+    cmp = pvComp(GetHeaderStd2(low, delta - 1), key, keylen, cursor); //initial probe cost
     if (cmp == 0) return delta;
     else if (cmp > 0) { //if K > Ki
             low = GetHeaderStd(cursor, cursor->Ip - 1); //ptr arith
             delta = cursor->firstL;
-            low = GetHeaderStd2(low, delta);
+            low = GetHeaderStd2(low, delta - 1);
     }
     else delta /= 2;
     
     for (; delta != 0; delta /= 2) {
-        if ((cmp = pvComp(GetHeaderStd2(low, delta), key, keylen, cursor)) > 0)
-            low = GetHeaderStd2(low, delta);
+        if ((cmp = pvComp(GetHeaderStd2(low, delta - 1), key, keylen, cursor)) > 0)
+            low = GetHeaderStd2(low, delta - 1);
     }//ptr carries current position
     return (org - (char*)low) / sizeof(Stdhead);
 }

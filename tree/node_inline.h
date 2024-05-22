@@ -37,6 +37,8 @@
     }
 
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
+#define GetHeaderStd2(nptr, i) (Stdhead *)(nptr + MAX_SIZE_IN_BYTES - (i + 1) sizeof(Stdhead))
+#define GetHeadBase(nptr) (Stdhead *) (nptr->base + MAX_SIZE_IN_BYTES - (cursor->size) * sizeof(Stdhead))
 
 inline void calculateBSMetaData(Node *node) {
     int n = node->size;
@@ -158,79 +160,23 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     return cmp;
 }
 #endif
+//returns position
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
-    int curPos = cursor->I - 1; //2^k, where k is floor(log cursor->size);
-    Stdhead *ki = GetHeaderStd(cursor, curPos);
-    uint16_t delta = cursor->I;
-
-    cmp = pvComp(ki, key, keylen, cursor); //initial probe cost
-    delta = delta >> 1;
-    if (cmp == 0 || delta == 0) return curPos;
+    uint16_t delta = cursor->I - 1; //delte is size //2^k, where k is floor(log cursor->size);
+    Stdhead* ptr = GetHeadBase(cursor);
+    char* org = (char*)ptr;
+    cmp = pvComp(ptr[delta], key, keylen, cursor); //initial probe cost
+    if (cmp == 0) return delta;
     else if (cmp > 0) { //if K > Ki
-            curPos = cursor->Ip - 1;
+            ptr += cursor->Ip - 1; //ptr arith
             delta = cursor->firstL;
-            curPos += delta;
     }
-    else curPos -= delta;
-
-    ki = GetHeaderStd(cursor, curPos); //2
-    cmp = pvComp(ki, key, keylen, cursor); 
-    delta = delta >> 1;
-    if (cmp == 0 || delta == 0) return curPos;
-    else if (cmp > 0) curPos += delta;
-    else curPos -= delta;
-
-    ki = GetHeaderStd(cursor, curPos); //3
-    cmp = pvComp(ki, key, keylen, cursor); 
-    delta = delta >> 1;
-    if (cmp == 0 || delta == 0) return curPos;
-    else if (cmp > 0) curPos += delta;
-    else curPos -= delta;
-
-    ki = GetHeaderStd(cursor, curPos); //4
-    cmp = pvComp(ki, key, keylen, cursor); 
-    delta = delta >> 1;
-    if (cmp == 0 || delta == 0) return curPos;
-    else if (cmp > 0) curPos += delta;
-    else curPos -= delta;
-
-    ki = GetHeaderStd(cursor, curPos); //5
-    cmp = pvComp(ki, key, keylen, cursor); 
-    delta = delta >> 1;
-    if (cmp == 0 || delta == 0) return curPos;
-    else if (cmp > 0) curPos += delta;
-    else curPos -= delta;
-
-    ki = GetHeaderStd(cursor, curPos); //6
-    cmp = pvComp(ki, key, keylen, cursor); 
-    delta = delta >> 1;
-    if (cmp == 0 || delta == 0) return curPos;
-    else if (cmp > 0) curPos += delta;
-    else curPos -= delta;
-
-    ki = GetHeaderStd(cursor, curPos); //7
-    cmp = pvComp(ki, key, keylen, cursor); 
-    delta = delta >> 1;
-    if (cmp == 0 || delta == 0) return curPos;
-    else if (cmp > 0) curPos += delta;
-    else curPos -= delta;
-
-    ki = GetHeaderStd(cursor, curPos); //8
-    cmp = pvComp(ki, key, keylen, cursor); 
-    delta = delta >> 1;
-    if (cmp == 0 || delta == 0) return curPos;
-    else if (cmp > 0) curPos += delta;
-    else curPos -= delta;
-
-    ki = GetHeaderStd(cursor, curPos); //9
-    cmp = pvComp(ki, key, keylen, cursor); 
-    delta = delta >> 1;
-    if (cmp == 0 || delta == 0) return curPos;
-    else if (cmp > 0) curPos += delta;
-    else curPos -= delta;
-
-    cout << "Unrolled Binary Search Exceeds Upperbound";
-    return curPos;
+    
+    for (delta /= 2; delta != 0; delta /= 2) {
+        if (pvComp(ptr[delta], key, keylen, cursor))
+            ptr += delta;
+    }//ptr carries current position
+    return ((char*)ptr - org) / sizeof(Stdhead);
 }
 
 

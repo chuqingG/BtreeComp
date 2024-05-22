@@ -125,7 +125,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
             strncpy(newbase + top, backward + PV_SIZE, sufLength); //ends at nullbyte, even if 0
             delete[] backward;
 #else
-            strcpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
+            strncpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
             int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
             strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
 #endif

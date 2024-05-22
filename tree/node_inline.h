@@ -165,16 +165,16 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     uint16_t delta = cursor->I - 1; //delte is size //2^k, where k is floor(log cursor->size);
     Stdhead* ptr = GetHeadBase(cursor);
     char* org = (char*)ptr;
-    cmp = pvComp(ptr + delta, key, keylen, cursor); //initial probe cost
+    cmp = pvComp(GetHeaderStd2(ptr, delta), key, keylen, cursor); //initial probe cost
     if (cmp == 0) return delta;
     else if (cmp > 0) { //if K > Ki
-            ptr += cursor->Ip - 1; //ptr arith
+            ptr = GetHeaderStd2(ptr, cursor->Ip - 1); //ptr arith
             delta = cursor->firstL;
             ptr += delta;
     }
     
     for (delta /= 2; delta != 0; delta /= 2) {
-        if (cmp = pvComp(ptr + delta, key, keylen, cursor))
+        if (cmp = pvComp(GetHeaderStd2(ptr, delta), key, keylen, cursor))
             ptr += delta;
     }//ptr carries current position
     return ((char*)ptr - org) / sizeof(Stdhead);

@@ -259,7 +259,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     // }
     int curPos = cursor->I - 1; //2^k, where k is floor(log cursor->size);
     Stdhead *ki = GetHeaderStd(cursor, curPos);
-    uint16_t delta = cursor->I;
+    uint16_t delta = cursor->I; //delta is size
 
     cmp = pvComp(ki, key, keylen, cursor); //initial probe cost
     delta = delta >> 1;

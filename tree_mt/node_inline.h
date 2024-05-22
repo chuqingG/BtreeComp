@@ -2,6 +2,7 @@
 #include "node_mt.h"
 #include "../utils/config.h"
 
+#include "../utils/compare.cpp"
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
 #define BufTop(nptr) (nptr->base + nptr->space_top)

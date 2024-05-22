@@ -176,7 +176,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     
     for (; delta != 0; delta /= 2) {
         if ((cmp = pvComp(GetHeaderStd2(low, delta - 1), key, keylen, cursor)) > 0)
-            low = GetHeaderStd2(low, delta - 1);
+            low = GetHeaderStd2(low, delta);
     }//ptr carries current position
     return (org - (char*)low) / sizeof(Stdhead);
 }

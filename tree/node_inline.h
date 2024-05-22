@@ -37,7 +37,7 @@
     }
 
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
-#define GetHeaderStd2(nptr, i) (Stdhead *)(nptr - i * sizeof(Stdhead))
+#define GetHeaderStd2(nptr, i) (Stdhead *)(nptr - (i + 1) * sizeof(Stdhead))
 #define GetHeadBase(nptr) (Stdhead *) (nptr->base + MAX_SIZE_IN_BYTES)
 
 inline void calculateBSMetaData(Node *node) {
@@ -170,14 +170,14 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     else if (cmp > 0) { //if K > Ki
             low = GetHeaderStd2(low, cursor->Ip - 1); //ptr arith
             delta = cursor->firstL;
-            low = GetHeadStd2(low, delta);
+            low = GetHeaderStd2(low, delta);
     }
     
     for (; delta != 0; delta /= 2) {
         if (cmp = pvComp(GetHeaderStd2(low, delta), key, keylen, cursor))
-            low = GetHeadStd2(low, delta);
+            low = GetHeaderStd2(low, delta);
     }//ptr carries current position
-    return (org - (Stdhead*)low) / sizeof(Stdhead);
+    return (org - (char*)low) / sizeof(Stdhead);
 }
 
 

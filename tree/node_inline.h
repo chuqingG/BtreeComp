@@ -170,6 +170,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     else if (cmp > 0) { //if K > Ki
             ptr += cursor->Ip - 1; //ptr arith
             delta = cursor->firstL;
+            ptr += delta;
     }
     
     for (delta /= 2; delta != 0; delta /= 2) {

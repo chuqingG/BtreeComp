@@ -166,7 +166,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     Stdhead* low = GetHeadBase(cursor);
     char* org = (char*)low; //most right
     cmp = pvComp(GetHeaderStd2(low, delta), key, keylen, cursor); //initial probe cost
-    if (cmp == 0) return delta;
+    if (cmp == 0) return delta - 1;
     else if (cmp > 0) { //if K > Ki
             low = GetHeaderStd(cursor, cursor->Ip - 1); //ptr arith
             delta = cursor->firstL;

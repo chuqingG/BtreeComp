@@ -170,7 +170,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     else if (cmp > 0) { //if K > Ki
             low = GetHeaderStd(cursor, cursor->Ip - 1); //ptr arith
             delta = cursor->firstL;
-            low = GetHeaderStd2(low, delta + 1);
+            //low = GetHeaderStd2(low, delta + 1);
     }
     else delta /= 2;
     

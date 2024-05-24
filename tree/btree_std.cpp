@@ -634,7 +634,7 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
         }
         return pos + 1;
     } 
-    else return pos;
+    else return cmp > 0 ? pos + 1 : pos;
 #else
     while (low <= high) {
         int mid = low + (high - low) / 2;

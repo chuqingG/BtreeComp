@@ -39,7 +39,7 @@
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
 #define GetHeaderStd2(nptr, i) (Stdhead *)(nptr - (i - 1)) //delta is 1-th indexed
 #define GetHeadBase(nptr) (Stdhead *) (nptr->base + MAX_SIZE_IN_BYTES - sizeof(Stdhead)) //points to first element
-
+#ifdef UBS
 inline void calculateBSMetaData(Node *node) {
     int n = node->size;
     int k = sizeof(int) * 8 - __builtin_clz(n) - 1;
@@ -161,6 +161,7 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 }
 #endif
 //returns position
+#ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
     uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
     Stdhead* low = GetHeadBase(cursor);
@@ -182,7 +183,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
         low = GetHeaderStd2(low, 2);
     return (org - (char*)low) / sizeof(Stdhead);
 }
-
+#endif
 
 /*
 ===============For DB2=============

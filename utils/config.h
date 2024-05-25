@@ -16,7 +16,7 @@
 // #define DUPKEY
 // #define TOFIX  // enable to fix some skipped problem
 #define PV //prefix vector
-#define UBS //unrolled binary search 
+// #define UBS //unrolled binary search 
 
 // Setup
 #define SPLIT_STRATEGY_SPACE

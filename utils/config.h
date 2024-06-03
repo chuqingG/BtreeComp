@@ -14,11 +14,11 @@
 // #define WTCACHE
 // #define DUPKEY
 // #define TOFIX  // enable to fix some skipped problem
-//  #define PV //prefix vector
+  #define PV //prefix vector
 
 // Setup
 #define SPLIT_STRATEGY_SPACE
-#define MAX_SIZE_IN_BYTES 1024 // 1024 //(4096 + 512) // 512 // 2048
+#define MAX_SIZE_IN_BYTES 512 // 1024 //(4096 + 512) // 512 // 2048
 #define DB2_PFX_MAX_SIZE 256   //(1024 + 512)  // 128  // 256
 #define SPLIT_LIMIT 32         // suggest to be >= 32 for safety on db2
 #define TAIL_SPLIT_WIDTH (1.0 / 6)

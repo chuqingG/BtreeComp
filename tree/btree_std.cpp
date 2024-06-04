@@ -604,11 +604,10 @@ bool BPTree::check_split_condition(Node *node, int keylen) {
     // split if the allocated page is full
     // double the key size to split safely
     // only works when the S_newkey <= S_prevkey + S_limit
-#ifdef PV
-    int currspace = node->space_top + node->size * (sizeof(Stdhead) - PV_SIZE);
-    int splitcost = 2 * max(keylen, APPROX_KEY_SIZE) + (sizeof(Stdhead) - PV_SIZE);
-#else
     int currspace = node->space_top + node->size * sizeof(Stdhead);
+#ifdef PV
+    int splitcost = 2 * max(keylen, APPROX_KEY_SIZE) + sizeof(Stdhead) - PV_SIZE;
+#else
     int splitcost = 2 * max(keylen, APPROX_KEY_SIZE) + sizeof(Stdhead);
 #endif
     if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)

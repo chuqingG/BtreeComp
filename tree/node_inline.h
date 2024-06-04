@@ -89,7 +89,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
                                        - (newidx + 1) * sizeof(Stdhead));
         int key_len = oldhead->key_len;
         #ifdef PV
-            char *presuf = new char[oldhead->key_len + 1]; //extract entire key
+            char *presuf = char[32 + 1]; //extract entire key
             presuf[oldhead->key_len + 1] = '\0';
             strncpy(presuf, oldhead->key_prefix, PV_SIZE);
             strncpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset), oldhead->key_len < PV_SIZE ? 0 :  oldhead->key_len);
@@ -102,7 +102,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
             int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
             strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
             top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
-            delete[] presuf;
+            //delete[] presuf;
         #else
             // strcpy(BufTop(nptr), k);
             strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);

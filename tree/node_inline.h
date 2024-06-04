@@ -89,22 +89,20 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
                                        - (newidx + 1) * sizeof(Stdhead));
         int key_len = oldhead->key_len;
         #ifdef PV
-            char presuf[33] = {0}; //extract entire key
-            char *p = presuf;
-           // presuf[oldhead->key_len + 1] = '\0';
-            memset(presuf, 0, 33);
+            char *presuf = new char[oldhead->key_len + 1]; //extract entire key
+            presuf[oldhead->key_len + 1] = '\0';
             strncpy(presuf, oldhead->key_prefix, PV_SIZE);
-            strncpy(p + PV_SIZE, PageOffset(nptr, oldhead->key_offset), oldhead->key_len < PV_SIZE ? 0 :  oldhead->key_len);
+            strncpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset), oldhead->key_len < PV_SIZE ? 0 :  oldhead->key_len);
 
             newhead->key_len = oldhead->key_len - cutoff;
             newhead->key_offset = top;
             memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
-            strncpy(newhead->key_prefix, p + cutoff, min(PV_SIZE, (int)newhead->key_len));
+            strncpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
 
             int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
-            strncpy(newbase + top, p + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
+            strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
             top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
-            //delete[] presuf;
+            delete[] presuf;
         #else
             // strcpy(BufTop(nptr), k);
             strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);

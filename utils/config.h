@@ -16,8 +16,8 @@
 // #define DUPKEY
 // #define TOFIX  // enable to fix some skipped problem
 #define PV //prefix vector
-#define UBS //unrolled binary search 
-// #define KN //key normalization
+// #define UBS //unrolled binary search 
+#define KN //key normalization
 // Setup
 #define SPLIT_STRATEGY_SPACE
 #define MAX_SIZE_IN_BYTES 1024 // 1024 //(4096 + 512) // 512 // 2048

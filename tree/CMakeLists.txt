@@ -25,3 +25,16 @@ add_custom_command(
     COMMENT "Generating assembly for btree_std.cpp"
 )
 add_custom_target(btree_std_asm ALL DEPENDS ${ASM_OUTPUT_DIR}/${source_filename}.s)
+
+if(UNIX AND NOT APPLE)
+    add_custom_command(TARGET btree_std POST_BUILD
+                       COMMAND ${CMAKE_RANLIB} $<TARGET_FILE:btree_std>)
+    add_custom_command(TARGET btree_db2 POST_BUILD
+                       COMMAND ${CMAKE_RANLIB} $<TARGET_FILE:btree_db2>)
+    add_custom_command(TARGET btree_myisam POST_BUILD
+                       COMMAND ${CMAKE_RANLIB} $<TARGET_FILE:btree_myisam>)
+    add_custom_command(TARGET btree_wt POST_BUILD
+                       COMMAND ${CMAKE_RANLIB} $<TARGET_FILE:btree_wt>)
+    add_custom_command(TARGET btree_pkb POST_BUILD
+                       COMMAND ${CMAKE_RANLIB} $<TARGET_FILE:btree_pkb>)
+endif()

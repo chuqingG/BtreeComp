@@ -17,7 +17,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -S -fverbose-asm -save-temps")
 get_filename_component(source_filename btree_std.cpp NAME_WE)
 add_custom_command(
     OUTPUT ${ASM_OUTPUT_DIR}/${source_filename}.s
-    COMMAND ${CMAKE_CXX_COMPILER} -S ${CMAKE_CURRENT_SOURCE_DIR}/btree_std.cpp -o ${ASM_OUTPUT_DIR}/${source_filename}.s
+    COMMAND ${CMAKE_CXX_COMPILER} -S ${CMAKE_CURRENT_SOURCE_DIR}/btree_std.cpp ${CMAKE_CURRENT_SOURCE_DIR}/btree_std.h -o ${ASM_OUTPUT_DIR}/${source_filename}.s
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/btree_std.cpp
     COMMENT "Generating assembly for btree_std.cpp"
 )

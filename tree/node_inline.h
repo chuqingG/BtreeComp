@@ -144,18 +144,18 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
     //     word[i] = key[min(keylen, PV_SIZE) - 1 - i];
     // return *(long*)word - *(long*)prefix;
 
-    int cmp_len = min(PV_SIZE, keylen);
-    // int idx = *matchp;
-    for (int idx = 0; idx < cmp_len; ++idx) {
-        int cmp = key[idx] - header->key_prefix[idx];
-        if (cmp != 0)
-            return cmp;
-    }
+    // int cmp_len = min(PV_SIZE, keylen);
+    // // int idx = *matchp;
+    // for (int idx = 0; idx < cmp_len; ++idx) {
+    //     int cmp = key[idx] - header->key_prefix[idx];
+    //     if (cmp != 0)
+    //         return cmp;
+    // }
     /* Contents are equal up to the smallest length. */
-    // int result = key[0] - header->key_prefix[0];
-    // result = result != 0 ? result : key[1] - header->key_prefix[1];
-    // result = result != 0 ? result : key[2] - header->key_prefix[2];
-    // result = result != 0 ? result : key[3] - header->key_prefix[3];
+    int result = key[0] - header->key_prefix[0];
+    result = result != 0 ? result : key[1] - header->key_prefix[1];
+    result = result != 0 ? result : key[2] - header->key_prefix[2];
+    result = result != 0 ? result : key[3] - header->key_prefix[3];
     return result;
 }
 

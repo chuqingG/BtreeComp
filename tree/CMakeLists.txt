@@ -24,4 +24,4 @@ add_custom_command(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/btree_std.cpp
     COMMENT "Generating assembly for btree_std.cpp"
 )
-#add_custom_target(btree_std_asm ALL DEPENDS ${ASM_OUTPUT_DIR}/${source_filename}.s)
+add_custom_target(btree_std_asm ALL DEPENDS ${ASM_OUTPUT_DIR}/${source_filename}.s)

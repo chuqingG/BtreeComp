@@ -17,11 +17,11 @@ file(MAKE_DIRECTORY ${ASM_OUTPUT_DIR})
 get_filename_component(source_filename btree_std.cpp NAME_WE)
 add_custom_command(
     OUTPUT ${ASM_OUTPUT_DIR}/${source_filename}.s
-    COMMAND ${CMAKE_CXX_COMPILER} -S ${CMAKE_CURRENT_SOURCE_DIR}/btree_std.cpp ${CMAKE_CURRENT_SOURCE_DIR}/btree_std.h -o ${ASM_OUTPUT_DIR}/${source_filename}.s
+    COMMAND ${CMAKE_CXX_COMPILER} -S -fverbose-asm -save-temps ${CMAKE_CURRENT_SOURCE_DIR}/btree_std.cpp ${CMAKE_CURRENT_SOURCE_DIR}/btree_std.h -o ${ASM_OUTPUT_DIR}/${source_filename}.s
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/btree_std.cpp
     COMMENT "Generating assembly for btree_std.cpp"
 )
-#add_custom_target(btree_std_asm ALL DEPENDS ${ASM_OUTPUT_DIR}/${source_filename}.s)
+add_custom_target(btree_std_asm ALL DEPENDS ${ASM_OUTPUT_DIR}/${source_filename}.s)
 
 # if(UNIX AND NOT APPLE)
 #     add_custom_command(TARGET btree_std POST_BUILD

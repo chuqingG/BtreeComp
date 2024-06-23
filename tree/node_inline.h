@@ -181,7 +181,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
             delta = cursor->firstL;
             //low = GetHeaderStd2(low, delta + 1);
     }
-    else delta /= 2;-
+    else delta /= 2;
     
     for (; delta != 0; delta /= 2) {
         auto temp = GetHeaderStd2(low, delta + 1); //offv=set one 

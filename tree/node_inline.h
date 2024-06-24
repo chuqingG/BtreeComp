@@ -46,7 +46,7 @@ inline void calculateBSMetaData(Node *node) {
     int n = node->size;
     int k = sizeof(int) * 8 - __builtin_clz(n) - 1;
     node->I = k <= 1 ? 0 : (uint16_t) 1 << k;
-    int l_aux= n - node->I + 1;// may need to be adjusted for the 0 special case
+    int l_aux= n - (node->I ? node->I : 0) + 1;// may need to be adjusted for the 0 special case
     int l = sizeof(int) * 8 - __builtin_clz(l_aux) - 1 + ((l_aux & (l_aux - 1)) ? 1 : 0);
     node->firstL = 1 << (l); //used to be (l - 1)
     node->Ip = (uint16_t) n + 1 - (1 << l);

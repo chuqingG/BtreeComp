@@ -48,7 +48,7 @@ inline void calculateBSMetaData(Node *node) {
     node->I = (uint16_t) 1 << k;
     int l_aux= n - node->I + 1;
     int l = sizeof(int) * 8 - __builtin_clz(l_aux) - 1 + ((l_aux & (l_aux - 1)) ? 1 : 0);
-    node->firstL = 1 << (l - 1);
+    node->firstL = 1 << (l); //used to be (l - 1)
     node->Ip = (uint16_t) n + 1 - (1 << l);
 }
 #endif
@@ -144,22 +144,22 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
     //     word[i] = key[min(keylen, PV_SIZE) - 1 - i];
     // return *(long*)word - *(long*)prefix;
 
-    // int cmp_len = min(PV_SIZE, keylen);
-    // // int idx = *matchp;
-    // for (int idx = 0; idx < cmp_len; ++idx) {
-    //     int cmp = key[idx] - header->key_prefix[idx];
-    //     if (cmp != 0)
-    //         return cmp;
-    // }
+    int cmp_len = min(PV_SIZE, keylen);
+    for (int idx = 0; idx < cmp_len; ++idx) {
+        int cmp = key[idx] - header->key_prefix[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    return 0;
     /* Contents are equal up to the smallest length. */
-    int result = key[0] - header->key_prefix[0];
-    result = result != 0 ? result : key[1] - header->key_prefix[1];
-    result = result != 0 ? result : key[2] - header->key_prefix[2];
-    result = result != 0 ? result : key[3] - header->key_prefix[3];
-    return result;
+    // int result = key[0] - header->key_prefix[0];
+    // result = result != 0 ? result : key[1] - header->key_prefix[1];
+    // result = result != 0 ? result : key[2] - header->key_prefix[2];
+    // result = result != 0 ? result : key[3] - header->key_prefix[3];
+    // return result;
 }
 
-inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
+long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
     if (cmp == 0) {
         cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
@@ -172,24 +172,25 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 #ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
     uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
-    Stdhead* low = GetHeadBase(cursor);
-    char* org = (char*)low; //most right
-    cmp = pvComp(GetHeaderStd2(low, delta), key, keylen, cursor); //initial probe cost
-    if (cmp == 0) return delta - 1;
-    else if (cmp > 0) { //if K > Ki
+    Stdhead* low = GetHeadBase(cursor) - 1;
+    char* org = (char*)low; //most right(largest is to the right)
+    cmp = pvComp(low - delta, key, keylen, cursor); //initial probe cost
+    // if (cmp == 0) return delta - 1;
+    // else 
+    if (cmp > 0) { //if K > Ki
             low = GetHeaderStd(cursor, cursor->Ip - 1); //ptr arith
             delta = cursor->firstL;
             //low = GetHeaderStd2(low, delta + 1);
     }
-    else delta /= 2;
-    
+
+    delta /= 2;
     for (; delta != 0; delta /= 2) {
-        auto temp = GetHeaderStd2(low, delta + 1); //offv=set one 
-        if ((cmp = pvComp(GetHeaderStd2(low, delta), key, keylen, cursor)) > 0)
-            low = temp;
+        //auto temp = GetHeaderStd2(low, delta + 1); //offset one 
+        if ((cmp = pvComp(low - delta, key, keylen, cursor)) > 0)
+            low -= delta;
     }//ptr carries current position
     if ((cmp = pvComp(low, key, keylen, cursor)) > 0)
-        low = GetHeaderStd2(low, 2);
+        low -= 1;
     return (org - (char*)low) / sizeof(Stdhead);
 }
 #endif

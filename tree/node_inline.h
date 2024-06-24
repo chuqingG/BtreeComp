@@ -38,15 +38,15 @@
 
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
 #define GetHeaderStd2(nptr, i) (Stdhead *)(nptr - (i - 1)) //delta is 1-th indexed
-#define GetHeadBase(nptr) (Stdhead *) (nptr->base + MAX_SIZE_IN_BYTES) //points to first element
+#define GetHeadBase(nptr) (Stdhead *) (nptr->base + MAX_SIZE_IN_BYTES - sizeof(Stdhead)) //points to first element
 
 #ifdef UBS
 
 inline void calculateBSMetaData(Node *node) {
     int n = node->size;
     int k = sizeof(int) * 8 - __builtin_clz(n) - 1;
-    node->I = (uint16_t) 1 << k;
-    int l_aux= n - node->I + 1;
+    node->I = k <= 1 ? 0 : (uint16_t) 1 << k;
+    int l_aux= n - node->I + 1;// may need to be adjusted for the 0 special case
     int l = sizeof(int) * 8 - __builtin_clz(l_aux) - 1 + ((l_aux & (l_aux - 1)) ? 1 : 0);
     node->firstL = 1 << (l); //used to be (l - 1)
     node->Ip = (uint16_t) n + 1 - (1 << l);
@@ -150,7 +150,7 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
         if (cmp != 0)
             return cmp;
     }
-    return 0;
+    return
     /* Contents are equal up to the smallest length. */
     // int result = key[0] - header->key_prefix[0];
     // result = result != 0 ? result : key[1] - header->key_prefix[1];
@@ -172,7 +172,7 @@ long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 #ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
     uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
-    Stdhead* low = GetHeadBase(cursor);
+    Stdhead* low = GetHeadBase(cursor) - 1;
     char* org = (char*)low; //most right(largest is to the right)
     cmp = pvComp(low - delta, key, keylen, cursor); //initial probe cost
     // if (cmp == 0) return delta - 1;
@@ -188,8 +188,8 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
         //auto temp = GetHeaderStd2(low, delta + 1); //offset one 
         if ((cmp = pvComp(low - delta, key, keylen, cursor)) > 0)
             low -= delta;
-    }
-    if ((cmp = pvComp(low - 1, key, keylen, cursor)) > 0)
+    }//ptr carries current position
+    if ((cmp = pvComp(low, key, keylen, cursor)) > 0)
         low -= 1;
     return (org - (char*)low) / sizeof(Stdhead);
 }

@@ -150,7 +150,7 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
         if (cmp != 0)
             return cmp;
     }
-    return
+    return 0;
     /* Contents are equal up to the smallest length. */
     // int result = key[0] - header->key_prefix[0];
     // result = result != 0 ? result : key[1] - header->key_prefix[1];

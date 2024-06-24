@@ -188,8 +188,8 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
         //auto temp = GetHeaderStd2(low, delta + 1); //offset one 
         if ((cmp = pvComp(low - delta, key, keylen, cursor)) > 0)
             low -= delta;
-    }//ptr carries current position
-    if ((cmp = pvComp(low, key, keylen, cursor)) > 0)
+    }
+    if ((cmp = pvComp(low - 1, key, keylen, cursor)) > 0)
         low -= 1;
     return (org - (char*)low) / sizeof(Stdhead);
 }

@@ -179,7 +179,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
         delta = cursor->firstL;
     }
     
-    for (delta /= 2;; delta != 0; delta /= 2) {
+    for (delta /= 2; delta != 0; delta /= 2) {
         //auto temp = GetHeaderStd2(low, delta + 1); //offset one 
         if ((cmp = pvComp(low - delta, key, keylen, cursor)) > 0)
             low -= delta;

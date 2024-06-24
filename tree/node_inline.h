@@ -159,7 +159,7 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
     // return result;
 }
 
-long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
+inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
     if (cmp == 0) {
         cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),

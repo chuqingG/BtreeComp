@@ -626,6 +626,7 @@ bool BPTree::check_split_condition(Node *node, int keylen) {
 int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low, int high,
                               bool &equal) {
 #ifdef UBS
+    if (cursor->size == 0) return 0;
     long cmp = 0;
     int pos =  unrolledBinarySearch(cursor, key, keylen, cmp);
     if (cmp == 0) {
@@ -757,6 +758,7 @@ int BPTree::char_cmp_count(const char *a, const char *b, int alen, int blen) {
 int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
                            int low, int high, bool isleaf) {
 #ifdef UBS
+    if (cursor->size == 0) return 0;
     long cmp = 0;
     int pos =  unrolledBinarySearch(cursor, key, keylen, cmp);
     if (cmp == 0) return isleaf ? pos : pos + 1; //right node of key

@@ -172,7 +172,7 @@ long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 #ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
     uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
-    Stdhead* low = GetHeadBase(cursor) - 1;
+    Stdhead* low = GetHeadBase(cursor);
     char* org = (char*)low; //most right(largest is to the right)
     cmp = pvComp(low - delta, key, keylen, cursor); //initial probe cost
     // if (cmp == 0) return delta - 1;

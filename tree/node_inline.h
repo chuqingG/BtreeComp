@@ -38,15 +38,15 @@
 
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
 #define GetHeaderStd2(nptr, i) (Stdhead *)(nptr - (i - 1)) //delta is 1-th indexed
-#define GetHeadBase(nptr) (Stdhead *) (nptr->base + MAX_SIZE_IN_BYTES - sizeof(Stdhead)) //points to first element
+#define GetHeadBase(nptr) (Stdhead *) (nptr->base + MAX_SIZE_IN_BYTES) //points to first element
 
 #ifdef UBS
 
 inline void calculateBSMetaData(Node *node) {
     int n = node->size;
     int k = sizeof(int) * 8 - __builtin_clz(n) - 1;
-    node->I = (uint16_t) (1 << k) - 1;
-    int l_aux = n - node->I;
+    node->I = (uint16_t) 1 << k;
+    int l_aux= n - node->I + 1;
     int l = sizeof(int) * 8 - __builtin_clz(l_aux) - 1 + ((l_aux & (l_aux - 1)) ? 1 : 0);
     node->firstL = 1 << (l); //used to be (l - 1)
     node->Ip = (uint16_t) n + 1 - (1 << l);

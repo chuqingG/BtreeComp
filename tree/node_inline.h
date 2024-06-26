@@ -173,22 +173,33 @@ long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 //returns position
 #ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
-    uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
-    Stdhead* low = GetHeadBase(cursor);
-    char* org = (char*)low; //most right(largest is to the right)
-    if (delta != cursor->size && pvComp(low - delta, key, keylen, cursor) >= 0) { //initial probe cost
-        low = GetHeaderStd(cursor, cursor->Ip - 1);  //if K > Ki
-        delta = cursor->firstL;
-    }
+    // uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
+    // Stdhead* low = GetHeadBase(cursor);
+    // char* org = (char*)low; //most right(largest is to the right)
+    // if (delta != cursor->size && pvComp(low - delta, key, keylen, cursor) >= 0) { //initial probe cost
+    //     low = GetHeaderStd(cursor, cursor->Ip - 1);  //if K > Ki
+    //     delta = cursor->firstL;
+    // }
     
-    for (delta /= 2; delta != 0; delta /= 2) {
-        //auto temp = GetHeaderStd2(low, delta + 1); //offset one 
-        if (pvComp(low - delta, key, keylen, cursor) >= 0)
-            low -= delta;
-    }
-    if ((cmp = pvComp(low, key, keylen, cursor)) > 0)
-        low -= 1;
-    return (org - (char*)low) / sizeof(Stdhead);
+    // for (delta /= 2; delta != 0; delta /= 2) {
+    //     //auto temp = GetHeaderStd2(low, delta + 1); //offset one 
+    //     if (pvComp(low - delta, key, keylen, cursor) >= 0)
+    //         low -= delta;
+    // }
+    // if ((cmp = pvComp(low, key, keylen, cursor)) > 0)
+    //     low -= 1;
+    // return (org - (char*)low) / sizeof(Stdhead);
+    int length = cursor->size;
+    Stdhead* first = GetHeadBase(cursor);
+    char* org = (char*)first;
+    while (length > 0) {
+      auto rem = length % 2;
+      length /= 2;
+      if (cmp = pvComp(first - length, key, keylen, cursor)) {
+         first -= length + rem;
+      }
+   }
+   return (org - (char*)first) / sizeof(Stdhead);
 }
 #endif
 

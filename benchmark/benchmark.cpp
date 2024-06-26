@@ -477,8 +477,8 @@ void RunBenchmark() {
     }
 
 #ifdef SINGLE_DEBUG
-        cout << "Finish reading: " << key_numbers << " items in total, "
-             << "max length: " << max_data_length << endl;
+        cout << "Finish reading: " << key_numbers << " items in total, ";
+          //   << "max length: " << max_data_length << endl;
 #endif
         int warm_num = std::round(allvalues.size() * warmup_split_ratio);
         for (int i = 0; i < warm_num; i++) {

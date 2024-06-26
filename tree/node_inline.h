@@ -199,7 +199,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
         first -= length + rem;
       }
    }
-cmp = pvComp(first - length, key, keylen, cursor);
+    cmp = pvComp(first - length, key, keylen, cursor);
    return (org - (char*)first) / sizeof(Stdhead);
 }
 #endif

@@ -190,6 +190,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     //     low -= 1;
     // return (org - (char*)low) / sizeof(Stdhead);
     int length = cursor->size;
+    cmp = 1;
     Stdhead* first = GetHeadBase(cursor);
     char* org = (char*)first;
     long local_cmp;

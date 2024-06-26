@@ -108,15 +108,14 @@ void generate_random_number(vector<string> &values, int num_keys) {
         values.push_back(convert_to_16_bytes(to_string(n)));
 }
 
-void generate_random_string(vector<string> &values, int num_keys, int len) {
+void generate_random_string(vector<char*> &values, int num_keys, int len) {
     static const char alphanum[] =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz";
     
     for (int i = 0; i < num_keys; i++) {
-        std::string tmp_s;
-        tmp_s.reserve(len);
+        char * tmp_s = new char[len];
 
         for (int j = 0; j < len; ++j) {
             tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];

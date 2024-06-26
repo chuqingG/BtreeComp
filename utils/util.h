@@ -109,7 +109,7 @@ void generate_random_number(vector<string> &values, int num_keys) {
 }
 
 void generate_random_string(vector<char*> &values, int num_keys, int len) {
-    srand(time(NULL));
+    srand(42);
     static const char alphanum[] =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

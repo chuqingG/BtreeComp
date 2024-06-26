@@ -119,7 +119,7 @@ void generate_random_string(vector<char*> &values, int num_keys, int len) {
         char * tmp_s = new char[len];
 
         for (int j = 0; j < len; ++j) {
-            tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+            tmp_s[j] = alphanum[rand() % (sizeof(alphanum) - 1)];
         }
         
         values.push_back(tmp_s);

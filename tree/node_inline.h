@@ -192,13 +192,16 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     int length = cursor->size;
     Stdhead* first = GetHeadBase(cursor);
     char* org = (char*)first;
+    long local_cmp;
     while (length > 0) {
       auto rem = length % 2;
       length /= 2;
-      if ((cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
-         first -= length + rem;
+      if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
+        cmp = local_cmp;
+        first -= length + rem;
       }
    }
+
    return (org - (char*)first) / sizeof(Stdhead);
 }
 #endif

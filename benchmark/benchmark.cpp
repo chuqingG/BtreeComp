@@ -453,6 +453,7 @@ void RunBenchmark() {
     std::vector<char *> allvalues;
     if (dataset == DatasetTypes::RANDOM) {
         generate_random_string(allvalues, key_numbers, max_keylen);
+        cout << "random array first 3 indices: " << allvalues[0] << ", " << allvalues[1] << ", " << allvalues[2] << "\n"; 
 //         column_num = 1;
 // #ifdef TOFIX
 //         generate_random_number(values, key_numbers);

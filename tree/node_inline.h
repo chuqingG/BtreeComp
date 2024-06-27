@@ -197,9 +197,8 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     while (length > 0) {
       auto rem = length % 2;
       length /= 2;
-      if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
+      if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0)
         first -= length + rem;
-      }
       if (local_cmp == 0) cmp = 0;
    }
 

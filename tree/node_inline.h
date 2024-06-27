@@ -200,11 +200,11 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
       local_cmp = pvComp(first - length, key, keylen, cursor);
       long first_temp;
         asm volatile (
-            "cmpq $0, %[local_cmp]\n\t"        // Test local_cmp with itself to set flags
             "addq %[length], %[rem]\n\t"                 // Calculate length + rem and store result in rem (overwrite rem)
             "shlq $3, %[rem]\n\t"
             "movq %[first], %[first_temp]\n\t"           // Move first into first_temp
             "subq %[rem], %[first_temp]\n\t"             // Subtract rem from first_temp
+            "cmpq $0, %[local_cmp]\n\t"        // Test local_cmp with itself to set flags
             "cmovge %[first_temp], %[first]\n\t"        // If local_cmp >= 0, move first_temp to first
             : [first] "+r" (first), [first_temp] "=&r" (first_temp), [rem] "+r" (rem)  // Output operands
             : [local_cmp] "r" (local_cmp), [length] "r" (length)  // Input operands

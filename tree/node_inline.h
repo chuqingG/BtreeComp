@@ -174,47 +174,47 @@ long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 //returns position
 #ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
-    uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
-    Stdhead* low = GetHeadBase(cursor);
-    char* org = (char*)low; //most right(largest is to the right)
-    if (delta != cursor->size && pvComp(low - delta, key, keylen, cursor) >= 0) { //initial probe cost
-        low = GetHeaderStd(cursor, cursor->Ip - 1);  //if K > Ki
-        delta = cursor->firstL;
-    }
+    // uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
+    // Stdhead* low = GetHeadBase(cursor);
+    // char* org = (char*)low; //most right(largest is to the right)
+    // if (delta != cursor->size && pvComp(low - delta, key, keylen, cursor) >= 0) { //initial probe cost
+    //     low = GetHeaderStd(cursor, cursor->Ip - 1);  //if K > Ki
+    //     delta = cursor->firstL;
+    // }
     
-    for (delta /= 2; delta != 0; delta /= 2) {
-        //auto temp = GetHeaderStd2(low, delta + 1); //offset one 
-        if (pvComp(low - delta, key, keylen, cursor) >= 0)
-            low -= delta;
-    }
-    if ((cmp = pvComp(low, key, keylen, cursor)) > 0)
-        low -= 1;
-    return (org - (char*)low) / sizeof(Stdhead);
+    // for (delta /= 2; delta != 0; delta /= 2) {
+    //     //auto temp = GetHeaderStd2(low, delta + 1); //offset one 
+    //     if (pvComp(low - delta, key, keylen, cursor) >= 0)
+    //         low -= delta;
+    // }
+    // if ((cmp = pvComp(low, key, keylen, cursor)) > 0)
+    //     low -= 1;
+    // return (org - (char*)low) / sizeof(Stdhead);
 
-//     long length = cursor->size;
-//     cmp = 1;
-//     Stdhead* first = GetHeadBase(cursor);
-//     char* org = (char*)first;
-//     long local_cmp;
-//     while (length > 0) {
-//       long rem = length % 2;
-//       length /= 2;
-//       local_cmp = pvComp(first - length, key, keylen, cursor);
-//       Stdhead* first_temp = first - length - rem;
-//         asm volatile (
-//             "cmpq $0, %[local_cmp]\n\t"        // Test local_cmp with itself to set flags
-//             "cmovge %[first_temp], %[first]\n\t"        // If local_cmp >= 0, move first_temp to first
-//             : [first] "+r" (first)  // Output operands
-//             : [local_cmp] "r" (local_cmp), [first_temp] "r" (first_temp) // Input operands
-//             : "cc"  // Clobbered registers
-//         );
-//     //     if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
-//     //     first -= length + rem;
-//     //   }
-//       if (local_cmp == 0) cmp = 0;
-//    }
+    long length = cursor->size;
+    cmp = 1;
+    Stdhead* first = GetHeadBase(cursor);
+    char* org = (char*)first;
+    long local_cmp;
+    while (length > 0) {
+      long rem = length % 2;
+      length /= 2;
+      local_cmp = pvComp(first - length, key, keylen, cursor);
+      Stdhead* first_temp = first - length - rem;
+        asm volatile (
+            "cmpq $0, %[local_cmp]\n\t"        // Test local_cmp with itself to set flags
+            "cmovge %[first_temp], %[first]\n\t"        // If local_cmp >= 0, move first_temp to first
+            : [first] "+r" (first)  // Output operands
+            : [local_cmp] "r" (local_cmp), [first_temp] "r" (first_temp) // Input operands
+            : "cc"  // Clobbered registers
+        );
+    //     if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
+    //     first -= length + rem;
+    //   }
+      if (local_cmp == 0) cmp = 0;
+   }
 
-//    return (org - (char*)first) / sizeof(Stdhead);
+   return (org - (char*)first) / sizeof(Stdhead);
 }
 #endif
 

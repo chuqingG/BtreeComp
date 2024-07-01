@@ -433,8 +433,10 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     node->space_top = left_top;
     UpdateBase(node, left_base);
 #ifdef UBS
+#ifdef SHAR
     calculateBSMetaData(node);
     calculateBSMetaData(right);
+#endif
 #endif
     node->ptrs = leftptrs;
     node->ptr_cnt = split + 1;
@@ -585,8 +587,10 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     UpdateBase(node, left_base);
 
 #ifdef UBS
+#ifdef SHAR
     calculateBSMetaData(node);
     calculateBSMetaData(right);
+#endif
 #endif
     // set key bound
     right->highkey = new Item(*node->highkey);

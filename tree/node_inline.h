@@ -41,7 +41,7 @@
 #define GetHeadBase(nptr) (Stdhead *) (nptr->base + MAX_SIZE_IN_BYTES - sizeof(Stdhead)) //points to first element
 
 #ifdef UBS
-
+#ifdef SHAR
 inline void calculateBSMetaData(Node *node) {
     int n = node->size;
     int k = sizeof(int) * 8 - __builtin_clz(n) - 1;
@@ -51,6 +51,7 @@ inline void calculateBSMetaData(Node *node) {
     node->firstL = 1 << (l); //used to be (l - 1)
     node->Ip = (uint16_t) n + 1 - (1 << l);
 }
+#endif
 #endif
 
 inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
@@ -80,7 +81,9 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     header->key_len = klen;
     nptr->size += 1;
 #ifdef UBS
+#ifdef SHAR
     calculateBSMetaData(nptr);
+#endif
 #endif
 }
 

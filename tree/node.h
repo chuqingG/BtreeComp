@@ -48,9 +48,11 @@ public:
     void erase(const char *k, int keylen, int idx);
     // int findk(const char *k, int keylen);
 #ifdef UBS
+#ifdef SHAR
     uint16_t I;
     uint16_t Ip;
     uint16_t firstL;
+#endif
 #endif
 };
 

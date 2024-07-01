@@ -183,9 +183,13 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     // }
     
     // for (delta /= 2; delta != 0; delta /= 2) {
-    //     //auto temp = GetHeaderStd2(low, delta + 1); //offset one 
-    //     if (pvComp(low - delta, key, keylen, cursor) >= 0)
+    //     auto temp = pvComp(low - delta, key, keylen, cursor); //offset one 
+    //     if (temp == 0) 
+    //         return (org - (char*)(low - delta)) / sizeof(Stdhead);
+    //     if (temp > 0)
     //         low -= delta;
+    //     //     if (pvComp(low - delta, key, keylen, cursor) >= 0)
+    // //         low -= delta;
     // }
     // if ((cmp = pvComp(low, key, keylen, cursor)) > 0)
     //     low -= 1;
@@ -199,19 +203,22 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     while (length > 0) {
       long rem = length % 2;
       length /= 2;
-      local_cmp = pvComp(first - length, key, keylen, cursor);
-      Stdhead* first_temp = first - length - rem;
-        asm volatile (
-            "cmpq $0, %[local_cmp]\n\t"        // Test local_cmp with itself to set flags
-            "cmovge %[first_temp], %[first]\n\t"        // If local_cmp >= 0, move first_temp to first
-            : [first] "+r" (first)  // Output operands
-            : [local_cmp] "r" (local_cmp), [first_temp] "r" (first_temp) // Input operands
-            : "cc"  // Clobbered registers
-        );
-    //     if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
-    //     first -= length + rem;
-    //   }
-      if (local_cmp == 0) cmp = 0;
+    //   local_cmp = pvComp(first - length, key, keylen, cursor);
+    //   Stdhead* first_temp = first - length - rem;
+    //     asm volatile (
+    //         "cmpq $0, %[local_cmp]\n\t"        // Test local_cmp with itself to set flags
+    //         "cmovge %[first_temp], %[first]\n\t"        // If local_cmp >= 0, move first_temp to first
+    //         : [first] "+r" (first)  // Output operands
+    //         : [local_cmp] "r" (local_cmp), [first_temp] "r" (first_temp) // Input operands
+    //         : "cc"  // Clobbered registers
+    //     );
+        if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
+            first -= length + rem;
+        }
+        if (local_cmp == 0) {
+            cmp = 0;
+            break;
+        }
    }
 
    return (org - (char*)first) / sizeof(Stdhead);

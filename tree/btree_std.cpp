@@ -763,12 +763,33 @@ int BPTree::char_cmp_count(const char *a, const char *b, int alen, int blen) {
 int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
                            int low, int high, bool isleaf) {
 #ifdef UBS
-    if (cursor->size == 0) return 0;
-    long cmp = 0;
-    int pos =  unrolledBinarySearch(cursor, key, keylen, cmp);
-    if (cmp == 0) return isleaf ? pos : pos + 1; //right node of key
-    // if (cmp == 0) return pos; //branchless
-    else return isleaf ? -1 : pos; //not found in leaf, or branch node right child
+    // if (cursor->size == 0) return 0;
+    // long cmp = 0;
+    // int pos =  unrolledBinarySearch(cursor, key, keylen, cmp);
+    // if (cmp == 0) return isleaf ? pos : pos + 1; //right node of key
+    // // if (cmp == 0) return pos; //branchless
+    // else return isleaf ? -1 : pos; //not found in leaf, or branch node right child
+
+    long length = cursor->size;
+    Stdhead* first = GetHeadBase(cursor);
+    Stdhead* org = first;
+    long local_cmp;
+    while (length > 0) {
+      long rem = length % 2;
+      length /= 2;
+        if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
+            first -= length + rem;
+        }
+        else if (local_cmp == 0) {//branchful
+            first -= length;
+            int result = org - first;
+            if (!isleaf) result++;
+            return result;
+        }
+   }
+   return isleaf ? -1 : org - first;
+
+
 #else
     while (low <= high) {
         int mid = low + (high - low) / 2;

@@ -212,11 +212,11 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     //         : [local_cmp] "r" (local_cmp), [first_temp] "r" (first_temp) // Input operands
     //         : "cc"  // Clobbered registers
     //     );
-        if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
+        if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
             first -= length + rem;
         }
-        if (local_cmp == 0) {//branchful
-            first += rem;
+        else if (local_cmp == 0) {//branchful
+            first -= length;
             cmp = 0;
             break;
         }

@@ -22,9 +22,11 @@ Node::Node() {
     next = nullptr;
 
 #ifdef UBS
+#ifdef SHAR
     I = 0;
     Ip = 0;
     firstL = 0;
+#endif
 #endif
 }
 

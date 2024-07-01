@@ -215,7 +215,8 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
         if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
             first -= length + rem;
         }
-        if (local_cmp == 0) {
+        if (local_cmp == 0) {//branchful
+            first += rem;
             cmp = 0;
             break;
         }

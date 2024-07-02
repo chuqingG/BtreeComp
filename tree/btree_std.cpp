@@ -632,7 +632,7 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
 #ifdef UBS
     // if (cursor->size == 0) return 0;
 
-    return unrolledBinarySearch(cursor, key, keylen, true);
+    return unrolledBinarySearch(cursor, key, keylen, equal);
     // if (cmp == 0) {
     //    equal = true;
     //     while (pos < high) { //linear search

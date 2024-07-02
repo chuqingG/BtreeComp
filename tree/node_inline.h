@@ -200,9 +200,9 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool 
 
 {//branchless w/ inline assembly
       long length = cursor->size;
-    cmp = 1;
     Stdhead* first = GetHeadBase(cursor);
     Stdhead* org = first;
+    long cmp = 1;
     long local_cmp;
     while (length > 0) {
       long rem = length % 2;

@@ -198,57 +198,57 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool 
     //     low -= 1;
     // return (org - low);
 
-// {
+{//branchless w/ inline assembly
+    long length = cursor->size;
+    cmp = 1;
+    Stdhead* first = GetHeadBase(cursor);
+    char* org = (char*)first;
+    long local_cmp;
+    while (length > 0) {
+      long rem = length % 2;
+      length /= 2;
+      local_cmp = pvComp(first - length, key, keylen, cursor);
+      Stdhead* first_temp = first - length - rem;
+        asm volatile (
+            "cmpq $0, %[local_cmp]\n\t"        // Test local_cmp with itself to set flags
+            "cmovge %[first_temp], %[first]\n\t"        // If local_cmp >= 0, move first_temp to first
+            : [first] "+r" (first)  // Output operands
+            : [local_cmp] "r" (local_cmp), [first_temp] "r" (first_temp) // Input operands
+            : "cc"  // Clobbered registers
+        );
+        // if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
+        //     first -= length + rem;
+        // }
+        // else if (local_cmp == 0) {//branchful
+        //     first -= length;
+        //     cmp = 0;
+        //     break;
+        // }
+   }
+
+   return (org - (char*)first) / sizeof(Stdhead);
+}
+
+// {//modified uniform
 //     long length = cursor->size;
-//     cmp = 1;
 //     Stdhead* first = GetHeadBase(cursor);
-//     char* org = (char*)first;
+//     Stdhead* org = first;
 //     long local_cmp;
 //     while (length > 0) {
 //       long rem = length % 2;
 //       length /= 2;
-//     //   local_cmp = pvComp(first - length, key, keylen, cursor);
-//     //   Stdhead* first_temp = first - length - rem;
-//     //     asm volatile (
-//     //         "cmpq $0, %[local_cmp]\n\t"        // Test local_cmp with itself to set flags
-//     //         "cmovge %[first_temp], %[first]\n\t"        // If local_cmp >= 0, move first_temp to first
-//     //         : [first] "+r" (first)  // Output operands
-//     //         : [local_cmp] "r" (local_cmp), [first_temp] "r" (first_temp) // Input operands
-//     //         : "cc"  // Clobbered registers
-//     //     );
 //         if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
 //             first -= length + rem;
 //         }
 //         else if (local_cmp == 0) {//branchful
 //             first -= length;
-//             cmp = 0;
-//             break;
+//             int result = org - first;
+//             if (!isleaf) result++;
+//             return result;
 //         }
 //    }
-
-//    return (org - (char*)first) / sizeof(Stdhead);
+//    return isleaf ? -1 : org - first;
 // }
-
-{//modified uniform
-    long length = cursor->size;
-    Stdhead* first = GetHeadBase(cursor);
-    Stdhead* org = first;
-    long local_cmp;
-    while (length > 0) {
-      long rem = length % 2;
-      length /= 2;
-        if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
-            first -= length + rem;
-        }
-        else if (local_cmp == 0) {//branchful
-            first -= length;
-            int result = org - first;
-            if (!isleaf) result++;
-            return result;
-        }
-   }
-   return isleaf ? -1 : org - first;
-}
 
 }
 #endif

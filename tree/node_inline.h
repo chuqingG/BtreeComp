@@ -199,10 +199,10 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool 
     // return (org - low);
 
 {//branchless w/ inline assembly
-    long length = cursor->size;
+      long length = cursor->size;
     cmp = 1;
     Stdhead* first = GetHeadBase(cursor);
-    char* org = (char*)first;
+    Stdhead* org = first;
     long local_cmp;
     while (length > 0) {
       long rem = length % 2;
@@ -216,17 +216,18 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool 
             : [local_cmp] "r" (local_cmp), [first_temp] "r" (first_temp) // Input operands
             : "cc"  // Clobbered registers
         );
-        // if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
-        //     first -= length + rem;
-        // }
-        // else if (local_cmp == 0) {//branchful
-        //     first -= length;
-        //     cmp = 0;
-        //     break;
-        // }
+    //     if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
+    //     first -= length + rem;
+    //   }
+      if (local_cmp == 0) cmp = 0;
    }
-
-   return (org - (char*)first) / sizeof(Stdhead);
+    if (cmp == 0) {
+        first -= length;
+        int result = org - first;
+        if (!isleaf) result++;
+        return result;
+    }
+   return isleaf ? -1 : (org - first);
 }
 
 // {//modified uniform

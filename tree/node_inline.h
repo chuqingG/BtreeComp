@@ -222,7 +222,6 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool 
       if (local_cmp == 0) cmp = 0;
    }
     if (cmp == 0) {
-        first -= length;
         int result = org - first;
         if (!isleaf) result++;
         return result;

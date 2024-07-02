@@ -630,9 +630,9 @@ bool BPTree::check_split_condition(Node *node, int keylen) {
 int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low, int high,
                               bool &equal) {
 #ifdef UBS
-    if (cursor->size == 0) return 0;
-    long cmp = 0;
-    int pos =  unrolledBinarySearch(cursor, key, keylen, cmp);
+    // if (cursor->size == 0) return 0;
+
+    return unrolledBinarySearch(cursor, key, keylen, cmp);
     // if (cmp == 0) {
     //    equal = true;
     //     while (pos < high) { //linear search
@@ -642,8 +642,7 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
     //     }
     //     return pos + 1;
     // } 
-    // else 
-    return pos;
+
 #else
     while (low <= high) {
         int mid = low + (high - low) / 2;
@@ -770,24 +769,8 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     // // if (cmp == 0) return pos; //branchless
     // else return isleaf ? -1 : pos; //not found in leaf, or branch node right child
 
-    long length = cursor->size;
-    Stdhead* first = GetHeadBase(cursor);
-    Stdhead* org = first;
-    long local_cmp;
-    while (length > 0) {
-      long rem = length % 2;
-      length /= 2;
-        if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
-            first -= length + rem;
-        }
-        else if (local_cmp == 0) {//branchful
-            first -= length;
-            int result = org - first;
-            if (!isleaf) result++;
-            return result;
-        }
-   }
-   return isleaf ? -1 : org - first;
+    return unrolledBinarySearch(cusor, key, keylen, isleaf);
+
 
 
 #else

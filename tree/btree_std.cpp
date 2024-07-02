@@ -632,7 +632,7 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
 #ifdef UBS
     // if (cursor->size == 0) return 0;
 
-    return unrolledBinarySearch(cursor, key, keylen, cmp);
+    return unrolledBinarySearch(cursor, key, keylen, true);
     // if (cmp == 0) {
     //    equal = true;
     //     while (pos < high) { //linear search
@@ -769,7 +769,7 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     // // if (cmp == 0) return pos; //branchless
     // else return isleaf ? -1 : pos; //not found in leaf, or branch node right child
 
-    return unrolledBinarySearch(cusor, key, keylen, isleaf);
+    return unrolledBinarySearch(cursor, key, keylen, isleaf);
 
 
 

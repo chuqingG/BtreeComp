@@ -177,6 +177,8 @@ long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 //returns position
 #ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool isleaf) {//cutoff is potential head_comp ignored bytes
+
+{//shar branchless
     // uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
     // Stdhead* low = GetHeadBase(cursor);
     // Stdhead* org = low; //most right(largest is to the right)
@@ -186,67 +188,92 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool 
     // }
     
     // for (delta /= 2; delta != 0; delta /= 2) {
-    //     // auto temp = pvComp(low - delta, key, keylen, cursor); //offset one 
-    //     // if (temp == 0) 
-    //     //     return (org - (char*)(low - delta)) / sizeof(Stdhead);
-    //     // if (temp > 0)
-    //     //     low -= delta;
     //     if (pvComp(low - delta, key, keylen, cursor) >= 0)
     //     low -= delta;
     // }
     // if ((cmp = pvComp(low, key, keylen, cursor)) > 0)
     //     low -= 1;
     // return (org - low);
-
-{//branchless w/ inline assembly
-      long length = cursor->size;
-    Stdhead* first = GetHeadBase(cursor);
-    Stdhead* org = first;
-    long cmp = 1;
-    long local_cmp;
-    while (length > 0) {
-      long rem = length % 2;
-      length /= 2;
-      local_cmp = pvComp(first - length, key, keylen, cursor);
-      Stdhead* first_temp = first - length - rem;
-        asm volatile (
-            "cmpq $0, %[local_cmp]\n\t"        // Test local_cmp with itself to set flags
-            "cmovge %[first_temp], %[first]\n\t"        // If local_cmp >= 0, move first_temp to first
-            : [first] "+r" (first)  // Output operands
-            : [local_cmp] "r" (local_cmp), [first_temp] "r" (first_temp) // Input operands
-            : "cc"  // Clobbered registers
-        );
-    //     if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
-    //     first -= length + rem;
-    //   }
-      if (local_cmp == 0) cmp = 0;
-   }
-    if (cmp == 0) {
-        return org - first;
-    }
-   return isleaf ? -1 : (org - first);
 }
 
-// {//modified uniform
-//     long length = cursor->size;
+// {//shar branchful
+//     uint16_t delta = cursor->I; //delta is size
+//     Stdhead* low = GetHeadBase(cursor);
+//     Stdhead* org = low; //most right(largest is to the right)
+//     long temp;
+//     if (temp = delta != cursor->size && (temp = pvComp(low - delta, key, keylen, cursor)) >= 0) { //initial probe cost
+//         low = GetHeaderStd(cursor, cursor->Ip - 1);  //if K > Ki
+//         delta = cursor->firstL;
+//     }
+
+//     //for (delta /= 2; delta != 0; delta /= 2) {//branchless
+//     while (delta != 0) {
+//         delta /= 2;//branchful
+//         temp = pvComp(low - delta, key, keylen, cursor); //offset one 
+//         if (temp == 0) {//branchful
+//             low -= delta;
+//             int result = org - low;
+//             if (!isleaf) result++;
+//             return result;
+//         }
+//         else if (temp > 0) {
+//             low -= delta;
+//         }
+//     }
+//     if (temp > 0) low -= 1;
+
+//     return isleaf ? -1 : (org - low);
+// }
+
+// {//modify uniform branchless w/ inline assembly
+//       long length = cursor->size;
 //     Stdhead* first = GetHeadBase(cursor);
 //     Stdhead* org = first;
+//     long cmp = 1;
 //     long local_cmp;
 //     while (length > 0) {
 //       long rem = length % 2;
 //       length /= 2;
-//         if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
-//             first -= length + rem;
-//         }
-//         else if (local_cmp == 0) {//branchful
-//             first -= length;
-//             int result = org - first;
-//             if (!isleaf) result++;
-//             return result;
-//         }
+//       local_cmp = pvComp(first - length, key, keylen, cursor);
+//       Stdhead* first_temp = first - length - rem;
+//         asm volatile (
+//             "cmpq $0, %[local_cmp]\n\t"        // Test local_cmp with itself to set flags
+//             "cmovge %[first_temp], %[first]\n\t"        // If local_cmp >= 0, move first_temp to first
+//             : [first] "+r" (first)  // Output operands
+//             : [local_cmp] "r" (local_cmp), [first_temp] "r" (first_temp) // Input operands
+//             : "cc"  // Clobbered registers
+//         );
+//     //     if ((local_cmp = pvComp(first - length, key, keylen, cursor)) >= 0) {
+//     //     first -= length + rem;
+//     //   }
+//       if (local_cmp == 0) cmp = 0;
 //    }
-//    return isleaf ? -1 : org - first;
+//     if (cmp == 0) {
+//         return org - first;
+//     }
+//    return isleaf ? -1 : (org - first);
 // }
+
+{//modified uniform
+    long length = cursor->size;
+    Stdhead* first = GetHeadBase(cursor);
+    Stdhead* org = first;
+    long local_cmp;
+    while (length > 0) {
+      long rem = length % 2;
+      length /= 2;
+        if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
+            first -= length + rem;
+        }
+        else if (local_cmp == 0) {//branchful
+            first -= length;
+            int result = org - first;
+            if (!isleaf) result++;
+            return result;
+        }
+   }
+   return isleaf ? -1 : org - first;
+}
 
 }
 #endif

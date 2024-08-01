@@ -37,6 +37,7 @@
         nptr->prefix = new Item(addr, size, newallo); \
     }
 int bswap(int);
+char* allocSafeStr(int length);
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
 #define movNorm(src, dest) *(int*)dest = bswap(*(int*)src)
 #define fillNull(dest, offset) *(int*)(dest + offset) = 0; // for post head compression less than 4 bytes edge cases
@@ -105,8 +106,9 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
         Stdhead *newhead = (Stdhead *)(newbase + MAX_SIZE_IN_BYTES
                                        - (newidx + 1) * sizeof(Stdhead));
         int key_len = oldhead->key_len;
-        #ifdef PV
-            char *presuf = new char[oldhead->key_len + 1]; //extract entire key
+        #ifdef KP
+            // char *presuf = new char[oldhead->key_len + 1]; //extract entire key
+            char * presuf = allocSafeStr(oldhead->key_len + 1);
             presuf[oldhead->key_len + 1] = '\0';
             memcpy(presuf, oldhead->key_prefix, PV_SIZE);
             strncpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset), oldhead->key_len < PV_SIZE ? 0 :  oldhead->key_len);
@@ -115,9 +117,10 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
 
             newhead->key_len = oldhead->key_len - cutoff;
             newhead->key_offset = top;
-            memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
-            strncpy(newhead->key_prefix, presuf + cutoff, (int)newhead->key_len);
-            movNorm(presuf, presuf); //store prefix as normalized
+            // memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
+            fillNull(newhead->key_prefix, 0);
+            // strncpy(newhead->key_prefix, presuf + cutoff, (int)PV_SIZE);
+            movNorm((presuf + cutoff), newhead->key_prefix); //store prefix as normalized
 
             int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
             strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0

@@ -5,8 +5,10 @@
 #include <cstring>
 #include "../utils/item.hpp"
 #include "../utils/compare.cpp"
+#include <cstdint>
 
 using namespace std;
+#define movNorm(src, dest) *(int*)dest = __builtin_bswap32(*(int*)src) //double declaration
 
 char *tail_compress(const char *lastleft, const char *firstright, int len_ll, int len_fr) {
     int prefixlen = get_common_prefix_len(lastleft, firstright, len_ll, len_fr);
@@ -20,13 +22,18 @@ char *tail_compress(const char *lastleft, const char *firstright, int len_ll, in
     return separator;
 }
 char *tail_compress(char *leftprefix, char *rightprefix, const char *leftsuffix, const char *rightsuffix, int len_ll, int len_fr) {
+#ifdef KP
     char *left = new char[len_ll + 1];
     char *right = new char[len_fr + 1];
-    strncpy(left, leftprefix, PV_SIZE);
+    movNorm(leftprefix, left);
     strcpy(left + PV_SIZE, leftsuffix);
-    strncpy(right, rightprefix, PV_SIZE);
+    movNorm(rightprefix, right);
     strcpy(right + PV_SIZE, rightsuffix);
-    return tail_compress(left, right, len_ll, len_fr);
+    char* ret = tail_compress(left, right, len_ll, len_fr);
+    delete left;
+    delete right;
+    return ret;
+#endif
 }
 
 int tail_compress_length(const char *lastleft, const char *firstright, int len_ll, int len_fr) {
@@ -38,13 +45,18 @@ int tail_compress_length(const char *lastleft, const char *firstright, int len_l
 }
 
 int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsuffix, const char *rightsuffix, int len_ll, int len_fr) {
+#ifdef KP
     char *left = new char[len_ll + 1];
     char *right = new char[len_fr + 1];
-    strncpy(left, leftprefix, PV_SIZE);
+    movNorm(leftprefix, left);
     strcpy(left + PV_SIZE, leftsuffix);
-    strncpy(right, rightprefix, PV_SIZE);
+    movNorm(rightprefix, right);
     strcpy(right + PV_SIZE, rightsuffix);
-    return tail_compress_length(left, right, len_ll, len_fr);
+    int ret = tail_compress_length(left, right, len_ll, len_fr); //used in finding the length of tail comp key
+    delete left;
+    delete right;
+    return ret;
+#endif
 }
 
 int head_compression_find_prefix_length(Item *low, Item *high) {

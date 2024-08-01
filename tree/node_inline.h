@@ -2,6 +2,7 @@
 #include "node.h"
 // #include "../utils/config.h"
 #include "../utils/compare.cpp"
+#include <cstdint>
 
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
@@ -35,9 +36,11 @@
         delete nptr->prefix;                          \
         nptr->prefix = new Item(addr, size, newallo); \
     }
-
+int bswap(int);
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
-
+#define movNorm(src, dest) *(int*)dest = bswap(*(int*)src)
+#define fillNull(dest, offset) *(int*)(dest + offset) = 0; // for post head compression less than 4 bytes edge cases
+#ifdef UBS
 inline void calculateBSMetaData(Node *node) {
     int n = node->size;
     int k = sizeof(int) * 8 - __builtin_clz(n) - 1;
@@ -47,8 +50,9 @@ inline void calculateBSMetaData(Node *node) {
     node->firstL = 1 << (l - 1);
     node->Ip = (uint16_t) n + 1 - (1 << l);
 }
-
+#endif
 inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
+    klen = klen < PV_SIZE ? PV_SIZE : klen; //invariant: must be at least length 4
     // shift the headers
     for (int i = nptr->size; i > pos; i--) {
         memcpy(GetHeaderStd(nptr, i), GetHeaderStd(nptr, i - 1), sizeof(Stdhead));
@@ -65,8 +69,7 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
             strcpy(BufTop(nptr), "\0");
             nptr->space_top += 1;
         }
-        memset(header->key_prefix, 0, PV_SIZE);
-        strncpy(header->key_prefix, k, min(PV_SIZE, (int)klen));
+        *(int*) header->key_prefix = bswap(*(int*)k);
     #else
         strcpy(BufTop(nptr), k);
         nptr->space_top += klen + 1;
@@ -105,13 +108,16 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
         #ifdef PV
             char *presuf = new char[oldhead->key_len + 1]; //extract entire key
             presuf[oldhead->key_len + 1] = '\0';
-            strncpy(presuf, oldhead->key_prefix, PV_SIZE);
+            memcpy(presuf, oldhead->key_prefix, PV_SIZE);
             strncpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset), oldhead->key_len < PV_SIZE ? 0 :  oldhead->key_len);
+
+            movNorm(presuf, presuf); //unnormalize for cutoff
 
             newhead->key_len = oldhead->key_len - cutoff;
             newhead->key_offset = top;
             memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
-            strncpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
+            strncpy(newhead->key_prefix, presuf + cutoff, (int)newhead->key_len);
+            movNorm(presuf, presuf); //store prefix as normalized
 
             int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
             strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
@@ -128,25 +134,19 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
         //     cout << "wrong update" << endl;
     }
 }
-
+inline int bswap(int n) {
+    return __builtin_bswap32(n);
+}
+inline char* allocSafeStr(int length) {
+    char* s = new char[length + PV_SIZE];
+    fillNull(s, length);
+    return s;
+}
 #ifdef PV
 inline long word_cmp(Stdhead* header,const char* key, int keylen) {
-    // char word[8] = {0};
-    // char prefix[8] = {0};
-    // for (int i = 0; i < PV_SIZE; i++) 
-    //     prefix[i] = header->key_prefix[PV_SIZE - 1 - i];
-    // for (int i = 0; i < min(keylen, PV_SIZE); i++)
-    //     word[i] = key[min(keylen, PV_SIZE) - 1 - i];
-    // return *(long*)word - *(long*)prefix;
-    int cmp_len = min(PV_SIZE, keylen);
-    // int idx = *matchp;
-    for (int idx = 0; idx < cmp_len; ++idx) {
-        int cmp = key[idx] - header->key_prefix[idx];
-        if (cmp != 0)
-            return cmp;
-    }
-    /* Contents are equal up to the smallest length. */
-    return 0;
+    int pre = *(int*)key;
+    pre = bswap(pre);
+    return pre - *(int*)header->key_prefix;
 }
 
 inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
@@ -158,6 +158,7 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     return cmp;
 }
 #endif
+#ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
     // if (cursor->size <= 16) {
     //     int i;
@@ -192,7 +193,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     }
     return curPos;
 }
-
+#endif
 
 /*
 ===============For DB2=============

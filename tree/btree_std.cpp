@@ -1,5 +1,6 @@
 #include "btree_std.h"
 #include "../compression/compression_std.cpp"
+#include <cassert>
 
 // Initialise the BPTree Node
 BPTree::BPTree(bool head_compression, bool tail_compression) {
@@ -312,7 +313,8 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     int insertpos;
     bool equal = false;
 
-    if (this->head_comp) {
+    if (this->head_comp) { 
+        if (newkey_len - node->prefix->size < PV_SIZE)
         insertpos = search_insert_pos(node, newkey + node->prefix->size,
                                       newkey_len - node->prefix->size,
                                       0, node->size - 1, equal);
@@ -342,7 +344,8 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     char *pkey_buf;
     if (this->head_comp && node->prefix->size) { //promote key
         pkey_len = node->prefix->size + head_fr->key_len;
-        pkey_buf = new char[pkey_len + 1];
+        // pkey_buf = new char[pkey_len + 1];
+        pkey_buf = allocSafeStr(pkey_len + 1);//kn
         strncpy(pkey_buf, node->prefix->addr, node->prefix->size);
         #ifdef PV
             strncpy(pkey_buf + node->prefix->size, head_fr->key_prefix, PV_SIZE);
@@ -353,7 +356,8 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     }
     else {
         pkey_len = head_fr->key_len;
-        pkey_buf = new char[pkey_len + 1];
+        // pkey_buf = new char[pkey_len + 1];
+        pkey_buf = allocSafeStr(pkey_len + 1);//kn
         #ifdef PV
             strncpy(pkey_buf, head_fr->key_prefix, PV_SIZE);
             strcpy(pkey_buf + PV_SIZE, firstright);
@@ -499,10 +503,12 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
 #endif
         if (this->head_comp && node->prefix->size) {
             int pfxlen = node->prefix->size;
-            s = new char[s_len + pfxlen + 1];
+            // s = new char[s_len + pfxlen + 1];
+            s = allocSafeStr(s_len + pfxlen + 1);
             strncpy(s, node->prefix->addr, pfxlen);
-            #ifdef PV
+            #ifdef KP
                 strncpy(s + pfxlen, head_fr->key_prefix, min(s_len, PV_SIZE));
+                //movNorm(head_fr->key_prefix, s + pfxlen);
                 if (s_len > PV_SIZE) strncpy(s + pfxlen + PV_SIZE, firstright, s_len - PV_SIZE); 
             #else
                 strncpy(s + pfxlen, firstright, s_len);
@@ -510,9 +516,11 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             s_len += pfxlen;
         }
         else {
-            s = new char[s_len + 1];
-            #ifdef PV
+            // s = new char[s_len + 1];
+            s = allocSafeStr(s_len + 1);
+            #ifdef KP
                 strncpy(s, head_fr->key_prefix, min(s_len, PV_SIZE));
+                //movNorm(head_fr->key_prefix, s);
                 if (s_len > PV_SIZE) strncpy(s + PV_SIZE, firstright, s_len - PV_SIZE); //copy until nullbyte
             #else
                 strncpy(s, firstright, s_len);
@@ -523,10 +531,12 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     else {
         if (this->head_comp && node->prefix->size) {
             s_len = node->prefix->size + head_fr->key_len;
-            s = new char[s_len + 1];
+            // s = new char[s_len + 1];
+            s = allocSafeStr(s_len + 1);
             strncpy(s, node->prefix->addr, node->prefix->size);
-            #ifdef PV
+            #ifdef KP
                 strncpy(s + node->prefix->size, head_fr->key_prefix, PV_SIZE); //prefix
+                //movNorm(head_fr->key_prefix, s + node->prefix->size);
                 strcpy(s + PV_SIZE + node->prefix->size, firstright); //suffix
             #else
                 strcpy(s + node->prefix->size, firstright);
@@ -534,7 +544,8 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
         }
         else {
             s_len = head_fr->key_len;
-            s = new char[s_len + 1];
+            // s = new char[s_len + 1];
+            s = allocSafeStr(s_len + 1);
             #ifdef PV
                 strncpy(s, head_fr->key_prefix,PV_SIZE);
                 strcpy(s + PV_SIZE, firstright); //copy until nullbyte
@@ -612,7 +623,11 @@ bool BPTree::check_split_condition(Node *node, int keylen) {
     // double the key size to split safely
     // only works when the S_newkey <= S_prevkey + S_limit
     int currspace = node->space_top + node->size * sizeof(Stdhead);
+#ifdef PV
+    int splitcost = 2 * max(keylen, APPROX_KEY_SIZE) + sizeof(Stdhead) - PV_SIZE;
+#else
     int splitcost = 2 * max(keylen, APPROX_KEY_SIZE) + sizeof(Stdhead);
+#endif
     if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
     else
@@ -636,13 +651,14 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
     } 
     else return cmp > 0 ? pos + 1 : pos;
 #else
+    assert(keylen >= PV_SIZE);
     while (low <= high) {
         int mid = low + (high - low) / 2;
 
         Stdhead *header = GetHeaderStd(cursor, mid);
 
         #ifdef PV
-        long cmp = pvComp(ki, key, keylen, cursor);
+        long cmp = pvComp(header, key, keylen, cursor);
         #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
@@ -759,13 +775,14 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     if (cmp == 0) return isleaf ? pos : pos + 1; //right node of key
     else return isleaf ? -1 : cmp > 0 ? pos + 1 : pos; //not found in leaf, or branch node right child
 #else
+    assert(keylen >= PV_SIZE);
     while (low <= high) {
         int mid = low + (high - low) / 2;
         Stdhead *header = GetHeaderStd(cursor, mid);
         
 #ifndef TRACK_DISTANCE
     #ifdef PV
-        long cmp = pvComp(ki, key, keylen, cursor);
+        long cmp = pvComp(header, key, keylen, cursor);
     #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);

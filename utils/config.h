@@ -8,8 +8,8 @@
 #define MEMDEBUG
 #define CHARALL
 #define SINGLE_DEBUG
-#define PRINT //enable checking warmup and print warmup tree
-//#define CHECK
+// #define PRINT //enable printing warmup tree
+// #define CHECK // check correctness on warmup tree
 #define VERBOSE_PRINT // enable to write some intermediate results to output file (if set -o)
 // #define WT_OPTIM   // enable for prefixstart
 // #define WTCACHE
@@ -17,7 +17,9 @@
 // #define TOFIX  // enable to fix some skipped problem
 #define PV //prefix vector
 // #define UBS //unrolled binary search 
-#define KP
+// #define KP //KN Key-prefix normalization only
+// #define PN //KN Partial normalization
+#define FN //KN Full normalization
 
 // Setup
 #define SPLIT_STRATEGY_SPACE

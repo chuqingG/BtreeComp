@@ -63,7 +63,13 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     header->key_offset = nptr->space_top;
     #ifdef PV
         if (klen > PV_SIZE) {
+            #if defined KP
             strcpy(BufTop(nptr), k + PV_SIZE);
+            #elif defined FN
+                for (char* kp = (char *)k, np = BufTop(nptr); k < k + klen; k += 4, np += 4) {
+                    movNorm(k, np);
+                }
+            #endif
             nptr->space_top += klen - PV_SIZE + 1;
         }
         else {
@@ -106,7 +112,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
         Stdhead *newhead = (Stdhead *)(newbase + MAX_SIZE_IN_BYTES
                                        - (newidx + 1) * sizeof(Stdhead));
         int key_len = oldhead->key_len;
-        #ifdef KP
+        #if defined KP
             // char *presuf = new char[oldhead->key_len + 1]; //extract entire key
             char * presuf = allocSafeStr(oldhead->key_len + 1);
             presuf[oldhead->key_len + 1] = '\0';
@@ -126,6 +132,62 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
             strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
             top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
             delete[] presuf;
+        #if defined FN
+            uint32_t oldwordidx = cutoff / PV_SIZE;
+            uint32_t oldcharidx = norm_index(cutoff % PV_SIZE); //zero-th indexed
+
+            uint32_t newidx = 3; //single index
+
+            if (oldwordidx == 0) {
+                while (oldcharidx >= 0) {
+                    char c = oldhead->key_prefix[oldcharidx];
+                    newhead->key_prefix[newidx] = c;
+                    oldcharidx++; newidx--;
+                } //copy oldhead prefix completely
+                oldcharidx = 3; oldwordidx++;
+            }
+
+            char* suffix = PageOffset(nptr, oldhead->key_offset);
+            while (newidx >= 0) {
+                char c = suffix[4 * oldwordidx + oldcharidx];
+                newhead->key_prefix[newidx] = c;
+                nextidx(oldwordidx, oldcharidx); newidx--;
+            }//copy newhead prefix completely
+
+            char* dest = newbase + top;
+            uint32_t newlen = oldhead->key_len - cutoff;
+            uint32_t lastindex = newlen / 4 + norm_index(newlen % PV_SIZE);
+            newidx = 4;
+            while(oldwordidx * 4 + oldcharidx < oldhead->key_len) {
+                uint32_t offset = oldwordidx * 4;
+                char c;
+                switch(oldcharidx) {
+                    case 3:
+                        c = suffix[offset + 3];
+                        dest[nextidx(newidx)] = c;
+                        if (newidx == lastindex) goto finished;
+                    case 2:
+                        c = suffix[offset + 2];
+                        dest[nextidx(newidx)] = c;
+                        if (newidx == lastindex) goto finished;
+                    case 1:
+                        c = suffix[offset + 1];
+                        dest[nextidx(newidx)] = c;
+                        if (newidx == lastindex) goto finished;
+                    case 0:
+                        c = suffix[offset];
+                        dest[nextidx(newidx)] = c;
+                        oldwordidx++; oldcharidx = 3;
+                }
+            }
+            finished: //fill nullbyte
+            uint32_t nullnum = newlen % PV_SIZE;
+            uint32_t totalbytes = newlen & 0xFC + 4;
+            if (nullnum > 0) dest[totalbytes - 4] &= ~(0xFFFFFFFF << (nullnum * 8)); //clear possible null bytes
+            dest[totalbytes] = '\0';
+            newhead->key_len = oldhead->key_len - cutoff;
+            newhead->key_offset = top;
+            top += totalbytes + 1;
         #else
             strcpy(BufTop(nptr), k);
             strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
@@ -145,6 +207,50 @@ inline char* allocSafeStr(int length) {
     fillNull(s, length);
     return s;
 }
+inline int adjustLen(int klen, int pfxlen) {
+    klen -= pfxlen;
+    return klen < PV_SIZE ? PV_SIZE : klen; //invariant, can't be lower than 4 bytes
+}
+inline int ceilLen(int klen) {
+    int mod = klen % PV_SIZE;
+    return keylen + (mod > 0 ? PV_SIZE - mod : 0);
+}
+
+inline void nextidx(int &wordidx, int &charidx) {
+    if (++charidx == 4) {
+        charidx = 0;
+        wordidx++;
+    }
+}
+inline int nextidx(int &idx) {
+    if (--idx % 4 == 0) idx += 7;
+    return idx;
+}
+
+inline int norm_index(int x) {
+    switch (x) {
+        case 3:
+            return 1;
+        case 2:
+            return 2:
+        case 1:
+            return 3;
+        case 0:
+            return 0;
+        default:
+            assert(false);
+    }
+}
+
+void copy_norm_to_unnorm(char &src, char *dest, uint32_t len) {
+    uint32_t idx = 4;
+    dest[len] = '\0';
+    while (len > 0) {
+        nextidx(idx);
+        dest[idx] = src[idx]; 
+        len--;
+    }
+}
 #ifdef PV
 inline long word_cmp(Stdhead* header,const char* key, int keylen) {
     int pre = *(int*)key;
@@ -155,8 +261,22 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
 inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
     if (cmp == 0) {
-        cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
-                            keylen, header->key_len);
+        #if defined KP
+            cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                                keylen, header->key_len);
+        #elif defined FN
+            char *suffix = PageOffset(cursor, header->key_offset);
+            key += PV_SIZE;
+            int len = min((int)header->key_len - PV_SIZE, keylen - PV_SIZE);
+            for (key += 4, int idx = 0; idx < len; idx += 4) {
+                key += 4; suffix += 4;
+                int pre = bswap(*(int*)key);
+                cmp = pre - *(int*)(suffix);
+                if (cmp != 0) return cmp;
+            }
+            cmp = keylen - header->key_len;
+
+        #endif
     }
     return cmp;
 }

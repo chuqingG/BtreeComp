@@ -6,8 +6,9 @@
 #include "../utils/item.hpp"
 #include "../utils/compare.cpp"
 #include <cstdint>
-
+#include <cassert>
 using namespace std;
+
 #define movNorm(src, dest) *(int*)dest = __builtin_bswap32(*(int*)src) //double declaration
 
 char *tail_compress(const char *lastleft, const char *firstright, int len_ll, int len_fr) {
@@ -22,6 +23,8 @@ char *tail_compress(const char *lastleft, const char *firstright, int len_ll, in
     return separator;
 }
 char *tail_compress(char *leftprefix, char *rightprefix, const char *leftsuffix, const char *rightsuffix, int len_ll, int len_fr) {
+    assert("Tail compress ran");
+    return NULL;
 #if defined KP
     char *left = new char[len_ll + 1];
     char *right = new char[len_fr + 1];
@@ -42,15 +45,15 @@ char *tail_compress(char *leftprefix, char *rightprefix, const char *leftsuffix,
             prefixlength += temp;
             if (temp < PV_SIZE) break;
         }
-        if (len_fr > prefixlen) {
-            prefixlen++;
+        if (len_fr > prefixlength) {
+            prefixlength++;
         }
     }
-    char *separator = new char[prefixlen + 1];
+    char *separator = new char[prefixlength + 1];
     
-    strncpy(separator, firstright, prefixlen);
-    separator[prefixlen] = '\0';
-
+    // strncpy(separator, firstright, prefixlength);
+    separator[prefixlength] = '\0';
+ 
     return separator;
 #endif
 }
@@ -77,18 +80,19 @@ int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsu
     return ret;
 #elif defined FN
     int prefixlength  = normed_common_prefix(*(int*)leftprefix, *(int*)rightprefix);
-    if (prefixlength < PV_SIZE) goto finish;
     int length = min(len_ll - PV_SIZE, len_fr - PV_SIZE);
+    if (prefixlength < PV_SIZE) goto finish;
     for (int idx = 0; idx < length; idx += 4, leftsuffix += 4, rightsuffix += 4) {
         int temp = normed_common_prefix(*(int*)leftsuffix, *(int*)rightsuffix);
         prefixlength += temp;
         if (temp < PV_SIZE) break;
     }
-    finish:
-    if (len_fr > prefixlen) {
-        prefixlen++;
+finish:
+    if (len_fr > prefixlength) {
+        prefixlength++;
     }
-    return prefixlen;
+    int mod = prefixlength % PV_SIZE;
+    return prefixlength + (mod > 0 ? PV_SIZE - mod : 0);
 #endif
 }
 

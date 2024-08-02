@@ -3,6 +3,7 @@
 // #include "../utils/config.h"
 #include "../utils/compare.cpp"
 #include <cstdint>
+#include <cassert>
 
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
@@ -38,6 +39,10 @@
     }
 int bswap(int);
 char* allocSafeStr(int length);
+int norm_index(int);
+void nextidx(int &, int &);
+int nextidx(int &);
+int adjustLen(int, int);
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
 #define movNorm(src, dest) *(int*)dest = bswap(*(int*)src)
 #define fillNull(dest, offset) *(int*)(dest + offset) = 0; // for post head compression less than 4 bytes edge cases
@@ -64,10 +69,12 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     #ifdef PV
         if (klen > PV_SIZE) {
             #if defined KP
-            strcpy(BufTop(nptr), k + PV_SIZE);
+                strcpy(BufTop(nptr), k + PV_SIZE);
             #elif defined FN
-                for (char* kp = (char *)k, np = BufTop(nptr); k < k + klen; k += 4, np += 4) {
-                    movNorm(k, np);
+                char* kp = (char *)k + 4;
+                char* np = BufTop(nptr);
+                for (; kp < k + klen; kp += 4, np += 4) {
+                    movNorm(kp, np);
                 }
             #endif
             nptr->space_top += klen - PV_SIZE + 1;
@@ -132,19 +139,31 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
             strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
             top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
             delete[] presuf;
-        #if defined FN
-            uint32_t oldwordidx = cutoff / PV_SIZE;
-            uint32_t oldcharidx = norm_index(cutoff % PV_SIZE); //zero-th indexed
+        #elif defined FN
+            int oldwordidx = cutoff / PV_SIZE; 
+            //first used to see if the old prefix is skipped, then to keep track which word of suffix is in
+            int oldcharidx = PV_SIZE - 1 - cutoff; 
+            //first used to see which char in the old prefix is being copied, than used to track index of the suffix word char 
 
-            uint32_t newidx = 3; //single index
+            newidx = 3; //first absolute index in the prefix, then absolute index of suffix
 
             if (oldwordidx == 0) {
-                while (oldcharidx >= 0) {
-                    char c = oldhead->key_prefix[oldcharidx];
-                    newhead->key_prefix[newidx] = c;
-                    oldcharidx++; newidx--;
+                switch (oldcharidx) {
+                    case 3:
+                        newhead->key_prefix[newidx] = oldhead->key_prefix[3];
+                        newidx--;
+                    case 2:
+                        newhead->key_prefix[newidx] = oldhead->key_prefix[2];
+                        newidx--;
+                    case 1:
+                        newhead->key_prefix[newidx] = oldhead->key_prefix[1];
+                        newidx--;
+                    case 0:
+                        newhead->key_prefix[newidx] = oldhead->key_prefix[0];
+                        newidx--;
+
                 } //copy oldhead prefix completely
-                oldcharidx = 3; oldwordidx++;
+                oldcharidx = 3;// always start on third pos
             }
 
             char* suffix = PageOffset(nptr, oldhead->key_offset);
@@ -155,9 +174,10 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
             }//copy newhead prefix completely
 
             char* dest = newbase + top;
-            uint32_t newlen = oldhead->key_len - cutoff;
-            uint32_t lastindex = newlen / 4 + norm_index(newlen % PV_SIZE);
-            newidx = 4;
+            int newlen = oldhead->key_len - cutoff;
+            int suflength = ((newlen - PV_SIZE) & 0xFC) + 4;
+            int lastindex = suflength - PV_SIZE + norm_index(newlen % PV_SIZE);
+            newidx = -4;
             while(oldwordidx * 4 + oldcharidx < oldhead->key_len) {
                 uint32_t offset = oldwordidx * 4;
                 char c;
@@ -182,12 +202,11 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
             }
             finished: //fill nullbyte
             uint32_t nullnum = newlen % PV_SIZE;
-            uint32_t totalbytes = newlen & 0xFC + 4;
-            if (nullnum > 0) dest[totalbytes - 4] &= ~(0xFFFFFFFF << (nullnum * 8)); //clear possible null bytes
-            dest[totalbytes] = '\0';
-            newhead->key_len = oldhead->key_len - cutoff;
+            if (nullnum > 0) *(int*)(dest + suflength - PV_SIZE) &= ~(((uint32_t)0xFFFFFFFF) >> (nullnum * 8)); //clear possible null bytes
+            dest[suflength] = '\0';
+            newhead->key_len = newlen;
             newhead->key_offset = top;
-            top += totalbytes + 1;
+            top += suflength + 1;
         #else
             strcpy(BufTop(nptr), k);
             strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
@@ -202,7 +221,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
 inline int bswap(int n) {
     return __builtin_bswap32(n);
 }
-inline char* allocSafeStr(int length) {
+inline char* allocSafeStr(int length) { // for head compression word comp
     char* s = new char[length + PV_SIZE];
     fillNull(s, length);
     return s;
@@ -213,18 +232,21 @@ inline int adjustLen(int klen, int pfxlen) {
 }
 inline int ceilLen(int klen) {
     int mod = klen % PV_SIZE;
-    return keylen + (mod > 0 ? PV_SIZE - mod : 0);
+    return klen + (mod > 0 ? PV_SIZE - mod : 0);
 }
 
 inline void nextidx(int &wordidx, int &charidx) {
-    if (++charidx == 4) {
-        charidx = 0;
+    if (--charidx < 0) {
+        charidx = 3;
         wordidx++;
     }
 }
 inline int nextidx(int &idx) {
-    if (--idx % 4 == 0) idx += 7;
-    return idx;
+    if (idx % 4 == 0) {
+        idx += 7;
+        return idx;
+    }
+    return --idx;
 }
 
 inline int norm_index(int x) {
@@ -232,7 +254,7 @@ inline int norm_index(int x) {
         case 3:
             return 1;
         case 2:
-            return 2:
+            return 2;
         case 1:
             return 3;
         case 0:
@@ -242,13 +264,15 @@ inline int norm_index(int x) {
     }
 }
 
-void copy_norm_to_unnorm(char &src, char *dest, uint32_t len) {
-    uint32_t idx = 4;
+void copy_norm_to_unnorm(char *src, char *dest, int len) { //fills nullbyte
+    // assert(len >= PV_SIZE);I guess don't need this
+    int idx = -4;
     dest[len] = '\0';
-    while (len > 0) {
+    int i = 0;
+    while (i < len) {
         nextidx(idx);
-        dest[idx] = src[idx]; 
-        len--;
+        dest[i] = src[idx]; 
+        i++;
     }
 }
 #ifdef PV
@@ -268,11 +292,11 @@ inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
             char *suffix = PageOffset(cursor, header->key_offset);
             key += PV_SIZE;
             int len = min((int)header->key_len - PV_SIZE, keylen - PV_SIZE);
-            for (key += 4, int idx = 0; idx < len; idx += 4) {
-                key += 4; suffix += 4;
+            for (int idx = 0; idx < len; idx += 4) {
                 int pre = bswap(*(int*)key);
                 cmp = pre - *(int*)(suffix);
                 if (cmp != 0) return cmp;
+                key += 4; suffix += 4;
             }
             cmp = keylen - header->key_len;
 

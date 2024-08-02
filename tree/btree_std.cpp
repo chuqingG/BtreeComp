@@ -535,8 +535,8 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
                 // strncpy(s, head_fr->key_prefix, min(s_len, PV_SIZE));
                 movNorm(head_fr->key_prefix, s);
                 if (s_len > PV_SIZE) strncpy(s + PV_SIZE, firstright, s_len - PV_SIZE); //copy until nullbyte
-            #if defined FN
-                movNorm(header_fr->key_prefix, s);
+            #elif defined FN
+                movNorm(head_fr->key_prefix, s);
                 copy_norm_to_unnorm(firstright, s + PV_SIZE, s_len - PV_SIZE);
             #else
                 strncpy(s, firstright, s_len);
@@ -802,7 +802,7 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
 #else
     assert(keylen >= PV_SIZE);
     #ifdef FN
-    assert(keylen % 4 == 0);
+    // assert(keylen % 4 == 0); allow head compression padded
     #endif
     while (low <= high) {
         int mid = low + (high - low) / 2;

@@ -156,12 +156,24 @@ void printKeys(Node *node, bool compressed) {
         Stdhead *head = GetHeaderStd(node, i);
 
         if (compressed && node->prefix->addr) {
-            #ifdef PV 
-            char prefix[PV_SIZE + 1] = {0};
-            strncpy(prefix, head->key_prefix,PV_SIZE);
-            cout << prefix;
+            #if defined(KP) || defined(FN) //prefix
+                char prefix[PV_SIZE + 1] = {0};
+                // strncpy(prefix, head->key_prefix,PV_SIZE);
+                movNorm(head->key_prefix, prefix);
+                cout << prefix;
             #endif
-            cout  << PageOffset(node, head->key_offset) << ",";
+            //suffix
+            #if defined KP
+                cout  << PageOffset(node, head->key_offset) << ",";
+            #elif defined FN
+                auto suffix = PageOffset(node, head->key_offset);
+                for (int i = 0; i < ceilLen(head->key_len) - PV_SIZE; i += 4) {
+                    char word[PV_SIZE + 1] = {0};
+                    movNorm((suffix + i), word);
+                    cout << word;
+                }
+                cout << ",";
+            #endif
         }
         else {
             cout << node->prefix->addr << PageOffset(node, head->key_offset) << ",";

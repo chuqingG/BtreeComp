@@ -110,8 +110,12 @@ void read_dataset(vector<string> &values, string filename, int max_number = -1) 
     if (max_number < 0)
         max_number = INT_MAX;
     while (std::getline(in, str) && counter < max_number) {
-        if (str.size() > 0)
+        if (str.size() > 0) {
+            #if defined FN
+                str += "\0\0\0\0";
+            #endif
             values.push_back(str);
+        }
         counter++;
     }
     if (!counter) {

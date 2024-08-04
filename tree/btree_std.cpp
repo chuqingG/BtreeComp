@@ -164,7 +164,7 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
             Node *newRoot = new Node();
 
             InsertNode(newRoot, 0, currsplit.left);
-            InsertKeyStd(newRoot, 0, currsplit.promotekey.addr, currsplit.promotekey.size);
+            InsertKeyStd(newRoot, 0, currsplit.promotekey.addr, adjustLen(currsplit.promotekey.size, 0));
             InsertNode(newRoot, 1, currsplit.right);
 
             newRoot->IS_LEAF = false;
@@ -373,7 +373,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
             strcpy(pkey_buf, firstright);
         #endif
     }
-    pkey_len = adjustLen(pkey_len, 0);
+    // pkey_len = adjustLen(pkey_len, 0);
     newsplit.promotekey.addr = pkey_buf;
     newsplit.promotekey.size = pkey_len;
     newsplit.promotekey.newallocated = true;
@@ -578,7 +578,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             #endif
         }
     }
-    s_len = adjustLen(s_len, 0);
+    //s_len = adjustLen(s_len, 0);
     newsplit.promotekey.addr = s;
     newsplit.promotekey.size = s_len;
     newsplit.promotekey.newallocated = true;

@@ -147,15 +147,15 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
     //     word[i] = key[min(keylen, PV_SIZE) - 1 - i];
     // return *(long*)word - *(long*)prefix;
 
-    // int cmp_len = min(PV_SIZE, keylen);
-    // for (int idx = 0; idx < cmp_len; ++idx) {
-    //     int cmp = key[idx] - header->key_prefix[idx];
-    //     if (cmp != 0)
-    //         return cmp;
-    // }
-    // return 0;
+    int cmp_len = min(PV_SIZE, keylen);
+    for (int idx = 0; idx < cmp_len; ++idx) {
+        int cmp = key[idx] - header->key_prefix[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    return 0;
 
-    return *(int *)(key) - *(int*)(header->key_prefix);
+    // return *(int *)(key) - *(int*)(header->key_prefix);
 
     /* Contents are equal up to the smallest length. */
     // int result = key[0] - header->key_prefix[0];
@@ -167,10 +167,10 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
 
 long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
-    // if (cmp == 0) {
-    //     cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
-    //                         keylen, header->key_len);
-    // }
+    if (cmp == 0) {
+        cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                            keylen, header->key_len);
+    }
     return cmp;
 }
 #endif
@@ -255,26 +255,26 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool 
 //    return isleaf ? -1 : (org - first);
 // }
 
-{//modified uniform
-    long length = cursor->size;
-    Stdhead* first = GetHeadBase(cursor);
-    Stdhead* org = first;
-    long local_cmp;
-    while (length > 0) {
-      long rem = length % 2;
-      length /= 2;
-        if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
-            first -= length + rem;
-        }
-        else if (local_cmp == 0) {//branchful
-            first -= length;
-            int result = org - first;
-            if (!isleaf) result++;
-            return result;
-        }
-   }
-   return isleaf ? -1 : org - first;
-}
+// {//modified uniform
+//     long length = cursor->size;
+//     Stdhead* first = GetHeadBase(cursor);
+//     Stdhead* org = first;
+//     long local_cmp;
+//     while (length > 0) {
+//       long rem = length % 2;
+//       length /= 2;
+//         if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
+//             first -= length + rem;
+//         }
+//         else if (local_cmp == 0) {//branchful
+//             first -= length;
+//             int result = org - first;
+//             if (!isleaf) result++;
+//             return result;
+//         }
+//    }
+//    return isleaf ? -1 : org - first;
+// }
 
 
 }

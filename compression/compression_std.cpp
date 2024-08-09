@@ -91,8 +91,8 @@ finish:
     if (len_fr > prefixlength) {
         prefixlength++;
     }
-    int mod = prefixlength % PV_SIZE;
-    return prefixlength + (mod > 0 ? PV_SIZE - mod : 0);
+    // int mod = prefixlength % PV_SIZE;
+    return prefixlength// + (mod > 0 ? PV_SIZE - mod : 0);
 #endif
 }
 

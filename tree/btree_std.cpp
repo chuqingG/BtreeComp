@@ -197,7 +197,7 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
                          adjustedLen);//KP
         }
         else {
-            InsertKeyStd(node, insertpos, newkey->addr, newkey->size);
+            InsertKeyStd(node, insertpos, newkey->addr, adjustedLen);
         }
 
         // Insert the new childsplit.right into node->ptrs[insertpos + 1]
@@ -341,7 +341,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     char *firstright = PageOffset(node, head_fr->key_offset);
     int pkey_len;
     char *pkey_buf;
-    if (this->head_comp && node->prefix->size) { //promote key
+    if (this->head_comp && node->prefix->size) { 
         pkey_len = node->prefix->size + head_fr->key_len;
         // pkey_buf = new char[pkey_len + 1];
         pkey_buf = allocSafeStr(pkey_len + 1);//kp
@@ -353,7 +353,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
         #elif defined FN
             int offset = PV_SIZE + node->prefix->size;
             movNorm(head_fr->key_prefix, (pkey_buf + node->prefix->size));
-            copy_norm_to_unnorm(firstright, pkey_buf + offset, pkey_len - offset);
+            if (head_fr->key_len > PV_SIZE) copy_norm_to_unnorm(firstright, pkey_buf + offset, head_fr->key_len - PV_SIZE);
         #else
             strcpy(pkey_buf + node->prefix->size, firstright);
         #endif
@@ -368,12 +368,12 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
             strcpy(pkey_buf + PV_SIZE, firstright);
         #elif defined FN
             movNorm(head_fr->key_prefix, pkey_buf);
-            copy_norm_to_unnorm(firstright, pkey_buf + PV_SIZE, pkey_len - PV_SIZE);
+            if (pkey_len > PV_SIZE) copy_norm_to_unnorm(firstright, pkey_buf + PV_SIZE, pkey_len - PV_SIZE);
         #else
             strcpy(pkey_buf, firstright);
         #endif
     }
-    // pkey_len = adjustLen(pkey_len, 0);
+    fillNull(pkey_buf, pkey_len);
     newsplit.promotekey.addr = pkey_buf;
     newsplit.promotekey.size = pkey_len;
     newsplit.promotekey.newallocated = true;
@@ -522,7 +522,7 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             #elif defined FN
                 int offset = pfxlen + PV_SIZE;
                 movNorm(head_fr->key_prefix, (s + pfxlen));    
-                copy_norm_to_unnorm(firstright, s + offset, s_len - offset);
+                if (s_len > PV_SIZE) copy_norm_to_unnorm(firstright, s + offset, s_len - PV_SIZE);
             #else
                 strncpy(s + pfxlen, firstright, s_len);
             #endif
@@ -537,18 +537,20 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
                 if (s_len > PV_SIZE) strncpy(s + PV_SIZE, firstright, s_len - PV_SIZE); //copy until nullbyte
             #elif defined FN
                 movNorm(head_fr->key_prefix, s);
-                copy_norm_to_unnorm(firstright, s + PV_SIZE, s_len - PV_SIZE);
+                if (s_len > PV_SIZE) copy_norm_to_unnorm(firstright, s + PV_SIZE, s_len - PV_SIZE);
             #else
                 strncpy(s, firstright, s_len);
             #endif
         }
-        s[s_len] = '\0';
+        // s_len = ceilLen(s_len); //enforce divisble by 4 invariant
+        fillNull(s, s_len);
+        //s[s_len] = '\0';
     }
     else {
         if (this->head_comp && node->prefix->size) {
-            s_len = node->prefix->size + head_fr->key_len;
+            s_len =  head_fr->key_len;
             // s = new char[s_len + 1];
-            s = allocSafeStr(s_len + 1);
+            s = allocSafeStr(s_len + node->prefix->size + 1);
             strncpy(s, node->prefix->addr, node->prefix->size);
             #if defined KP
                 // strncpy(s + node->prefix->size, head_fr->key_prefix, PV_SIZE); //prefix
@@ -557,10 +559,11 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
             #elif defined FN
                 int offset = PV_SIZE + node->prefix->size;
                 movNorm(head_fr->key_prefix, (s + node->prefix->size));
-                copy_norm_to_unnorm(firstright, s + offset, s_len - offset);
+                if (s_len > PV_SIZE)  copy_norm_to_unnorm(firstright, s + offset, s_len - PV_SIZE);
             #else
                 strcpy(s + node->prefix->size, firstright);
             #endif
+            s_len += node->prefix->size;
         }
         else {
             s_len = head_fr->key_len;
@@ -572,11 +575,14 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
                 strcpy(s + PV_SIZE, firstright); //copy until nullbyte
             #elif defined FN
                 movNorm(head_fr->key_prefix, s);
-                copy_norm_to_unnorm(firstright, s + PV_SIZE, s_len - PV_SIZE);
+                if (s_len > PV_SIZE) copy_norm_to_unnorm(firstright, s + PV_SIZE, s_len - PV_SIZE);
             #else
                 strcpy(s, firstright);
             #endif
         }
+        // s_len = ceilLen(s_len); //enforce divisble by 4 invariant
+        fillNull(s, s_len);
+        //s[s_len] = '\0';
     }
     //s_len = adjustLen(s_len, 0);
     newsplit.promotekey.addr = s;
@@ -887,7 +893,8 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
     // Condition when node is None
     if (x == NULL)
         return;
-
+    else if (x->IS_LEAF)
+        return;
     // Loop to print the depths of the
     // current node
     for (int i = 1; i < depth; ++i) {

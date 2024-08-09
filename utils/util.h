@@ -140,7 +140,14 @@ int read_dataset_char(vector<char *> &values, string filename, int max_keylen, i
         std::getline(in, str);
         int len = str.size();
         int real_len = min(len, max_keylen);
-        char *cptr = new char[real_len + 1];
+
+        #if defined FN
+            char *cptr = new char[real_len + PV_SIZE + 1];
+            *(int*) (cptr + real_len + 1) = 0;
+        #else 
+            char *cptr = new char[real_len + 1];
+        #endif
+
         // strcpy(cptr, str.data());
         strncpy(cptr, str.data(), real_len);
         cptr[real_len] = '\0';

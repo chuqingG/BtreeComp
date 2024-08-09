@@ -150,6 +150,7 @@ NodePkB::~NodePkB() {
 }
 
 void printKeys(Node *node, bool compressed) {
+    // if (node->IS_LEAF) return;
     if (compressed && node->prefix->addr)
         cout << node->prefix->addr << ": ";
     for (int i = 0; i < node->size; i++) {
@@ -167,7 +168,7 @@ void printKeys(Node *node, bool compressed) {
                 cout  << PageOffset(node, head->key_offset) << ",";
             #elif defined FN
                 auto suffix = PageOffset(node, head->key_offset);
-                for (int i = 0; i < ceilLen(head->key_len) - PV_SIZE; i += 4) {
+                for (int i = 0; i < PV_SIZE; i += 4) {
                     char word[PV_SIZE + 1] = {0};
                     movNorm((suffix + i), word);
                     cout << word;

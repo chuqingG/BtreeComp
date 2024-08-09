@@ -43,6 +43,7 @@ int norm_index(int);
 void nextidx(int &, int &);
 int nextidx(int &);
 int adjustLen(int, int);
+int ceilLen(int);
 #define GetHeaderStd(nptr, i) (Stdhead *)(nptr->base + MAX_SIZE_IN_BYTES - (i + 1) * sizeof(Stdhead))
 #define movNorm(src, dest) *(int*)dest = bswap(*(int*)src)
 #define fillNull(dest, offset) *(int*)(dest + offset) = 0; // for post head compression less than 4 bytes edge cases
@@ -59,6 +60,7 @@ inline void calculateBSMetaData(Node *node) {
 #endif
 inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     klen = klen < PV_SIZE ? PV_SIZE : klen; //invariant: must be at least length 4
+    //key must be padded
     // shift the headers
     for (int i = nptr->size; i > pos; i--) {
         memcpy(GetHeaderStd(nptr, i), GetHeaderStd(nptr, i - 1), sizeof(Stdhead));
@@ -70,14 +72,18 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
         if (klen > PV_SIZE) {
             #if defined KP
                 strcpy(BufTop(nptr), k + PV_SIZE);
+                nptr->space_top += klen - PV_SIZE + 1;
             #elif defined FN
                 char* kp = (char *)k + 4;
                 char* np = BufTop(nptr);
                 for (; kp < k + klen; kp += 4, np += 4) {
                     movNorm(kp, np);
                 }
+                *np = '\0';
+                int suflength = ceilLen(klen - PV_SIZE);
+                nptr->space_top += suflength + 1;
             #endif
-            nptr->space_top += klen - PV_SIZE + 1;
+
         }
         else {
             strcpy(BufTop(nptr), "\0");
@@ -140,12 +146,14 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
             top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
             delete[] presuf;
         #elif defined FN
+            assert(oldhead->key_len > cutoff);
             int oldwordidx = cutoff / PV_SIZE; 
             //first used to see if the old prefix is skipped, then to keep track which word of suffix is in
-            int oldcharidx = PV_SIZE - 1 - cutoff; 
+            int oldcharidx = PV_SIZE - 1 - (cutoff % PV_SIZE); //cutoff is 4 and above
             //first used to see which char in the old prefix is being copied, than used to track index of the suffix word char 
 
             newidx = 3; //first absolute index in the prefix, then absolute index of suffix
+            *(int*)newhead->key_prefix = 0;
 
             if (oldwordidx == 0) {
                 switch (oldcharidx) {
@@ -165,19 +173,30 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
                 } //copy oldhead prefix completely
                 oldcharidx = 3;// always start on third pos
             }
+            else if (oldwordidx > 0) oldwordidx--;
+    
+            if (oldhead->key_len == 4) {
+                leave:
+                *(newbase + top) = '\0';
+                newhead->key_len = 4;
+                newhead->key_offset = top;
+                top += 1;
+                continue;
+            }
 
             char* suffix = PageOffset(nptr, oldhead->key_offset);
             while (newidx >= 0) {
+                // if (4 + oldwordidx * 4 + oldcharidx >= oldhead->key_len) goto leave;
                 char c = suffix[4 * oldwordidx + oldcharidx];
                 newhead->key_prefix[newidx] = c;
                 nextidx(oldwordidx, oldcharidx); newidx--;
             }//copy newhead prefix completely
 
             char* dest = newbase + top;
-            int newlen = oldhead->key_len - cutoff;
-            int suflength = ((newlen - PV_SIZE) & 0xFC) + 4;
-            int lastindex = suflength - PV_SIZE + norm_index(newlen % PV_SIZE);
+            int newlen = adjustLen(oldhead->key_len, cutoff);
+            int suflength = ceilLen(newlen - PV_SIZE);
             newidx = -4;
+            int lastindex = suflength - PV_SIZE + norm_index(newlen % PV_SIZE);
             while(oldwordidx * 4 + oldcharidx < oldhead->key_len) {
                 uint32_t offset = oldwordidx * 4;
                 char c;
@@ -231,6 +250,7 @@ inline int adjustLen(int klen, int pfxlen) {
     return klen < PV_SIZE ? PV_SIZE : klen; //invariant, can't be lower than 4 bytes
 }
 inline int ceilLen(int klen) {
+    if (klen <= 0) return 0;
     int mod = klen % PV_SIZE;
     return klen + (mod > 0 ? PV_SIZE - mod : 0);
 }

@@ -55,11 +55,20 @@ public:
 
     void Insert(const vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); i++) {
+            // if (i == 957) {
+            //     cout << "error insertion\n";
+            // }
             _tree->insert(values[i]);
                 #ifdef PRINT
                 cout << "   after " << values[i] << "\n";
                 vector<bool> flag(values.size() * 1.25);
                 _tree->printTree(_tree->getRoot(), flag, true);
+                #endif
+                #ifdef CHECK
+            // if (i == 6999) {
+            //         vector<bool> flag(values.size());
+            //         _tree->printTree(_tree->getRoot(), flag, true);
+            // }
                 #endif
         }
         #ifdef CHECK
@@ -70,9 +79,12 @@ public:
 
     bool Search(const std::vector<char *> &values) override {
         int count = 0;
-        for (uint32_t i = 0; i < values.size(); i++)
+        for (uint32_t i = 0; i < values.size(); i++) {
+            if (i == 221) {
+                cout << "Error search\n";
+            }
             if (_tree->search(values.at(i)) == -1) {
-               #ifdef CHECK
+                #ifdef CHECK
             //             if (i == 2204) {
             //         vector<bool> flag(values.size());
             //         _tree->printTree(_tree->getRoot(), flag, true);
@@ -83,6 +95,7 @@ public:
                 // return false;
                 count++;
             }
+        }
         cout << "count: " << count << endl;
 #ifdef TRACK_DISTANCE
         cout << "move times: " << _tree->cmp_count << endl
@@ -198,14 +211,12 @@ public:
 
     void Insert(const std::vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); ++i) {
-            // if (i == 1214913)
-            //     cout << "here" << endl;
             _tree->insert(values.at(i));
             // vector<bool> flag(i + 1);
             // _tree->printTree(_tree->getRoot(), flag, true);
         }
-        // vector<bool> flag(values.size());
-        // _tree->printTree(_tree->getRoot(), flag, true);
+        vector<bool> flag(values.size());
+        _tree->printTree(_tree->getRoot(), flag, true);
     }
 
     // bool Search(const std::vector<char *> &values) override {
@@ -217,8 +228,10 @@ public:
     bool Search(const std::vector<char *> &values) override {
         int count = 0;
         for (uint32_t i = 0; i < values.size(); ++i)
-            if (_tree->search(values.at(i)) == -1)
+            if (_tree->search(values.at(i)) == -1) {
+
                 count++;
+            }
         cout << "count:" << count << endl;
         return true;
     }

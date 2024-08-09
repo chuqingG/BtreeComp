@@ -178,7 +178,7 @@ long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 #ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool isleaf) {//cutoff is potential head_comp ignored bytes
 
-{//shar branchless
+{//shar unroll
     uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
     Stdhead* low = GetHeadBase(cursor);
     Stdhead* org = low; //most right(largest is to the right)
@@ -187,17 +187,70 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool 
         low = GetHeaderStd(cursor, cursor->Ip - 1);  //if K > Ki
         delta = cursor->firstL;
     }
-    
-    for (delta /= 2; delta != 0; delta /= 2) {
-        if (pvComp(low - delta, key, keylen, cursor) >= 0)
-        low -= delta;
+    delta /= 2;
+    switch (delta) {
+        case 256:
+            if (pvComp(low - 256, key, keylen, cursor) >= 0)
+                low -= 128;
+        case 128:
+            if (pvComp(low - 128, key, keylen, cursor) >= 0)
+                low -= 128;
+        case 64:
+            if (pvComp(low - 64, key, keylen, cursor) >= 0)
+                low -= 64;
+        case 32:
+            if (pvComp(low - 32, key, keylen, cursor) >= 0)
+                low -= 32;
+        case 16:
+            if (pvComp(low - 16, key, keylen, cursor) >= 0)
+                low -= 16;
+        case 8:
+            if (pvComp(low - 8, key, keylen, cursor) >= 0)
+                low -= 8;
+        case 4:
+            if (pvComp(low - 4, key, keylen, cursor) >= 0)
+                low -= 4;
+        case 2:
+            if ((pvComp(low - 2, key, keylen, cursor)) >= 0)
+                low -= 2;
+        case 1: 
+            if ((pvComp(low - 1, key, keylen, cursor)) >= 0)
+                low -= 1;
+            if ((cmp = pvComp(low, key, keylen, cursor)) >= 0)
+                low -= 1;
+        case 0:
+            break;
     }
-    if ((cmp = pvComp(low, key, keylen, cursor)) >= 0)
-        low -= 1;
+    // for (delta /= 2; delta != 0; delta /= 2) {
+    //     if (pvComp(low - delta, key, keylen, cursor) >= 0)
+    //     low -= delta;
+    // }
+
     if (cmp == 0) return org - low;
 
     return isleaf ? -1 : (org - low);;
 }
+
+// {//shar branchless
+//     uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
+//     Stdhead* low = GetHeadBase(cursor);
+//     Stdhead* org = low; //most right(largest is to the right)
+//     long cmp = -1;
+//     if (delta != cursor->size && pvComp(low - delta, key, keylen, cursor) >= 0) { //initial probe cost
+//         low = GetHeaderStd(cursor, cursor->Ip - 1);  //if K > Ki
+//         delta = cursor->firstL;
+//     }
+    
+//     for (delta /= 2; delta != 0; delta /= 2) {
+//         if (pvComp(low - delta, key, keylen, cursor) >= 0)
+//         low -= delta;
+//     }
+//     if ((cmp = pvComp(low, key, keylen, cursor)) >= 0)
+//         low -= 1;
+//     if (cmp == 0) return org - low;
+
+//     return isleaf ? -1 : (org - low);;
+// }
 
 // {//shar branchful
 //     uint16_t delta = cursor->I; //delta is size

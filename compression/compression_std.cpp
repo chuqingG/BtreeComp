@@ -37,24 +37,24 @@ char *tail_compress(char *leftprefix, char *rightprefix, const char *leftsuffix,
     delete right;
     return ret;
 #elif defined FN
-    int prefixlength = normed_common_prefix(*(int*)leftprefix, *(int*)rightprefix);
-    if (prefixlength == PV_SIZE) {
-        int length = min(len_ll - PV_SIZE, len_fr - PV_SIZE);
-        for (int idx = 0; idx < length; idx += 4, leftsuffix += 4, rightsuffix += 4) {
-            int temp = normed_common_prefix(*(int*)leftsuffix, *(int*)rightsuffix);
-            prefixlength += temp;
-            if (temp < PV_SIZE) break;
-        }
-        if (len_fr > prefixlength) {
-            prefixlength++;
-        }
-    }
-    char *separator = new char[prefixlength + 1];
+    // int prefixlength = normed_common_prefix(*(int*)leftprefix, *(int*)rightprefix);
+    // if (prefixlength == PV_SIZE) {
+    //     int length = min(len_ll - PV_SIZE, len_fr - PV_SIZE);
+    //     for (int idx = 0; idx < length; idx += 4, leftsuffix += 4, rightsuffix += 4) {
+    //         int temp = normed_common_prefix(*(int*)leftsuffix, *(int*)rightsuffix);
+    //         prefixlength += temp;
+    //         if (temp < PV_SIZE) break;
+    //     }
+    //     if (len_fr > prefixlength) {
+    //         prefixlength++;
+    //     }
+    // }
+    // char *separator = new char[prefixlength + 1];
     
-    // strncpy(separator, firstright, prefixlength);
-    separator[prefixlength] = '\0';
+    // // strncpy(separator, firstright, prefixlength);
+    // separator[prefixlength] = '\0';
  
-    return separator;
+    // return separator;
 #endif
 }
 
@@ -79,11 +79,11 @@ int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsu
     delete right;
     return ret;
 #elif defined FN
-    int prefixlength  = normed_common_prefix(*(int*)leftprefix, *(int*)rightprefix);
+    int prefixlength  = normed_common_prefix(*(int*)leftprefix, *(int*)rightprefix, min(len_ll, len_fr));
     int length = min(len_ll - PV_SIZE, len_fr - PV_SIZE);
     if (prefixlength < PV_SIZE) goto finish;
     for (int idx = 0; idx < length; idx += 4, leftsuffix += 4, rightsuffix += 4) {
-        int temp = normed_common_prefix(*(int*)leftsuffix, *(int*)rightsuffix);
+        int temp = normed_common_prefix(*(int*)leftsuffix, *(int*)rightsuffix, length - idx);
         prefixlength += temp;
         if (temp < PV_SIZE) break;
     }
@@ -92,7 +92,7 @@ finish:
         prefixlength++;
     }
     // int mod = prefixlength % PV_SIZE;
-    return prefixlength// + (mod > 0 ? PV_SIZE - mod : 0);
+    return prefixlength; // + (mod > 0 ? PV_SIZE - mod : 0);
 #endif
 }
 

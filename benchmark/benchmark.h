@@ -80,9 +80,9 @@ public:
     bool Search(const std::vector<char *> &values) override {
         int count = 0;
         for (uint32_t i = 0; i < values.size(); i++) {
-            if (i == 221) {
-                cout << "Error search\n";
-            }
+            // if (i == 221) {
+            //     cout << "Error search\n";
+            // }
             if (_tree->search(values.at(i)) == -1) {
                 #ifdef CHECK
             //             if (i == 2204) {

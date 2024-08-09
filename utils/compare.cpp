@@ -48,13 +48,14 @@ int char_cmp_new(const char *a, const char *b, int alen, int blen) { // gaurunte
     #endif
 }
 
-int normed_common_prefix(uint32_t left, uint32_t right) {
+int normed_common_prefix(uint32_t left, uint32_t right, int length) {
     int idx = 0;
-    while (idx < 4) {
-        uint8_t leftb = (left >> idx*8) & 0xFF;
-        uint8_t rightb = (right >> idx*8) & 0xFF;
+    if (length > PV_SIZE) length = PV_SIZE;
+    while (idx < length) {
+        uint8_t leftb = (left >> (PV_SIZEMINUS - idx)*8) & 0xFF;
+        uint8_t rightb = (right >> (PV_SIZEMINUS - idx)*8) & 0xFF;
         if (leftb != rightb) return idx;
         idx++;
     }
-    return 4;
+    return idx;
 }

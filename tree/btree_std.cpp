@@ -164,7 +164,7 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
             Node *newRoot = new Node();
 
             InsertNode(newRoot, 0, currsplit.left);
-            InsertKeyStd(newRoot, 0, currsplit.promotekey.addr, adjustLen(currsplit.promotekey.size, 0));
+            InsertKeyStd(newRoot, 0, currsplit.promotekey.addr, currsplit.promotekey.size);
             InsertNode(newRoot, 1, currsplit.right);
 
             newRoot->IS_LEAF = false;
@@ -182,10 +182,10 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
         Item *newkey = &(childsplit->promotekey);
         int insertpos;
         bool equal = false;
-        int adjustedLen = adjustLen(newkey->size, node->prefix->size);
+
         if (this->head_comp) {
             insertpos = search_insert_pos(node, newkey->addr + node->prefix->size,
-                                          adjustedLen,
+                                          newkey->size - node->prefix->size,
                                           0, node->size - 1, equal);//KP
         }
         else {
@@ -194,10 +194,10 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
         // Insert promotekey into node->keys[insertpos]
         if (this->head_comp) {
             InsertKeyStd(node, insertpos, newkey->addr + node->prefix->size,
-                         adjustedLen);//KP
+                         newkey->size - node->prefix->size);//KP
         }
         else {
-            InsertKeyStd(node, insertpos, newkey->addr, adjustedLen);
+            InsertKeyStd(node, insertpos, newkey->addr, newkey->size);
         }
 
         // Insert the new childsplit.right into node->ptrs[insertpos + 1]
@@ -682,7 +682,7 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
     } 
     else return cmp > 0 ? pos + 1 : pos;
 #else
-    assert(keylen >= PV_SIZE);
+    // assert(keylen >= PV_SIZE);
     while (low <= high) {
         int mid = low + (high - low) / 2;
 
@@ -806,7 +806,7 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     if (cmp == 0) return isleaf ? pos : pos + 1; //right node of key
     else return isleaf ? -1 : cmp > 0 ? pos + 1 : pos; //not found in leaf, or branch node right child
 #else
-    assert(keylen >= PV_SIZE);
+    // assert(keylen >= PV_SIZE);
     #ifdef FN
     // assert(keylen % 4 == 0); allow head compression padded
     #endif
@@ -893,8 +893,8 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
     // Condition when node is None
     if (x == NULL)
         return;
-    else if (x->IS_LEAF)
-        return;
+    // else if (x->IS_LEAF)
+    //     return;
     // Loop to print the depths of the
     // current node
     for (int i = 1; i < depth; ++i) {

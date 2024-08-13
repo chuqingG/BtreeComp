@@ -290,7 +290,7 @@ inline int sufLen(int x) {
 
 inline int normalizedLen(int x) {
     if (sufLen(x) == 0) return x;
-    return x 
+    return x;
 }
 void copy_norm_to_unnorm(char *src, char *dest, int len) { //fills nullbyte
     // assert(len >= PV_SIZE);I guess don't need this

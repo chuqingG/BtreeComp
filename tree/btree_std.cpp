@@ -843,7 +843,7 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
     // Condition when node is None
     if (x == NULL)
         return;
-
+    else if (depth > 1) return;
     // Loop to print the depths of the
     // current node
     for (int i = 1; i < depth; ++i) {

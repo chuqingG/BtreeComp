@@ -26,7 +26,7 @@
 #define DEFAULT_DATASET_SIZE 100
 #define APPROX_KEY_SIZE 32
 #define WT_CACHE_KEY_NUM 1000
-#define PV_SIZE 2 //2,4, or 8
+#define PV_SIZE 4 //2,4, or 8
 
 #define PKB_LEN 2
 // #define TRACK_DISTANCE // distance to decompress for delta compression

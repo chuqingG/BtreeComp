@@ -177,6 +177,7 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
             }
             insert_nonleaf(parent, path, parentlevel - 1, &currsplit);
         }
+
     }
     else {
         Item *newkey = &(childsplit->promotekey);
@@ -203,6 +204,7 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
         // Insert the new childsplit.right into node->ptrs[insertpos + 1]
         InsertNode(node, insertpos + 1, childsplit->right);
     }
+    // delete &childsplit->promotekey;
 }
 
 void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int keylen) {
@@ -453,9 +455,13 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     node->ptr_cnt = split + 1;
 
     // set key bound
+    delete right->highkey;
     right->highkey = new Item(*node->highkey);
+    delete node->highkey;
     node->highkey = new Item(newsplit.promotekey);
+    delete right->lowkey;
     right->lowkey = new Item(newsplit.promotekey);
+
 
     // Set next pointers
     Node *next = node->next;
@@ -631,8 +637,11 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     calculateBSMetaData(right);
 #endif
     // set key bound
+    delete right->highkey;
     right->highkey = new Item(*node->highkey);
+    delete node->highkey;
     node->highkey = new Item(newsplit.promotekey);
+    delete right->lowkey;
     right->lowkey = new Item(newsplit.promotekey);
 
     // Set next pointers

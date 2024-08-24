@@ -204,7 +204,6 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
         // Insert the new childsplit.right into node->ptrs[insertpos + 1]
         InsertNode(node, insertpos + 1, childsplit->right);
     }
-    // delete &childsplit->promotekey;
 }
 
 void BPTree::insert_leaf(Node *leaf, Node **path, int path_level, char *key, int keylen) {
@@ -312,12 +311,13 @@ int BPTree::split_point(Node *node) {
 splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *childsplit) {
     splitReturn_new newsplit;
     const char *newkey = childsplit->promotekey.addr;
-    uint16_t newkey_len = adjustLen(childsplit->promotekey.size, node->prefix->size);
+    uint16_t newkey_len = childsplit->promotekey.size;
     int insertpos;
     bool equal = false;
-    if (this->head_comp) { 
+
+    if (this->head_comp) {
         insertpos = search_insert_pos(node, newkey + node->prefix->size,
-                                      newkey_len,
+                                      newkey_len - node->prefix->size,
                                       0, node->size - 1, equal);
     }
     else {
@@ -328,12 +328,11 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     // so always insert newkey into the page for split
     // The promotekey has already been compressed
     if (this->head_comp) {
-        InsertKeyStd(node, insertpos, newkey + node->prefix->size, newkey_len);
+        InsertKeyStd(node, insertpos, newkey + node->prefix->size, newkey_len - node->prefix->size);
     }
     else {
         InsertKeyStd(node, insertpos, newkey, newkey_len);
     }
-
     // Insert the new right node to its parent
     InsertNode(node, insertpos + 1, childsplit->right);
 

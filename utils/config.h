@@ -8,7 +8,7 @@
 #define MEMDEBUG
 #define CHARALL
 #define SINGLE_DEBUG
-// #define PRINT //enable printing warmup tree
+#define PRINT //enable printing warmup tree
 // #define CHECK // check correctness on warmup tree
 #define VERBOSE_PRINT // enable to write some intermediate results to output file (if set -o)
 // #define WT_OPTIM   // enable for prefixstart

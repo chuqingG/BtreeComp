@@ -8,7 +8,7 @@
 #define MEMDEBUG
 #define CHARALL
 #define SINGLE_DEBUG
-#define PRINT //enable printing warmup tree
+// #define PRINT //enable printing warmup tree
 // #define CHECK // check correctness on warmup tree
 #define VERBOSE_PRINT // enable to write some intermediate results to output file (if set -o)
 // #define WT_OPTIM   // enable for prefixstart
@@ -32,7 +32,7 @@
 #define APPROX_KEY_SIZE 32
 #define WT_CACHE_KEY_NUM 1000
 #define PV_SIZE 4 //2,4, or 8
-#define PV_SIZEMINUS 3
+#define PV_SIZEMINUS 3 //PV_SIZE - 1
 
 #define PKB_LEN 2
 // #define TRACK_DISTANCE // distance to decompress for delta compression

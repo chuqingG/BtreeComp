@@ -75,8 +75,8 @@ int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsu
     movNorm(rightprefix, right);
     strcpy(right + PV_SIZE, rightsuffix);
     int ret = tail_compress_length(left, right, len_ll, len_fr); //used in finding the length of tail comp key
-    delete left;
-    delete right;
+    delete[] left;
+    delete[] right;
     return ret;
 #elif defined FN
     int prefixlength  = normed_common_prefix(*(int*)leftprefix, *(int*)rightprefix, min(len_ll, len_fr));

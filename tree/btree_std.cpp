@@ -346,7 +346,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
         strncpy(pkey_buf, node->prefix->addr, node->prefix->size);
         #ifdef PV
             strncpy(pkey_buf + node->prefix->size, head_fr->key_prefix, PV_SIZE);
-            strcpy(pkey_buf + PV_SIZE + node->prefix->size, firstright);
+            if (head_fr->key_len > PV_SIZE) strcpy(pkey_buf + PV_SIZE + node->prefix->size, firstright);
         #else
             strcpy(pkey_buf + node->prefix->size, firstright);
         #endif
@@ -355,8 +355,8 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
         pkey_len = head_fr->key_len;
         pkey_buf = new char[pkey_len + 1];
         #ifdef PV
-            strncpy(pkey_buf, head_fr->key_prefix, PV_SIZE);
-            strcpy(pkey_buf + PV_SIZE, firstright);
+            strncpy(pkey_buf, head_fr->key_prefix, min(PV_SIZE, pkey_len));
+            if (head_fr->key_len > PV_SIZE) strcpy(pkey_buf + PV_SIZE, firstright);
         #else
             strcpy(pkey_buf, firstright);
         #endif
@@ -388,7 +388,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
                              rightprefix_len - node->prefix->size, right->space_top);
 
             char *newpfx = new char[rightprefix_len + 1];
-            strncpy(newpfx, newsplit.promotekey.addr, rightprefix_len);
+            if (rightprefix_len > 0) strncpy(newpfx, newsplit.promotekey.addr, rightprefix_len);
             newpfx[rightprefix_len] = '\0';
             UpdatePfxItem(right, newpfx, rightprefix_len, true);
         }
@@ -396,7 +396,8 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
             // Assign the previous prefix to the new right node
             if (node->prefix->size > 0) {
                 char *newpfx = new char[node->prefix->size + 1];
-                strcpy(newpfx, node->prefix->addr);
+                if (node->prefix->size > 0) *newpfx = '\0';
+                else strcpy(newpfx, node->prefix->addr);
                 UpdatePfxItem(right, newpfx, node->prefix->size, true);
             }
             CopyToNewPageStd(node, split + 1, node->size, right->base, 0, right->space_top);
@@ -437,8 +438,11 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     node->ptr_cnt = split + 1;
 
     // set key bound
+    delete right->highkey;
     right->highkey = new Item(*node->highkey);
+    delete node->highkey;
     node->highkey = new Item(newsplit.promotekey);
+    delete right->lowkey;
     right->lowkey = new Item(newsplit.promotekey);
 
     // Set next pointers
@@ -582,9 +586,13 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     UpdateBase(node, left_base);
 
     // set key bound
+    delete right->highkey;
     right->highkey = new Item(*node->highkey);
+    delete node->highkey;
     node->highkey = new Item(newsplit.promotekey);
+    delete right->lowkey;
     right->lowkey = new Item(newsplit.promotekey);
+
 
     // Set next pointers
     Node *next = node->next;

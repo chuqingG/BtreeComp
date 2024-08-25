@@ -139,38 +139,24 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
 
 #ifdef PV
 inline long word_cmp(Stdhead* header,const char* key, int keylen) {
-    // char word[8] = {0};
-    // char prefix[8] = {0};
-    // for (int i = 0; i < PV_SIZE; i++) 
-    //     prefix[i] = header->key_prefix[PV_SIZE - 1 - i];
-    // for (int i = 0; i < min(keylen, PV_SIZE); i++)
-    //     word[i] = key[min(keylen, PV_SIZE) - 1 - i];
-    // return *(long*)word - *(long*)prefix;
 
-    // int cmp_len = min(PV_SIZE, keylen);
-    // for (int idx = 0; idx < cmp_len; ++idx) {
-    //     int cmp = key[idx] - header->key_prefix[idx];
-    //     if (cmp != 0)
-    //         return cmp;
-    // }
-    // return 0;
+    int cmp_len = min(PV_SIZE, keylen);
+    for (int idx = 0; idx < cmp_len; ++idx) {
+        int cmp = key[idx] - header->key_prefix[idx];
+        if (cmp != 0)
+            return cmp;
+    }
+    return 0;
 
-    return *(int *)(key) - *(int*)(header->key_prefix);
-
-    /* Contents are equal up to the smallest length. */
-    // int result = key[0] - header->key_prefix[0];
-    // result = result != 0 ? result : key[1] - header->key_prefix[1];
-    // result = result != 0 ? result : key[2] - header->key_prefix[2];
-    // result = result != 0 ? result : key[3] - header->key_prefix[3];
-    // return result;
+    // return *(int *)(key) - *(int*)(header->key_prefix);
 }
 
 long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
-    // if (cmp == 0) {
-    //     cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
-    //                         keylen, header->key_len);
-    // }
+    if (cmp == 0) {
+        cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                            keylen, header->key_len);
+    }
     return cmp;
 }
 #endif
@@ -178,58 +164,58 @@ long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
 #ifdef UBS
 inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool isleaf) {//cutoff is potential head_comp ignored bytes
 
-{//shar unroll
-    uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
-    Stdhead* low = GetHeadBase(cursor);
-    Stdhead* org = low; //most right(largest is to the right)
-    long cmp = -1;
-    if (delta != cursor->size && pvComp(low - delta, key, keylen, cursor) >= 0) { //initial probe cost
-        low = GetHeaderStd(cursor, cursor->Ip - 1);  //if K > Ki
-        delta = cursor->firstL;
-    }
-    delta /= 2;
-    switch (delta) {
-        case 256:
-            if (pvComp(low - 256, key, keylen, cursor) >= 0)
-                low -= 256;
-        case 128:
-            if (pvComp(low - 128, key, keylen, cursor) >= 0)
-                low -= 128;
-        case 64:
-            if (pvComp(low - 64, key, keylen, cursor) >= 0)
-                low -= 64;
-        case 32:
-            if (pvComp(low - 32, key, keylen, cursor) >= 0)
-                low -= 32;
-        case 16:
-            if (pvComp(low - 16, key, keylen, cursor) >= 0)
-                low -= 16;
-        case 8:
-            if (pvComp(low - 8, key, keylen, cursor) >= 0)
-                low -= 8;
-        case 4:
-            if (pvComp(low - 4, key, keylen, cursor) >= 0)
-                low -= 4;
-        case 2:
-            if ((pvComp(low - 2, key, keylen, cursor)) >= 0)
-                low -= 2;
-        case 1: 
-            if ((pvComp(low - 1, key, keylen, cursor)) >= 0)
-                low -= 1;
-            if ((cmp = pvComp(low, key, keylen, cursor)) >= 0)
-                low -= 1;
-        case 0:
-            break;
-    }
-    // for (delta /= 2; delta != 0; delta /= 2) {
-    //     if (pvComp(low - delta, key, keylen, cursor) >= 0)
-    //     low -= delta;
-    // }
+// {//shar unroll
+//     uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
+//     Stdhead* low = GetHeadBase(cursor);
+//     Stdhead* org = low; //most right(largest is to the right)
+//     long cmp = -1;
+//     if (delta != cursor->size && pvComp(low - delta, key, keylen, cursor) >= 0) { //initial probe cost
+//         low = GetHeaderStd(cursor, cursor->Ip - 1);  //if K > Ki
+//         delta = cursor->firstL;
+//     }
+//     delta /= 2;
+//     switch (delta) {
+//         case 256:
+//             if (pvComp(low - 256, key, keylen, cursor) >= 0)
+//                 low -= 256;
+//         case 128:
+//             if (pvComp(low - 128, key, keylen, cursor) >= 0)
+//                 low -= 128;
+//         case 64:
+//             if (pvComp(low - 64, key, keylen, cursor) >= 0)
+//                 low -= 64;
+//         case 32:
+//             if (pvComp(low - 32, key, keylen, cursor) >= 0)
+//                 low -= 32;
+//         case 16:
+//             if (pvComp(low - 16, key, keylen, cursor) >= 0)
+//                 low -= 16;
+//         case 8:
+//             if (pvComp(low - 8, key, keylen, cursor) >= 0)
+//                 low -= 8;
+//         case 4:
+//             if (pvComp(low - 4, key, keylen, cursor) >= 0)
+//                 low -= 4;
+//         case 2:
+//             if ((pvComp(low - 2, key, keylen, cursor)) >= 0)
+//                 low -= 2;
+//         case 1: 
+//             if ((pvComp(low - 1, key, keylen, cursor)) >= 0)
+//                 low -= 1;
+//             if ((cmp = pvComp(low, key, keylen, cursor)) >= 0)
+//                 low -= 1;
+//         case 0:
+//             break;
+//     }
+//     // for (delta /= 2; delta != 0; delta /= 2) {
+//     //     if (pvComp(low - delta, key, keylen, cursor) >= 0)
+//     //     low -= delta;
+//     // }
 
-    if (cmp == 0) return org - low;
+//     if (cmp == 0) return org - low;
 
-    return isleaf ? -1 : (org - low);;
-}
+//     return isleaf ? -1 : (org - low);;
+// }
 
 // {//shar branchless
 //     uint16_t delta = cursor->I; //delte is size, minus 1 for index //2^k, where k is floor(log cursor->size);
@@ -308,26 +294,26 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool 
 //    return isleaf ? -1 : (org - first);
 // }
 
-// {//modified uniform
-//     long length = cursor->size;
-//     Stdhead* first = GetHeadBase(cursor);
-//     Stdhead* org = first;
-//     long local_cmp;
-//     while (length > 0) {
-//       long rem = length % 2;
-//       length /= 2;
-//         if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
-//             first -= length + rem;
-//         }
-//         else if (local_cmp == 0) {//branchful
-//             first -= length;
-//             int result = org - first;
-//             if (!isleaf) result++;
-//             return result;
-//         }
-//    }
-//    return isleaf ? -1 : org - first;
-// }
+{//modified uniform
+    long length = cursor->size;
+    Stdhead* first = GetHeadBase(cursor);
+    Stdhead* org = first;
+    long local_cmp;
+    while (length > 0) {
+      long rem = length % 2;
+      length /= 2;
+        if ((local_cmp = pvComp(first - length, key, keylen, cursor)) > 0) {
+            first -= length + rem;
+        }
+        else if (local_cmp == 0) {//branchful
+            first -= length;
+            int result = org - first;
+            if (!isleaf) result++;
+            return result;
+        }
+   }
+   return isleaf ? -1 : org - first;
+}
 
 
 }

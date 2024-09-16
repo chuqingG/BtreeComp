@@ -60,10 +60,10 @@ const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
     {"Btree-Head", new BPTreeHeadCompBenchmark()},
     {"Btree-Tail", new BPTreeTailCompBenchmark()},
     {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
-    // {"Btree-WT", new BPTreeWTBenchmark()},
-    // {"Btree-My", new BPTreeMyISAMBenchmark()},
-    // {"Btree-PkB", new BPTreePkBBenchmark()},
-    // {"Btree-DB2", new BPTreeDB2Benchmark()},
+    {"Btree-WT", new BPTreeWTBenchmark()},
+    {"Btree-My", new BPTreeMyISAMBenchmark()},
+    {"Btree-PkB", new BPTreePkBBenchmark()},
+    {"Btree-DB2", new BPTreeDB2Benchmark()},
     //{"Other-ART", new ARTBenchmark()},
 };
 

@@ -346,7 +346,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
         strncpy(pkey_buf, node->prefix->addr, node->prefix->size);
         #ifdef PV
             strncpy(pkey_buf + node->prefix->size, head_fr->key_prefix, PV_SIZE);
-            strcpy(pkey_buf + PV_SIZE + node->prefix->size, firstright);
+            if (head_fr->key_len > PV_SIZE) strcpy(pkey_buf + PV_SIZE + node->prefix->size, firstright);
         #else
             strcpy(pkey_buf + node->prefix->size, firstright);
         #endif
@@ -356,7 +356,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
         pkey_buf = new char[pkey_len + 1];
         #ifdef PV
             strncpy(pkey_buf, head_fr->key_prefix, PV_SIZE);
-            strcpy(pkey_buf + PV_SIZE, firstright);
+            if (head_fr->key_len > PV_SIZE) strcpy(pkey_buf + PV_SIZE, firstright);
         #else
             strcpy(pkey_buf, firstright);
         #endif

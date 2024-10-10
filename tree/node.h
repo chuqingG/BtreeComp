@@ -21,10 +21,13 @@ int MAX_NODE_SIZE = 4;
 
 const char MAXHIGHKEY[] = "infinity";
 
-struct Stdhead {
+typedef struct {
+    #ifdef PV
+    char key_prefix[PV_SIZE]; 
+    #endif
     uint16_t key_offset;
     uint16_t key_len;
-} __attribute__((packed));
+} __attribute__((packed)) Stdhead;
 
 class Node {
 public:
@@ -32,7 +35,6 @@ public:
     int size;
     char *base;
     uint16_t space_top;
-    uint16_t invalid_len;
     vector<Node *> ptrs;
     uint16_t ptr_cnt;
 
@@ -45,6 +47,11 @@ public:
     ~Node();
     void erase(const char *k, int keylen, int idx);
     // int findk(const char *k, int keylen);
+#ifdef UBS
+    uint16_t I;
+    uint16_t Ip;
+    uint16_t firstL;
+#endif
 };
 
 struct DB2head {

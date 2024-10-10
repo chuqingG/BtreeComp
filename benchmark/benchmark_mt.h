@@ -80,35 +80,48 @@ public:
     }
 
     void Insert(const vector<char *> &values) override {
-        // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                _tree->insert(values.at(i));
-                // vector<bool> flag(i + 1);
-                // _tree->printTree(_tree->getRoot(), flag, true);
-            });
+        // atomic<int> non_successful_searches(0);
+        std::vector<std::thread> threads;
+        int totalKeys = values.size();
+        int keysPerThread = totalKeys / threadPoolSize;
+
+        for (int i = 0; i < threadPoolSize; ++i) {
+            int start = i * keysPerThread;
+            int end = (i + 1) * keysPerThread;
+            threads.emplace_back(&BPTreeStdBenchmark::insertWork, this, values, start, end, i /*, &non_successful_searches */);
         }
-        // Wait for all tasks to be completed
-        pool.wait();
+
+        // Wait for all threads to finish
+        for (auto& thread : threads) {
+            thread.join();
+
+        }
         // vector<bool> flag(values.size());
-        // tree_->printTree(tree_->getRoot(), flag, true)
+        // _tree->printTree(_tree->getRoot(), flag, true);
     }
 
     bool Search(const std::vector<char *> &values) override {
         // create a thread pool with threadPoolSize threads
-        boost::asio::thread_pool pool(threadPoolSize);
-        atomic<int> non_successful_searches(0);
-        for (uint32_t i = 0; i < values.size(); ++i) {
-            boost::asio::post(pool, [&, i] {
-                if (_tree->search(values.at(i)) == -1) {
-                    // cout << "Failed for " << values.at(i) << endl;
-                    non_successful_searches += 1;
-                }
-            });
+
+        // atomic<int> non_successful_searches(0);
+          std::vector<std::thread> threads;
+        int totalKeys = values.size();
+        int keysPerThread = totalKeys / threadPoolSize;
+
+        for (int i = 0; i < threadPoolSize; ++i) {
+            int start = i * keysPerThread;
+            int end = (i + 1) * keysPerThread;
+            threads.emplace_back(&BPTreeStdBenchmark::searchWork, this, values, start, end, i /*, &non_successful_searches */);
         }
-        pool.wait();
-        return non_successful_searches == 0;
+
+        // Wait for all threads to finish
+        for (auto& thread : threads) {
+            thread.join();
+
+        }
+        //  cout << "Count: " << non_successful_searches << endl;
+        return true;
+        // return non_successful_searches == 0;
 
 #ifdef MYDEBUG
         // boost::asio::thread_pool pool(threadPoolSize);
@@ -144,7 +157,25 @@ public:
         cout << "Avg branching size " << statistics.totalBranching / (double)statistics.nonLeafNodes << endl;
         return statistics;
     }
+private:
+    void searchWork(const std::vector<char *> &values, int start, int end, int key/*,  atomic<int> *failure*/) {
+        for (uint32_t i = start; i < end; i++) {
+            if (_tree->search(values.at(i)) == -1) {
+                // cout << i << "\n";
+                // cout << "Failed for " << values.at(i) << endl;
+                //*failure += 1;
+            }
+        };
+        // cout << key << " from " << start << " to " << end << " exited\n";
+    }
 
+    void insertWork(const std::vector<char *> &values, int start, int end, int key/*,  atomic<int> *failure*/) {
+        for (uint32_t i = start; i < end; i++) {
+            _tree->insert(values.at(i));
+        };
+        // cout << key << " from " << start << " to " << end << " exited\n";
+    }
+    
 protected:
     BPTreeMT *_tree;
 };

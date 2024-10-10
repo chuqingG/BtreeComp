@@ -5,9 +5,10 @@ build
 build2
 build3
 builddebug
-builddsk
 buildnew
 builddebugnew
+buildsk
+builddsk
 benchmark/test*
 tree/insert.h
 tree/search.h

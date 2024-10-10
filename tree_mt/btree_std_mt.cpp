@@ -60,7 +60,7 @@ int BPTreeMT::search(const char *key) {
         else
             searchpos = search_in_node(leaf, key, keylen, 0, leaf->size - 1, true);
     }
-    leaf->unlock(READ);
+    // leaf->unlock(READ);
     return searchpos;
 }
 
@@ -79,6 +79,7 @@ void BPTreeMT::insert_nonleaf(Node *node, Node **path,
     node = move_right(node, childsplit->promotekey.addr, childsplit->promotekey.size);
 
     // Unlock child
+    // both children need to be locked
     childsplit->right->unlock(WRITE);
     childsplit->left->unlock(WRITE);
 
@@ -97,7 +98,7 @@ void BPTreeMT::insert_nonleaf(Node *node, Node **path,
             InsertNode(newRoot, 1, currsplit.right);
 
             newRoot->IS_LEAF = false;
-            newRoot->level = node->level + 1;
+            newRoot->level = node->level + 1;//?????????????
             _root = newRoot;
             max_level++;
             currsplit.right->unlock(WRITE);
@@ -234,8 +235,8 @@ int BPTreeMT::split_point(Node *node) {
     int size = node->size;
     int bestsplit = size / 2;
     if (this->tail_comp) {
-        int split_range_low = size * (1 / 2 - TAIL_SPLIT_WIDTH);
-        int split_range_high = size * (1 / 2 + TAIL_SPLIT_WIDTH);
+        int split_range_low = size * (1.0 / 2 - TAIL_SPLIT_WIDTH);
+        int split_range_high = size * (1.0 / 2 + TAIL_SPLIT_WIDTH);
         // Representing 16 bytes of the integer
         int minlen = INT16_MAX;
         for (int i = split_range_low; i < split_range_high - 1; i++) {
@@ -300,7 +301,7 @@ splitReturn_new BPTreeMT::split_nonleaf(Node *node, int pos, splitReturn_new *ch
     else {
         pkey_len = head_fr->key_len;
         pkey_buf = new char[pkey_len + 1];
-        strcpy(pkey_buf, firstright);
+        strcpy(pkey_buf, firstright); //?????
     }
     newsplit.promotekey.addr = pkey_buf;
     newsplit.promotekey.size = pkey_len;
@@ -440,7 +441,7 @@ splitReturn_new BPTreeMT::split_leaf(Node *node, char *newkey, int newkey_len) {
     char *firstright = PageOffset(node, head_fr->key_offset);
     char *s;
     int s_len;
-    if (this->tail_comp) {
+    if (this->tail_comp) { //this should all be right
         Stdhead *head_ll = GetHeaderStd(node, split - 1);
         char *lastleft = PageOffset(node, head_ll->key_offset);
 
@@ -554,7 +555,7 @@ bool BPTreeMT::check_split_condition(Node *node, int keylen) {
     // double the key size to split safely
     // only works when the S_newkey <= S_prevkey + S_limit
     int currspace = node->space_top + node->size * sizeof(Stdhead);
-    int splitcost = 2 * keylen + sizeof(Stdhead);
+    int splitcost = 2 * max(keylen, APPROX_KEY_SIZE) + sizeof(Stdhead);
     if (currspace + splitcost >= MAX_SIZE_IN_BYTES - SPLIT_LIMIT)
         return true;
     else
@@ -571,6 +572,22 @@ int BPTreeMT::search_insert_pos(Node *cursor, const char *key, int keylen, int l
                                keylen, header->key_len);
         if (cmp == 0) {
             equal = true;
+            
+            while (mid < high) {
+
+                Stdhead *header = GetHeaderStd(cursor, mid + 1);
+
+                if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
+
+                                 keylen, header->key_len))
+
+                    // return the last one if keys are equal
+
+                    break;
+
+                mid++;
+
+            }
             return mid + 1;
         }
         else if (cmp > 0)
@@ -590,7 +607,7 @@ Node *BPTreeMT::search_leaf_node(Node *searchroot, const char *key, int keylen) 
 
     Node *cursor = searchroot;
 
-    cursor->lock(READ);
+    // cursor->lock(READ);
     // Till we reach leaf node
     while (!cursor->IS_LEAF) {
         int pos;
@@ -603,8 +620,8 @@ Node *BPTreeMT::search_leaf_node(Node *searchroot, const char *key, int keylen) 
         }
 
         Node *nextptr = cursor->ptrs[pos];
-        cursor->unlock(READ);
-        nextptr->lock(READ);
+        // cursor->unlock(READ);
+        // nextptr->lock(READ);
         cursor = nextptr;
     }
     return cursor;
@@ -674,11 +691,11 @@ Node *BPTreeMT::scan_node(Node *node, const char *key, int keylen, bool print) {
     if (node->highkey->size != 0
         && char_cmp_new(node->highkey->addr, key, node->highkey->size, keylen) <= 0) {
         // cout << "branch 1" << endl;
-        return node->next;
+        return node->next; //follow until reaches right no?
     }
     else if (node->IS_LEAF) {
         // cout << "branch 2" << endl;
-        return node;
+        return node;//
     }
     else {
         int pos;

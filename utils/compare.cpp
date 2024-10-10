@@ -3,7 +3,9 @@
 #include <iostream>
 #include <stack>
 #include <string>
+
 using namespace std;
+extern char* string_conv(const char* key, int keylen);
 
 int get_common_prefix_len(const char *a, const char *b, int alen, int blen) {
     int idx = 0;
@@ -28,9 +30,13 @@ int char_cmp_skip(const char *a, const char *b,
     return (alen - blen);
 }
 
-int char_cmp_new(const char *a, const char *b, int alen, int blen) {
+int char_cmp_new(const char *a, const char *b, int alen, int blen) { // gauruntee to be longer than 4 in PV. Handles is 4 as well.
     // 1 : a > b
     // const size_t min_len = (alen < blen) ? alen : blen;
+    #ifdef PV
+    uint16_t size = PV_SIZE;
+    return char_cmp_skip(a, b - PV_SIZE, alen, blen, (uint16_t*)&size); //insane pointer arithmatic
+    #else
     int cmp_len = min(alen, blen);
     // int idx = *matchp;
     for (int idx = 0; idx < cmp_len; ++idx) {
@@ -40,4 +46,6 @@ int char_cmp_new(const char *a, const char *b, int alen, int blen) {
     }
     /* Contents are equal up to the smallest length. */
     return (alen - blen);
+    #endif
 }
+

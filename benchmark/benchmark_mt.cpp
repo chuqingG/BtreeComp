@@ -11,6 +11,9 @@
 #include "../utils/config.h"
 #include "../utils/util.h"
 
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/atomic.hpp>
 using namespace std;
 
 enum class BenchmarkTypes {
@@ -61,8 +64,8 @@ const std::map<std::string, BenchmarkTypes> strBenchmarksMap{
     {"backward", BenchmarkTypes::BACKWARDSCAN}};
 
 const std::vector<std::tuple<std::string, Benchmark_c *>> kIndexStructures{
-    {"BPTree-std", new BPTreeStdBenchmark()},
-    {"BPTree-head", new BPTreeHeadCompBenchmark()},
+    // {"BPTree-std", new BPTreeStdBenchmark()},
+    // {"BPTree-head", new BPTreeHeadCompBenchmark()},
     {"BPTree-tail", new BPTreeTailCompBenchmark()},
     {"BPTree-headtail", new BPTreeHeadTailCompBenchmark()},
     // {"BPTree-DB2", new BPTreeDB2Benchmark()},
@@ -131,12 +134,14 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
                         / 1e9;
         cout << "Finish Warmup: " << time_gap << " (s)" << endl;
 #endif
+        //msort(values.begin(), values.end());
 
         for (BenchmarkTypes benchmark : benchmarks) {
 #ifdef TIMEDEBUG
             double prefix_update = 0.0;
             double prefix_calc = 0.0;
 #endif
+            
             switch (benchmark) {
             case BenchmarkTypes::INSERT:
                 t1 = std::chrono::system_clock::now();
@@ -153,6 +158,7 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
                      << "Finish" << endl;
                 break;
             case BenchmarkTypes::SEARCH:
+                //boost::asio::thread_pool *pool = new boost::asio::thread_pool(thread_num);
                 t1 = std::chrono::system_clock::now();
                 // TODO(chuqing): more accurate correctness check, e.g. generate new search set
                 if (structure->Search(values))
@@ -165,6 +171,7 @@ auto RunBenchmarkIteration(std::vector<char *> values, std::vector<char *> value
                                                      std::chrono::nanoseconds>(std::chrono::system_clock::now() - t1)
                                                      .count())
                              / 1e9;
+
                 break;
             }
             structure_times[i].insert({benchmark, time_spent});
@@ -469,6 +476,7 @@ int main(int argc, char *argv[]) {
     if (thread_arg != nullptr) {
         const string thread_str{thread_arg};
         thread_num = std::stoul(thread_str);
+        
     }
     else {
         thread_num = 16; // default

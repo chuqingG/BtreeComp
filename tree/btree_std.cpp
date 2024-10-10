@@ -114,7 +114,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
                     // memcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_i->key_offset), sizeof(char) * head_i->key_len + 1);
                     strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
                     strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_i->key_offset));
-                    delete decomp_key;
+                    delete[] decomp_key;
                 }
                 entries += leaf->size - pos;
                 leaf = leaf->next;
@@ -133,7 +133,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
         char *decomp_key = new char[leaf->prefix->size + head_pos->key_len + 1];
         strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
         strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_pos->key_offset));
-        delete decomp_key;
+        delete[] decomp_key;
 
         entries++;
         pos++;

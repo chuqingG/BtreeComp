@@ -270,11 +270,13 @@ splitReturnWT BPTreeWT::split_nonleaf(NodeWT *node, int pos, splitReturnWT *chil
         newsplit.promotekey.size = header_split->key_len;
     }
     // make a copy, the addr will be reallocated after write into new page
-    char *keycopy = new char[newsplit.promotekey.size + 1];
-    strncpy(keycopy, newsplit.promotekey.addr, newsplit.promotekey.size);
-    keycopy[newsplit.promotekey.size] = '\0';
-    newsplit.promotekey.addr = keycopy;
-    newsplit.promotekey.newallocated = true;
+    if (!newsplit.promotekey.newallocated) {
+        char *keycopy = new char[newsplit.promotekey.size + 1];
+        strncpy(keycopy, newsplit.promotekey.addr, newsplit.promotekey.size);
+        keycopy[newsplit.promotekey.size] = '\0';
+        newsplit.promotekey.addr = keycopy;
+        newsplit.promotekey.newallocated = true;
+    }
 
     // 2. Substitute the first key in right part with its full key
     if (this->non_leaf_comp) {

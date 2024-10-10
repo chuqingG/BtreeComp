@@ -1,2 +1,0 @@
-/usr/bin/ar qc libbtree_pkb.a CMakeFiles/btree_pkb.dir/btree_pkb.cpp.o
-/usr/bin/ranlib libbtree_pkb.a

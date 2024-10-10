@@ -7,6 +7,8 @@ build3
 builddebug
 buildnew
 builddebugnew
+buildsk
+builddsk
 benchmark/test*
 tree/insert.h
 tree/search.h

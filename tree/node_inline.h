@@ -2,9 +2,9 @@
 #include "node.h"
 
 #include "../utils/compare.cpp"
-void word_conv_store(const char* src, const char* dest);
-long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen);
-char* string_conv(const char* key, int keylen, int cutoff);
+void word_conv_store(const char *src, const char *dest);
+long word_cmp_loop(char *suffix, int suffixlen, char *key, int keylen);
+char *string_conv(const char *key, int keylen, int cutoff);
 
 #define STDGUARD
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
@@ -45,11 +45,11 @@ char* string_conv(const char* key, int keylen, int cutoff);
 inline void calculateBSMetaData(Node *node) {
     int n = node->size;
     int k = sizeof(int) * 8 - __builtin_clz(n) - 1;
-    node->I = (uint16_t) 1 << k;
-    int l_aux= n - node->I + 1;
+    node->I = (uint16_t)1 << k;
+    int l_aux = n - node->I + 1;
     int l = sizeof(int) * 8 - __builtin_clz(l_aux) - 1 + ((l_aux & (l_aux - 1)) ? 1 : 0);
     node->firstL = 1 << (l - 1);
-    node->Ip = (uint16_t) n + 1 - (1 << l);
+    node->Ip = (uint16_t)n + 1 - (1 << l);
 }
 #endif
 
@@ -61,21 +61,21 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     // Set the new header
     Stdhead *header = GetHeaderStd(nptr, pos);
     header->key_offset = nptr->space_top;
-    #ifdef KN
-        if (klen > PV_SIZE) {
-            strcpy(BufTop(nptr), k + PV_SIZE);
-            nptr->space_top += klen - PV_SIZE + 1;
-        }
-        else {
-            strcpy(BufTop(nptr), "\0");
-            nptr->space_top += 1;
-        }
-        // memset(header->key_prefix, 0, PV_SIZbE);
-        memcpy(header->key_prefix, k, PV_SIZE);
-    #else
-        strcpy(BufTop(nptr), k);
-        nptr->space_top += klen + 1;
-    #endif
+#ifdef KN
+    if (klen > PV_SIZE) {
+        strcpy(BufTop(nptr), k + PV_SIZE);
+        nptr->space_top += klen - PV_SIZE + 1;
+    }
+    else {
+        strcpy(BufTop(nptr), "\0");
+        nptr->space_top += 1;
+    }
+    // memset(header->key_prefix, 0, PV_SIZbE);
+    memcpy(header->key_prefix, k, PV_SIZE);
+#else
+    strcpy(BufTop(nptr), k);
+    nptr->space_top += klen + 1;
+#endif
 
     header->key_len = klen;
     nptr->size += 1;
@@ -100,7 +100,7 @@ inline void RemoveKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
 }
 
 // with cutoff
-inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint16_t cutoff, uint16_t &top) {//cutoff is potential head_comp ignored bytes
+inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint16_t cutoff, uint16_t &top) { // cutoff is potential head_comp ignored bytes
     for (int i = low; i < high; i++) {
         int newidx = i - low;
         Stdhead *oldhead = GetHeaderStd(nptr, i);
@@ -108,35 +108,65 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
                                        - (newidx + 1) * sizeof(Stdhead));
         int key_len = oldhead->key_len;
 #ifdef PV
-            int l = oldhead->key_len < PV_SIZE ? PV_SIZE : oldhead->key_len;
-            char *presuf = new char[l + 1]; //extract entire key
-            presuf[l] = '\0';
-            memcpy(presuf, oldhead->key_prefix, PV_SIZE);
-            if (key_len > PV_SIZE) strncpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset), key_len - PV_SIZE);
+        // char *presuf = new char[oldhead->key_len + 1]; //extract entire key
+        // presuf[oldhead->key_len + 1] = '\0';
+        // strncpy(presuf, oldhead->key_prefix, PV_SIZE);
+        // strncpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset), oldhead->key_len < PV_SIZE ? 0 :  oldhead->key_len);
 
-            newhead->key_len = oldhead->key_len - cutoff;
-            newhead->key_offset = top;
-            memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
-#ifdef KN
-            char *forward = string_conv(presuf, l, 0); //convert forward
-            char *backward = string_conv(forward, l, cutoff); delete[] forward;//and back with cutoff
-            memcpy(newhead->key_prefix, backward, PV_SIZE); //at least PV_SIZE long. cutoff not in presuf
-            int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0; //for nullbyte
-            strncpy(newbase + top, backward + PV_SIZE, sufLength); //ends at nullbyte, even if 0
-            delete[] backward;
+        // newhead->key_len = oldhead->key_len - cutoff;
+        // newhead->key_offset = top;
+        // memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
+        // strncpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
+
+        // int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
+        // strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
+        // top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
+        // delete[] presuf;
+        int old_i = cutoff;
+        int new_i = 0;
+        int new_len = key_len - cutoff;
+        memset(newhead->key_prefix, 0, PV_SIZE);
+        if (cutoff < PV_SIZE) {
+            while (old_i < PV_SIZE && old_i < key_len) {
+                newhead->key_prefix[new_i] = oldhead->key_prefix[old_i];
+                old_i++;
+                new_i++;
+            }
+            if (old_i == key_len) {
+                newhead->key_len = new_len;
+                newhead->key_offset = top;
+                *(newbase + top) = '\0';
+                top += 1;
+                continue;
+            }
+        }
+
+        char *suffix = PageOffset(nptr, oldhead->key_offset);
+        int suffix_i = 0;
+        if (cutoff > PV_SIZE) {
+            suffix_i = cutoff - PV_SIZE;
+            ;
+        }
+        if (new_i < PV_SIZE) {
+            while (new_i < PV_SIZE && new_i < new_len) {
+                newhead->key_prefix[new_i] = suffix[suffix_i];
+                new_i++;
+                suffix_i++;
+            }
+        }
+
+        int sufLength = new_len - PV_SIZE;
+        if (sufLength < 0) sufLength = 0;
+        strncpy(newbase + top, suffix + suffix_i, sufLength);
+        newhead->key_len = new_len;
+        newhead->key_offset = top;
+        top += sufLength + 1;
 #else
-            strncpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
-            int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
-            strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
-#endif
-            top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
-            delete[] presuf;
-#else
-            strcpy(BufTop(nptr), k);
-            strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
-            newhead->key_len = oldhead->key_len - cutoff;
-            newhead->key_offset = top;
-            top += newhead->key_len + 1;
+        // strcpy(BufTop(nptr), k);
+        strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
+        newhead->key_len = oldhead->key_len - cutoff;
+        newhead->key_offset = top;
+        top += newhead->key_len + 1;
 #endif
         // if (newhead->key_len > 32)
         //     cout << "wrong update" << endl;
@@ -145,8 +175,8 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
 
 #ifdef PV
 
-inline void word_conv_store(char* src, char* dest) { //int length only for now
-    char c3 = src[3]; //supports in-place
+inline void word_conv_store(char *src, char *dest) { // int length only for now
+    char c3 = src[3];                                // supports in-place
     char c2 = src[2];
     dest[3] = src[0];
     dest[0] = c3;
@@ -154,13 +184,13 @@ inline void word_conv_store(char* src, char* dest) { //int length only for now
     dest[1] = c2;
 }
 
-inline char* string_conv(const char* key, int keylen, int cutoff) {//unnormalized to normalized
+inline char *string_conv(const char *key, int keylen, int cutoff) { // unnormalized to normalized
     keylen -= cutoff;
     key += cutoff;
     if (keylen <= 0) return "\0";
-    if (keylen <= PV_SIZE) { //keylen
-        char* result = new char[PV_SIZE + 1];
-        memset(result, 0, PV_SIZE + 1); //nullbyte
+    if (keylen <= PV_SIZE) { // keylen
+        char *result = new char[PV_SIZE + 1];
+        memset(result, 0, PV_SIZE + 1); // nullbyte
         memcpy(result, key, min(keylen, PV_SIZE));
         word_conv_store(result, result);
         return result;
@@ -169,53 +199,54 @@ inline char* string_conv(const char* key, int keylen, int cutoff) {//unnormalize
     int originalKeylen = keylen;
     char *pointer = result;
     while (keylen >= PV_SIZE) {
-        word_conv_store((char*)key, pointer);
+        word_conv_store((char *)key, pointer);
         keylen -= PV_SIZE;
         pointer += PV_SIZE;
         key += PV_SIZE;
     }
     for (int i = 0; i < keylen; i++) {
-        pointer[i] = key[i];//should cover s
+        pointer[i] = key[i]; // should cover s
     }
     result[originalKeylen] = '\0';
     return result;
 }
 
-inline long word_cmp(Stdhead* header,const char* key, int keylen) {
-    if (keylen < PV_SIZE) { //key already normalized
+inline long word_cmp(Stdhead *header, const char *key, int keylen) {
+    if (keylen < PV_SIZE) { // key already normalized
         char word[5] = {0};
         memcpy(word, key, PV_SIZE);
-         return *(int*)word - *(int*)header->key_prefix;
+        return *(int *)word - *(int *)header->key_prefix;
     }
 #if PV_SIZE == 4
-    return *(int*)key - *(int*)header->key_prefix;
-#else 
-    return *(long*)key - *(long*)header->key_prefix;
+    return *(int *)key - *(int *)header->key_prefix;
+#else
+    return *(long *)key - *(long *)header->key_prefix;
 #endif
 }
 
-inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
+inline long pvComp(Stdhead *header, const char *key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
     if (cmp == 0 && keylen > PV_SIZE && header->key_len > PV_SIZE) {
 #ifdef KN
-        cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len - PV_SIZE, (char*)key + PV_SIZE, keylen - PV_SIZE);
+        cmp = word_cmp_loop(PageOffset(cursor, header->key_offset), header->key_len - PV_SIZE, (char *)key + PV_SIZE, keylen - PV_SIZE);
 #else
         cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
-                            keylen, header->key_len);
+                           keylen, header->key_len);
 #endif
     }
-    else if (cmp == 0) return keylen - header->key_len; //if max length < prefix
-    return cmp; //if different
+    else if (cmp == 0)
+        return keylen - header->key_len; // if max length < prefix
+    return cmp;                          // if different
 }
 
-inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
+inline long word_cmp_loop(char *suffix, int suffixlen, char *key, int keylen) {
     long cmp = 0;
     int numOfWords = min(suffixlen, keylen) / PV_SIZE;
     for (int i = 0; i < numOfWords; i++) {
 #if PV_SIZE == 4
-        cmp = *(int*)key - *(int*)suffix;
-#else 
-        cmp = *(long*)key - *(long*)suffix;
+        cmp = *(int *)key - *(int *)suffix;
+#else
+        cmp = *(long *)key - *(long *)suffix;
 #endif
         if (cmp != 0) return cmp;
         suffix += PV_SIZE;
@@ -224,9 +255,8 @@ inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
     suffixlen -= numOfWords * PV_SIZE;
     keylen -= numOfWords * PV_SIZE;
 
-
     // int idx = *matchp;
-    if (keylen < PV_SIZE && suffixlen < PV_SIZE) {//both unnorm
+    if (keylen < PV_SIZE && suffixlen < PV_SIZE) { // both unnorm
         int cmp_len = min(keylen, suffixlen);
         for (int idx = 0; idx < cmp_len; ++idx) {
             cmp = key[idx] - suffix[idx];
@@ -234,10 +264,10 @@ inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
                 return cmp;
         }
     }
-    else { //one is unnorm, the other is norm
+    else { // one is unnorm, the other is norm
         int cmp_len = min(keylen, suffixlen);
         for (int idx = 0; idx < cmp_len; ++idx) {
-            cmp = key[ keylen < suffixlen ? idx : PV_SIZE - 1 - idx] - suffix[ keylen < suffixlen ? PV_SIZE - 1 - idx : idx];
+            cmp = key[keylen < suffixlen ? idx : PV_SIZE - 1 - idx] - suffix[keylen < suffixlen ? PV_SIZE - 1 - idx : idx];
             if (cmp != 0)
                 return cmp;
         }
@@ -247,7 +277,7 @@ inline long word_cmp_loop(char* suffix, int suffixlen, char* key, int keylen) {
 
 #endif
 #ifdef UBS
-inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) {//cutoff is potential head_comp ignored bytes
+inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long &cmp) { // cutoff is potential head_comp ignored bytes
     // if (cursor->size <= 16) {
     //     int i;
     //     for (i = 0; i < cursor->size; i++) {
@@ -257,27 +287,32 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, long 
     //     }
     //     return cursor->size - 1; //key is the larger than all keys
     // }
-    int curPos = cursor->I - 1; //2^k, where k is floor(log cursor->size);
+    int curPos = cursor->I - 1; // 2^k, where k is floor(log cursor->size);
     Stdhead *ki = GetHeaderStd(cursor, curPos);
-    uint16_t delta = cursor->I; //delta is size
+    uint16_t delta = cursor->I; // delta is size
 
-    cmp = pvComp(ki, key, keylen, cursor); //initial probe cost
+    cmp = pvComp(ki, key, keylen, cursor); // initial probe cost
     delta = delta >> 1;
-    if (cmp == 0 || delta == 0) return curPos;
-    else if (cmp > 0) { //if K > Ki
-            curPos = cursor->Ip - 1;
-            delta = cursor->firstL;
-            curPos += delta;
+    if (cmp == 0 || delta == 0)
+        return curPos;
+    else if (cmp > 0) { // if K > Ki
+        curPos = cursor->Ip - 1;
+        delta = cursor->firstL;
+        curPos += delta;
     }
-    else curPos -= delta;
+    else
+        curPos -= delta;
 
     while (delta != 0) {
-        ki = GetHeaderStd(cursor, curPos); //2
-        cmp = pvComp(ki, key, keylen, cursor); 
+        ki = GetHeaderStd(cursor, curPos); // 2
+        cmp = pvComp(ki, key, keylen, cursor);
         delta /= 2;
-        if (cmp == 0) return curPos;
-        else if (cmp > 0) curPos += delta;
-        else curPos -= delta;
+        if (cmp == 0)
+            return curPos;
+        else if (cmp > 0)
+            curPos += delta;
+        else
+            curPos -= delta;
     }
     return curPos;
 }

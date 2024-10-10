@@ -32,6 +32,11 @@ The rough code structure is displayed below, omitting some auxiliary files (e.g.
 ```
 
 ## Usage
+We use a [third repo](https://github.com/chuqingG/adaptive-radix-tree/) as submodule, so make sure you clone this benchmark by
+```
+git clone --recurse-submodules git@github.com:chuqingG/BtreeComp.git
+```
+By default the test of ART is disabled, it can be enabled by `ART_TEST` in utils/config.h. 
 ```bash
 # compile and build
 mkdir build && cd build 

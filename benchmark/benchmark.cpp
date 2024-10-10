@@ -64,7 +64,9 @@ const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
     {"Btree-My", new BPTreeMyISAMBenchmark()},
     {"Btree-PkB", new BPTreePkBBenchmark()},
     {"Btree-DB2", new BPTreeDB2Benchmark()},
-    //{"Other-ART", new ARTBenchmark()},
+#ifdef ART_TEST
+    {"Other-ART", new ARTBenchmark()},
+#endif
 };
 
 auto RunBenchmarkIteration(std::vector<char *> values,

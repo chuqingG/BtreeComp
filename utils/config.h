@@ -16,6 +16,7 @@
 // #define DUPKEY
 // #define TOFIX  // enable to fix some skipped problem
 //   #define PV //prefix vector
+// #define ART_TEST // uncomment to enable art benchmark
 
 // Setup
 #define SPLIT_STRATEGY_SPACE

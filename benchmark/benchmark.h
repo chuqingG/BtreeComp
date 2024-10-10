@@ -11,7 +11,9 @@
 #include "../tree/btree_myisam.cpp"
 #include "../tree/btree_wt.cpp"
 #include "../tree/btree_pkb.cpp"
-// #include "art.hpp"
+#ifdef ART_TEST
+#include "art.hpp"
+#endif
 // using namespace std;
 
 struct TreeStatistics {
@@ -464,48 +466,52 @@ private:
 External tester
 */
 
-// class ARTBenchmark : public Benchmark {
-// public:
-//     ~ARTBenchmark() override {
-//     }
+#ifdef ART_TEST
 
-//     virtual void InitializeStructure() override {
-//     }
+class ARTBenchmark : public Benchmark {
+public:
+    ~ARTBenchmark() override {
+    }
 
-//     void DeleteStructure() override {
-//     }
+    virtual void InitializeStructure() override {
+    }
 
-//     void Insert(const vector<char *> &keys) override {
-//         int v = 1;
-//         for (uint32_t i = 0; i < keys.size(); i++) {
-//             _tree.set(keys[i], v);
-//         }
-//     }
+    void DeleteStructure() override {
+    }
 
-//     bool Search(const std::vector<char *> &keys) override {
-//         int count = 0;
-//         for (uint32_t i = 0; i < keys.size(); i++)
-//             if (_tree.get(keys[i]) == -1) {
-//                 // cout << "Cannot find " << values[i] << endl;
-//                 return false;
-//             }
-//         return true;
-//     }
+    void Insert(const vector<char *> &keys) override {
+        int v = 1;
+        for (uint32_t i = 0; i < keys.size(); i++) {
+            _tree.set(keys[i], v);
+        }
+    }
 
-//     bool SearchRange(std::vector<char *> &sorted_values,
-//                      std::vector<int> &minIdxs) override {
-//         return true;
-//     }
+    bool Search(const std::vector<char *> &keys) override {
+        int count = 0;
+        for (uint32_t i = 0; i < keys.size(); i++)
+            if (_tree.get(keys[i]) == -1) {
+                // cout << "Cannot find " << values[i] << endl;
+                return false;
+            }
+        return true;
+    }
 
-//     TreeStatistics CalcStatistics() override {
-//         TreeStatistics statistics;
-//         statistics.height = _tree.getHeight();
-//         _tree.getSize(statistics.numNodes, statistics.nonLeafNodes,
-//                       statistics.totalBranching, statistics.numKeys, // numKeys->usedBranching
-//                       statistics.totalKeySize);
-//         return statistics;
-//     }
+    bool SearchRange(std::vector<char *> &sorted_values,
+                     std::vector<int> &minIdxs) override {
+        return true;
+    }
 
-// protected:
-//     art::art<int> _tree;
-// };
+    TreeStatistics CalcStatistics() override {
+        TreeStatistics statistics;
+        statistics.height = _tree.getHeight();
+        _tree.getSize(statistics.numNodes, statistics.nonLeafNodes,
+                      statistics.totalBranching, statistics.numKeys, // numKeys->usedBranching
+                      statistics.totalKeySize);
+        return statistics;
+    }
+
+protected:
+    art::art<int> _tree;
+};
+
+#endif // ART

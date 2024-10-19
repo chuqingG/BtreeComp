@@ -316,15 +316,15 @@ void get_full_key(NodeWT *node, int idx, Item &key, Cache *cache) {
         return;
     }
 
-    if (header->isinitialized) {
-        cout << "cache hit" << endl;
-        // keyloc *k = new keyloc(node, idx);
-        key.addr = cache->get(header);
-        key.size = APPROX_KEY_SIZE;
-        // delete k;
-        cout << "get idx = " << idx << ", return:" << key.addr << endl;
-        return;
-    }
+    // if (header->isinitialized) {
+    //     cout << "cache hit" << endl;
+    //     // keyloc *k = new keyloc(node, idx);
+    //     key.addr = cache->get(header);
+    //     key.size = APPROX_KEY_SIZE;
+    //     // delete k;
+    //     cout << "get idx = " << idx << ", return:" << key.addr << endl;
+    //     return;
+    // }
 
     char *decomp_key = new char[key.size + pfx_len + 1];
     // Get the compressed prefix from k[base] to k[i]
@@ -345,10 +345,10 @@ void get_full_key(NodeWT *node, int idx, Item &key, Cache *cache) {
     key.newallocated = true;
 
     // write into cache
-    keyloc *k = new keyloc(node, idx);
-    int pos_in_cache = cache->put(header);
-    cache->write(pos_in_cache, key.addr);
-    delete k;
+    // keyloc *k = new keyloc(node, idx);
+    // int pos_in_cache = cache->put(header);
+    // cache->write(pos_in_cache, key.addr);
+    // delete k;
     return;
 }
 #endif

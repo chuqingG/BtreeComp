@@ -345,7 +345,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
         pkey_buf = new char[pkey_len + 1];
         strncpy(pkey_buf, node->prefix->addr, node->prefix->size);
         #ifdef PV
-            strncpy(pkey_buf + node->prefix->size, head_fr->key_prefix, PV_SIZE);
+            strncpy(pkey_buf + node->prefix->size, head_fr->key_prefix, min(PV_SIZE, (int)head_fr->key_len));
             if (head_fr->key_len > PV_SIZE) strcpy(pkey_buf + PV_SIZE + node->prefix->size, firstright);
         #else
             strcpy(pkey_buf + node->prefix->size, firstright);

@@ -53,6 +53,15 @@ cmake -DCMAKE_BUILD_TYPE=Release .. && make
             -l [max_key_length]         # max key length, enable to truncate each key
 ```
 
+### Examples
+For demostration, our default 100 million random 32-Byte keys can be downloaded [here](https://drive.google.com/file/d/17JowQ_ZYsB9ZJ4MJcuaDKyxKE8k04yKP/view?usp=drive_link). 
+
+For example, by `./Benchmark -b insert,search -d /path/to/data -i 3` we can execute the default experiment. It will take some time, but we can also truncate the entire dataset by adding `-n NUMBER` to use only the first N data. 
+
+The same dataset can also be smoothly used to explore the impact of key size. By adding `-l k` the trees are set to read the first k-byte of each item. In our experiments, we evaluate the results when `k=8` and `k=16`.
+
+The page size can by changed in utils/config.h by setting the value of P in `#define MAX_SIZE_IN_BYTES P`. Make sure to recompile the files by `make` after changing the settings.
+
 ## Result Analysis
 
 In addition to the optional output file (-o), we also provide a summary on the screen output to get a quick glance of the results of each run, an example output is shown as follows.

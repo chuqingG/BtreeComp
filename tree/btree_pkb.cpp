@@ -39,10 +39,13 @@ int BPTreePkB::search(const char *key) {
     if (leaf == nullptr)
         return -1;
     findNodeResult result = find_node(leaf, key, keylen, offset, equal);
+
     if (result.low == result.high)
         return result.low;
-    else
+    else {
+        // cout << result.low << " " << result.high << endl;
         return -1;
+    }
 }
 
 int BPTreePkB::searchRange(const char *kmin, const char *kmax) {

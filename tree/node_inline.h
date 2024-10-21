@@ -64,7 +64,7 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     header->key_offset = nptr->space_top;
     #ifdef PV
         if (klen > PV_SIZE) {
-            strcpy(BufTop(nptr), k + PV_SIZE);
+            strncpy(BufTop(nptr), k + PV_SIZE, klen - PV_SIZE);
             nptr->space_top += klen - PV_SIZE + 1;
         }
         else {
@@ -153,10 +153,10 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
 
 long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     long cmp = word_cmp(header, key, keylen);
-    // if (cmp == 0) {
-    //     cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
-    //                         keylen, header->key_len);
-    // }
+    if (cmp == 0) {
+        cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                            keylen, header->key_len);
+    }
     return cmp;
 }
 #endif

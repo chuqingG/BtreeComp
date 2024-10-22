@@ -127,24 +127,61 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
         int key_len = oldhead->key_len;
         #if defined KP
             // char *presuf = new char[oldhead->key_len + 1]; //extract entire key
-            char * presuf = allocSafeStr(oldhead->key_len + 1);
-            presuf[oldhead->key_len + 1] = '\0';
-            memcpy(presuf, oldhead->key_prefix, PV_SIZE);
-            strncpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset), oldhead->key_len < PV_SIZE ? 0 :  oldhead->key_len);
+            // char * presuf = allocSafeStr(oldhead->key_len + 1);
+            // presuf[oldhead->key_len + 1] = '\0';
+            // memcpy(presuf, oldhead->key_prefix, PV_SIZE);
+            // strncpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset), oldhead->key_len < PV_SIZE ? 0 :  oldhead->key_len);
 
-            movNorm(presuf, presuf); //unnormalize for cutoff
+            // movNorm(presuf, presuf); //unnormalize for cutoff
 
-            newhead->key_len = oldhead->key_len - cutoff;
+            // newhead->key_len = oldhead->key_len - cutoff;
+            // newhead->key_offset = top;
+            // // memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
+            // fillNull(newhead->key_prefix, 0);
+            // // strncpy(newhead->key_prefix, presuf + cutoff, (int)PV_SIZE);
+            // movNorm((presuf + cutoff), newhead->key_prefix); //store prefix as normalized
+
+            // int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
+            // strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
+            // top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
+            // delete[] presuf;
+            int old_i = cutoff;
+            int new_i = 0;
+            int new_len = key_len - cutoff;
+            memset(newhead->key_prefix, 0, PV_SIZE);
+            int new_norm_idx = PV_SIZEMINUS;
+            if (cutoff < PV_SIZE) {
+                int old_norm_idx = PV_SIZEMINUS - cutoff;
+                while (old_i < PV_SIZE && old_i < key_len) {
+                    newhead->key_prefix[new_norm_idx] = oldhead->key_prefix[old_norm_idx];
+                    old_i++; new_i++; old_norm_idx--; new_norm_idx--;
+                }
+                if (old_i == key_len) {
+                    newhead->key_len = new_len;
+                    newhead->key_offset = top;
+                    *(newbase + top) = '\0';
+                    top += 1;
+                    continue;
+                }
+            }
+
+            char * suffix = PageOffset(nptr, oldhead->key_offset);
+            int suffix_i = 0;
+            if (cutoff > PV_SIZE) {
+                suffix_i = cutoff - PV_SIZE;;
+            }
+            if (new_i < PV_SIZE) {
+                while (new_i < PV_SIZE && new_i < new_len) {
+                    newhead->key_prefix[new_norm_idx] = suffix[suffix_i];
+                    new_i++; suffix_i++; new_norm_idx--;
+                }
+            }
+
+            int sufLength = new_len - PV_SIZE; if (sufLength < 0) sufLength = 0;
+            strncpy(newbase + top, suffix + suffix_i, sufLength);
+            newhead->key_len = new_len;
             newhead->key_offset = top;
-            // memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
-            fillNull(newhead->key_prefix, 0);
-            // strncpy(newhead->key_prefix, presuf + cutoff, (int)PV_SIZE);
-            movNorm((presuf + cutoff), newhead->key_prefix); //store prefix as normalized
-
-            int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
-            strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
-            top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
-            delete[] presuf;
+            top += sufLength + 1;
         #elif defined FN
             assert(oldhead->key_len > cutoff);
             int oldwordidx = cutoff / PV_SIZE; 

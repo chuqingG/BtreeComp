@@ -341,14 +341,37 @@ void copy_norm_to_unnorm(char *src, char *dest, int len) { //fills nullbyte
     }
 }
 #ifdef PV
-inline long word_cmp(Stdhead* header,const char* key, int keylen) {
-    int pre = *(int*)key;
-    pre = bswap(pre);
+inline long word_cmp(Stdhead* header,int pre, int keylen) {
+    // int pre = *(int*)key;
+    // pre = bswap(pre);
     return pre - *(int*)header->key_prefix;
 }
 
-inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
-    long cmp = word_cmp(header, key, keylen);
+// inline long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
+//     long cmp = word_cmp(header, key, keylen);
+//     if (cmp == 0) {
+//         #if defined KP
+//             cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
+//                                 keylen, header->key_len);
+//         #elif defined FN
+//             char *suffix = PageOffset(cursor, header->key_offset);
+//             key += PV_SIZE;
+//             int len = min((int)header->key_len - PV_SIZE, keylen - PV_SIZE);
+//             for (int idx = 0; idx < len; idx += 4) {
+//                 int pre = bswap(*(int*)key);
+//                 cmp = pre - *(int*)(suffix);
+//                 if (cmp != 0) return cmp;
+//                 key += 4; suffix += 4;
+//             }
+//             cmp = keylen - header->key_len;
+
+//         #endif
+//     }
+//     return cmp;
+// }
+
+inline long knComp(Stdhead* header, int prefix, const char* key, int keylen, Node *cursor) {
+    long cmp = word_cmp(header, prefix, keylen);
     if (cmp == 0) {
         #if defined KP
             cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),

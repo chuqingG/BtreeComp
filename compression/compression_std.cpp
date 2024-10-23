@@ -33,8 +33,8 @@ char *tail_compress(char *leftprefix, char *rightprefix, const char *leftsuffix,
     movNorm(rightprefix, right);
     strcpy(right + PV_SIZE, rightsuffix);
     char* ret = tail_compress(left, right, len_ll, len_fr);
-    delete left;
-    delete right;
+    delete[] left;
+    delete[] right;
     return ret;
 #elif defined FN
     // int prefixlength = normed_common_prefix(*(int*)leftprefix, *(int*)rightprefix);
@@ -70,10 +70,20 @@ int tail_compress_length(char *leftprefix, char *rightprefix, const char *leftsu
 #if defined KP
     char *left = new char[len_ll + 1];
     char *right = new char[len_fr + 1];
-    movNorm(leftprefix, left);
-    strcpy(left + PV_SIZE, leftsuffix);
-    movNorm(rightprefix, right);
-    strcpy(right + PV_SIZE, rightsuffix);
+    int idx = 0;
+    while (idx < min(len_ll, PV_SIZE)) {
+        left[idx] = leftprefix[PV_SIZEMINUS - idx];
+        idx++;
+    }
+    if (len_ll > PV_SIZE) strcpy(left + PV_SIZE, leftsuffix);
+    idx = 0;
+    while (idx < min(len_fr, PV_SIZE)) {
+        right[idx] = rightprefix[PV_SIZEMINUS - idx];
+        idx++;
+    }    
+    if (len_fr > PV_SIZE) strcpy(right + PV_SIZE, rightsuffix);
+    left[len_ll] = '\0';
+    right[len_fr] = '\0';
     int ret = tail_compress_length(left, right, len_ll, len_fr); //used in finding the length of tail comp key
     delete[] left;
     delete[] right;

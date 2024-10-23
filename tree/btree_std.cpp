@@ -691,13 +691,14 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
     else return cmp > 0 ? pos + 1 : pos;
 #else
     // assert(keylen >= PV_SIZE);
+    int prefix = bswap(*(int *)key);
     while (low <= high) {
         int mid = low + (high - low) / 2;
 
         Stdhead *header = GetHeaderStd(cursor, mid);
 
-        #ifdef PV
-        long cmp = pvComp(header, key, keylen, cursor);
+        #ifdef KN
+        long cmp = knComp(header, prefix, key, keylen, cursor);
         #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
@@ -708,8 +709,8 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
             while (mid < high) {
                 Stdhead *header = GetHeaderStd(cursor, mid + 1);
 
-                #ifdef PV
-                    long cmp = word_cmp(header, key, keylen);
+                #ifdef KN
+                    long cmp = word_cmp(header, prefix, keylen);
                     if (cmp != 0) break;
                     else if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                         keylen, header->key_len)) {
@@ -815,16 +816,16 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
     else return isleaf ? -1 : cmp > 0 ? pos + 1 : pos; //not found in leaf, or branch node right child
 #else
     // assert(keylen >= PV_SIZE);
-    #ifdef FN
-    // assert(keylen % 4 == 0); allow head compression padded
-    #endif
+
+    int prefix = bswap(*(int *)key);
+
     while (low <= high) {
         int mid = low + (high - low) / 2;
         Stdhead *header = GetHeaderStd(cursor, mid);
         
 #ifndef TRACK_DISTANCE
-    #ifdef PV
-        long cmp = pvComp(header, key, keylen, cursor);
+    #ifdef KN
+        long cmp = knComp(header, prefix, key, keylen, cursor);
     #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);

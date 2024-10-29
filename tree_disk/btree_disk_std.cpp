@@ -455,8 +455,11 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     node->ptr_cnt = split + 1;
 
     // set key bound
+    delete right->highkey;
     right->highkey = new Item(*node->highkey);
+    delete node->highkey;
     node->highkey = new Item(newsplit.promotekey);
+    delete right->lowkey;
     right->lowkey = new Item(newsplit.promotekey);
 
     // Set next pointers
@@ -581,8 +584,11 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     UpdateBaseInDisk(node, left_base, dsk);
 
     // set key bound
+    delete right->highkey;
     right->highkey = new Item(*node->highkey);
+    delete node->highkey;
     node->highkey = new Item(newsplit.promotekey);
+    delete right->lowkey;
     right->lowkey = new Item(newsplit.promotekey);
 
     // Set next pointers

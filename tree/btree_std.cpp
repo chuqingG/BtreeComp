@@ -114,7 +114,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
                     // memcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_i->key_offset), sizeof(char) * head_i->key_len + 1);
                     strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
                     strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_i->key_offset));
-                    delete decomp_key;
+                    delete[] decomp_key;
                 }
                 entries += leaf->size - pos;
                 leaf = leaf->next;
@@ -133,7 +133,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
         char *decomp_key = new char[leaf->prefix->size + head_pos->key_len + 1];
         strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
         strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_pos->key_offset));
-        delete decomp_key;
+        delete[] decomp_key;
 
         entries++;
         pos++;
@@ -344,7 +344,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
         pkey_buf = new char[pkey_len + 1];
         strncpy(pkey_buf, node->prefix->addr, node->prefix->size);
 #ifdef PV
-        strncpy(pkey_buf + node->prefix->size, head_fr->key_prefix, PV_SIZE);
+        strncpy(pkey_buf + node->prefix->size, head_fr->key_prefix, min(PV_SIZE, (int)head_fr->key_len));
         if (head_fr->key_len > PV_SIZE) strcpy(pkey_buf + PV_SIZE + node->prefix->size, firstright);
 #else
         strcpy(pkey_buf + node->prefix->size, firstright);

@@ -165,6 +165,7 @@ string get_full_key(NodeWT *node, int slot) {
     }
 }
 
+
 #else // no wt cache
 
 #ifdef WT_OPTIM

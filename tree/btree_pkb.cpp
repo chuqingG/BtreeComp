@@ -177,9 +177,7 @@ void BPTreePkB::insert_leaf(NodePkB *leaf, NodePkB **path, int path_level,
         int pfx_len = get_common_prefix_len(prevkey.addr, key, prevkey.size, keylen);
         InsertKeyPkB(leaf, insertpos, key, keylen, pfx_len);
 
-        if (!equal) {
-            update_next_prefix(leaf, insertpos, key, keylen);
-        }
+        update_next_prefix(leaf, insertpos, key, keylen);
     }
 }
 
@@ -205,9 +203,7 @@ splitReturnPkB BPTreePkB::split_nonleaf(NodePkB *node, NodePkB **path, int paren
                      path, parentlevel, prevkey);
     int pfx_len = get_common_prefix_len(prevkey.addr, promotekey->addr, prevkey.size, promotekey->size);
     InsertKeyPkB(node, insertpos, promotekey->addr, promotekey->size, pfx_len);
-    if (!equal) {
-        update_next_prefix(node, insertpos, promotekey->addr, promotekey->size);
-    }
+    update_next_prefix(node, insertpos, promotekey->addr, promotekey->size);
 
     InsertNode(node, insertpos + 1, childsplit->right);
 
@@ -286,10 +282,7 @@ splitReturnPkB BPTreePkB::split_leaf(NodePkB *node, NodePkB **path, int path_lev
                      path, path_level - 1, prevkey);
     int pfx_len = get_common_prefix_len(prevkey.addr, newkey, prevkey.size, keylen);
     InsertKeyPkB(node, insertpos, newkey, keylen, pfx_len);
-
-    if (!equal) {
-        update_next_prefix(node, insertpos, newkey, keylen);
-    }
+    update_next_prefix(node, insertpos, newkey, keylen);
 
     int split = split_point(node);
 

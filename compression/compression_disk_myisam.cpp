@@ -20,7 +20,7 @@ void get_full_key(NodeMyISAM *node, int idx, Item &key) {
         return;
     }
 
-    char *prev_key;
+    char *prev_key = NULL;
     bool newbuf = false;
     for (int pos = idx - 1;;) {
         MyISAMhead *head_i = GetHeaderMyISAM(node, pos);
@@ -43,6 +43,11 @@ void get_full_key(NodeMyISAM *node, int idx, Item &key) {
             }
         }
 
+        if (newbuf)
+            delete[] prev_key;
+        prev_key = key.addr;
+        newbuf = key.newallocated;
+
         if (pos == idx)
             break;
 
@@ -54,10 +59,7 @@ void get_full_key(NodeMyISAM *node, int idx, Item &key) {
             ++pos;
             break;
         }
-        if (newbuf)
-            delete[] prev_key;
-        prev_key = key.addr;
-        newbuf = key.newallocated;
+
     }
     return;
 }

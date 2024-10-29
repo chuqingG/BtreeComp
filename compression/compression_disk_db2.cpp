@@ -297,6 +297,7 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
         prefixItem pfxitem;
 
         pfxitem.prefix.addr = leftlast;
+        pfxitem.prefix.newallocated = true;
         pfxitem.prefix.size = prefixlen;
         pfxitem.low = firstlow;
         pfxitem.high = lasthigh;
@@ -317,6 +318,7 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
                 memcpy(GetPfxInPageDB2(result, i - 1), GetPfxInPageDB2(result, i), sizeof(DB2pfxhead));
             }
             result->pfx_size--;
+              delete[] rightfirst;
             return index + 1;
         }
         else if (firstlow > pfx_i->low && lasthigh == pfx_i_1->high) {
@@ -330,6 +332,7 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
             pfx_i_1->low = pfxitem.low;
             pfx_i_1->high = pfxitem.high;
             result->pfx_top += pfxitem.prefix.size + 1;
+              delete[] rightfirst;
             return index + 1;
         }
         else if (firstlow == pfx_i->low && lasthigh < pfx_i_1->high) {
@@ -343,6 +346,7 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
             pfx_i->high = pfxitem.high;
             result->pfx_top += pfxitem.prefix.size + 1;
             pfx_i_1->low = lasthigh + 1;
+              delete[] rightfirst;
             return index + 1;
         }
         else {
@@ -361,6 +365,7 @@ int expand_prefixes_in_boundary(prefixOptimization *result, int index) {
             pfx_i_1->high = pfxitem.high;
             result->pfx_top += pfxitem.prefix.size + 1;
             result->pfx_size++;
+              delete[] rightfirst;
             return index + 2;
         }
     }
@@ -439,6 +444,7 @@ void apply_prefix_optimization(NodeDB2 *node) {
                 strcpy(key_i, PfxOffset(node, pfxhead->pfx_offset));
                 strncpy(key_i + pfxhead->pfx_len, PageOffset(node, head_i->key_offset), curprefix_len);
                 key_i[pfx_len] = '\0';
+                if (pfxitem.prefix.newallocated) delete[] pfxitem.prefix.addr;
                 pfxitem.prefix.addr = key_i;
                 pfxitem.prefix.size = pfx_len;
                 pfxitem.prefix.newallocated = true;
@@ -471,6 +477,7 @@ void apply_prefix_optimization(NodeDB2 *node) {
         if (uninitialized) {
             // The last key hasn't been added, and it doesn't have prefix
             // Or the prefix space is not enough, simply put these keys : [i,node.size)
+            if (pfxitem.prefix.newallocated) delete[] pfxitem.prefix.addr;
             pfxitem.prefix.addr = PfxOffset(node, pfxhead->pfx_offset);
             pfxitem.prefix.size = pfxhead->pfx_len;
             pfxitem.prefix.newallocated = false;

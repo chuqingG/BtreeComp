@@ -61,17 +61,17 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     // Set the new header
     Stdhead *header = GetHeaderStd(nptr, pos);
     header->key_offset = nptr->space_top;
-#ifdef KN
+#ifdef PV
     if (klen > PV_SIZE) {
-        strcpy(BufTop(nptr), k + PV_SIZE);
+        strncpy(BufTop(nptr), k + PV_SIZE, klen - PV_SIZE);
         nptr->space_top += klen - PV_SIZE + 1;
     }
     else {
         strcpy(BufTop(nptr), "\0");
         nptr->space_top += 1;
     }
-    // memset(header->key_prefix, 0, PV_SIZbE);
-    memcpy(header->key_prefix, k, PV_SIZE);
+    memset(header->key_prefix, 0, PV_SIZE);
+    strncpy(header->key_prefix, k, min(PV_SIZE, (int)klen));
 #else
     strcpy(BufTop(nptr), k);
     nptr->space_top += klen + 1;

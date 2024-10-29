@@ -403,8 +403,6 @@ public:
     void Insert(const vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); ++i) {
             _tree->insert(values.at(i));
-            // vector<bool> flag(i + 1);
-            // _tree->printTree(_tree->getRoot(), flag, true);
         }
         // vector<bool> flag(values.size() + 1);
         // _tree->printTree(_tree->getRoot(), flag, true);
@@ -412,12 +410,12 @@ public:
 
     bool Search(const std::vector<char *> &values) override {
         int count = 0;
-        for (uint32_t i = 0; i < values.size(); ++i)
+        for (uint32_t i = 0; i < values.size(); ++i) {
             if (_tree->search(values[i]) == -1) {
-                // cout << values[i] << endl;
-                count++;
-                // return false;
+                // count++;
+                return false;
             }
+        }
         // cout << "count: " << count << endl;
         return true;
     }

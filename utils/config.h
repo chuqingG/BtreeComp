@@ -24,7 +24,7 @@
 #define DB2_PFX_MAX_SIZE 128  //(1024 + 512)  // 128  // 256
 #define SPLIT_LIMIT 32        // suggest to be >= 32 for safety on db2
 #define TAIL_SPLIT_WIDTH (1.0 / 6)
-#define RANGE_SCOPE (1.0 / 1000000)
+#define RANGE_SCOPE (1.0 / 100)
 #define DEFAULT_DATASET_SIZE 100
 #define APPROX_KEY_SIZE 32
 #define WT_CACHE_KEY_NUM 1000

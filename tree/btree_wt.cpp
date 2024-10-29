@@ -67,13 +67,16 @@ int BPTreeWT::searchRange(const char *kmin, const char *kmax) {
             leaf = leaf->next;
 
             WThead *head_first = GetHeaderWT(leaf, 0);
+            if (prevkey.newallocated) delete[] prevkey.addr;
             prevkey.addr = PageOffset(leaf, head_first->key_offset);
             prevkey.size = head_first->key_len;
+            prevkey.newallocated = false;
             continue;
         }
         // build current key
         WThead *h_pos = GetHeaderWT(leaf, pos);
         curkey.size = h_pos->pfx_len + h_pos->key_len;
+        if (curkey.newallocated) delete[] curkey.addr;
         curkey.addr = new char[curkey.size + 1];
         curkey.newallocated = true;
 
@@ -84,8 +87,8 @@ int BPTreeWT::searchRange(const char *kmin, const char *kmax) {
             break;
 
         // delete the previous allocated memory
-        if (pos)
-            delete prevkey.addr;
+        if (prevkey.newallocated)
+            delete[] prevkey.addr;
         prevkey = curkey;
         entries++;
         pos++;

@@ -452,18 +452,21 @@ void RunBenchmark() {
 
     std::vector<char *> values;
     std::vector<char *> values_warmup;
+    std::vector<char *> allvalues;
     if (dataset == DatasetTypes::RANDOM) {
-        column_num = 1;
-#ifdef TOFIX
-        generate_random_number(values, key_numbers);
-        generate_random_number(
-            values_warmup,
-            100'000); // TODO(chuqing): now set a small value for test
-#endif
+        generate_random_string(allvalues, key_numbers, max_keylen);
+        cout << "random array first 3 indices: " << allvalues[0] << ", " << allvalues[1] << ", " << allvalues[2] << "\n"; 
+//         column_num = 1;
+// #ifdef TOFIX
+//         generate_random_number(values, key_numbers);
+//         generate_random_number(
+//             values_warmup,
+//             100'000); // TODO(chuqing): now set a small value for test
+// #endif
     }
     else {
         cout << "Dataset file name " << dataset_file_name << endl;
-        std::vector<char *> allvalues;
+
         int max_data_length;
         if (key_numbers) {
             // cutoff on the whole dataset
@@ -474,9 +477,11 @@ void RunBenchmark() {
             max_data_length = read_dataset_char(allvalues, dataset_file_name, max_keylen);
             key_numbers = allvalues.size();
         }
+    }
+
 #ifdef SINGLE_DEBUG
-        cout << "Finish reading: " << key_numbers << " items in total, "
-             << "max length: " << max_data_length << endl;
+        cout << "Finish reading: " << key_numbers << " items in total, ";
+          //   << "max length: " << max_data_length << endl;
 #endif
         int warm_num = std::round(allvalues.size() * warmup_split_ratio);
         for (int i = 0; i < warm_num; i++) {
@@ -491,7 +496,7 @@ void RunBenchmark() {
         values_warmup.shrink_to_fit();
         allvalues.clear();
         vector<char *>(allvalues).swap(allvalues);
-    }
+    //}
 
     // Run Benchmarks
     for (int i = 0; i < iterations; ++i) {

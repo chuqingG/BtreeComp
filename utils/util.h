@@ -56,6 +56,12 @@ string convert_to_16_bytes(string key) {
     return key;
 }
 
+string convert_to_n_bytes(string key, int n) {
+    if (key.length() < 16)
+        return key + string(16 - key.length(), '0');
+    return key;
+}
+
 void generate_random_number_unique(vector<string> &values, int num_keys) {
     int i;
     for (i = 0; i < 2'000'000'000; i++) { // close to rand_max
@@ -100,6 +106,24 @@ void generate_random_number(vector<string> &values, int num_keys) {
     cout << "finish shuffle" << endl;
     for (auto n : origin)
         values.push_back(convert_to_16_bytes(to_string(n)));
+}
+
+void generate_random_string(vector<char*> &values, int num_keys, int len) {
+    srand(42);
+    static const char alphanum[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+    
+    for (int i = 0; i < num_keys; i++) {
+        char * tmp_s = new char[len];
+
+        for (int j = 0; j < len; ++j) {
+            tmp_s[j] = alphanum[rand() % (sizeof(alphanum) - 1)];
+        }
+        
+        values.push_back(tmp_s);
+    }  
 }
 
 void read_dataset(vector<string> &values, string filename, int max_number = -1) {

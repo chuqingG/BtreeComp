@@ -5,7 +5,6 @@
 #include <string>
 
 using namespace std;
-extern char* string_conv(const char* key, int keylen);
 
 int get_common_prefix_len(const char *a, const char *b, int alen, int blen) {
     int idx = 0;

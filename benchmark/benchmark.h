@@ -64,7 +64,9 @@ public:
             _tree->printTree(_tree->getRoot(), flag, true);
 #endif
         }
+
 #ifdef PRINT
+
         vector<bool> flag(values.size() * 1.25);
         _tree->printTree(_tree->getRoot(), flag, true);
 #endif
@@ -448,6 +450,52 @@ private:
 External tester
 */
 
+// class ARTBenchmark : public Benchmark {
+// public:
+//     ~ARTBenchmark() override {
+//     }
+
+//     virtual void InitializeStructure() override {
+//     }
+
+//     void DeleteStructure() override {
+//     }
+
+//     void Insert(const vector<char *> &keys) override {
+//         int v = 1;
+//         for (uint32_t i = 0; i < keys.size(); i++) {
+//             _tree.set(keys[i], v);
+//         }
+//     }
+
+//     bool Search(const std::vector<char *> &keys) override {
+//         int count = 0;
+//         for (uint32_t i = 0; i < keys.size(); i++)
+//             if (_tree.get(keys[i]) == -1) {
+//                 // cout << "Cannot find " << values[i] << endl;
+//                 return false;
+//             }
+//         return true;
+//     }
+
+//     bool SearchRange(std::vector<char *> &sorted_values,
+//                      std::vector<int> &minIdxs) override {
+//         return true;
+//     }
+
+//     TreeStatistics CalcStatistics() override {
+//         TreeStatistics statistics;
+//         statistics.height = _tree.getHeight();
+//         _tree.getSize(statistics.numNodes, statistics.nonLeafNodes,
+//                       statistics.totalBranching, statistics.numKeys, // numKeys->usedBranching
+//                       statistics.totalKeySize);
+//         return statistics;
+//     }
+
+// protected:
+//     art::art<int> _tree;
+// };
+
 #ifdef ART_TEST
 
 class ARTBenchmark : public Benchmark {
@@ -497,3 +545,4 @@ protected:
 };
 
 #endif // ART
+

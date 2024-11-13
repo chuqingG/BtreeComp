@@ -22,9 +22,11 @@ Node::Node() {
     next = nullptr;
 
 #ifdef UBS
+#ifdef SHAR
     I = 0;
     Ip = 0;
     firstL = 0;
+#endif
 #endif
 }
 
@@ -156,12 +158,13 @@ void printKeys(Node *node, bool compressed) {
         Stdhead *head = GetHeaderStd(node, i);
 
         if (compressed && node->prefix->addr) {
-#ifdef PV
+            #ifdef PV 
             char prefix[PV_SIZE + 1] = {0};
-            strncpy(prefix, head->key_prefix, PV_SIZE);
+            strncpy(prefix, head->key_prefix,PV_SIZE);
             cout << prefix;
-#endif
-            cout << PageOffset(node, head->key_offset) << ",";
+
+            #endif
+            cout  << PageOffset(node, head->key_offset) << ",";
         }
         else {
             cout << node->prefix->addr << PageOffset(node, head->key_offset) << ",";

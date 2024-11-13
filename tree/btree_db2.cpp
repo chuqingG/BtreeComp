@@ -101,7 +101,7 @@ int BPTreeDB2::searchRange(const char *kmin, const char *kmax) {
             char *decomp_key = new char[pfx->pfx_len + head_i->key_len + 1];
             strncpy(decomp_key, PfxOffset(leaf, pfx->pfx_offset), pfx->pfx_len);
             strcpy(decomp_key + pfx->pfx_len, PageOffset(leaf, head_i->key_offset));
-            delete decomp_key;
+            delete[] decomp_key;
             entries++;
         }
         if (i <= pfx->high)

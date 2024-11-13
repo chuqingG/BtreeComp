@@ -132,6 +132,19 @@ struct WThead {
 #endif
 
 #ifndef DUPKEY
+class KeyWT {
+public:
+    string value;
+    vector<string> ridList;
+    uint8_t prefix;
+    bool isinitialized;
+    string initialized_value;
+    KeyWT(string value, uint8_t prefix, int rid);
+    KeyWT(string value, uint8_t prefix, vector<string> ridList);
+    void addRecord(int rid);
+    int getSize();
+};
+
 class NodeWT {
 public:
     bool IS_LEAF;
@@ -141,7 +154,7 @@ public:
 
     uint8_t prefixstart; /* Best page prefix starting slot */
     uint8_t prefixstop;  /* Maximum slot to which the best page prefix applies */
-
+    vector<KeyWT> keys;
     vector<NodeWT *> ptrs;
     NodeWT *prev; // Prev node pointer
     NodeWT *next; // Next node pointer

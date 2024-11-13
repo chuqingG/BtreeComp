@@ -1,1 +1,0 @@
-/usr/bin/c++  -O0 -Wall -g2 -ggdb  -O0 -Wall -g2 -ggdb CMakeFiles/Benchmark.dir/benchmark/benchmark.cpp.o -o Benchmark  tree/libbtree_std.a tree/libbtree_db2.a tree/libbtree_myisam.a tree/libbtree_wt.a tree/libbtree_pkb.a 

@@ -3,6 +3,7 @@
 // #include "../utils/config.h"
 #include "../utils/compare.cpp"
 
+
 #define NewPage() (new char[MAX_SIZE_IN_BYTES])
 #define SetEmptyPage(p) memset(p, 0, sizeof(char) * MAX_SIZE_IN_BYTES)
 #define BufTop(nptr) (nptr->base + nptr->space_top)
@@ -62,6 +63,7 @@ inline void InsertKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
     // Set the new header
     Stdhead *header = GetHeaderStd(nptr, pos);
     header->key_offset = nptr->space_top;
+
     #ifdef PV
         if (klen > PV_SIZE) {
             strncpy(BufTop(nptr), k + PV_SIZE, klen - PV_SIZE);
@@ -103,35 +105,76 @@ inline void RemoveKeyStd(Node *nptr, int pos, const char *k, uint16_t klen) {
 }
 
 // with cutoff
-inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint16_t cutoff, uint16_t &top) {//cutoff is potential head_comp ignored bytes
+inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint16_t cutoff, uint16_t &top) { // cutoff is potential head_comp ignored bytes
     for (int i = low; i < high; i++) {
         int newidx = i - low;
         Stdhead *oldhead = GetHeaderStd(nptr, i);
         Stdhead *newhead = (Stdhead *)(newbase + MAX_SIZE_IN_BYTES
                                        - (newidx + 1) * sizeof(Stdhead));
         int key_len = oldhead->key_len;
-        #ifdef PV
-            char *presuf = new char[oldhead->key_len + 1]; //extract entire key
-            presuf[oldhead->key_len + 1] = '\0';
-            strncpy(presuf, oldhead->key_prefix, PV_SIZE);
-            strncpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset), oldhead->key_len < PV_SIZE ? 0 :  oldhead->key_len);
 
-            newhead->key_len = oldhead->key_len - cutoff;
-            newhead->key_offset = top;
-            memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
-            strncpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
+#ifdef PV
+        // char *presuf = new char[oldhead->key_len + 1]; //extract entire key
+        // presuf[oldhead->key_len + 1] = '\0';
+        // strncpy(presuf, oldhead->key_prefix, PV_SIZE);
+        // strncpy(presuf + PV_SIZE, PageOffset(nptr, oldhead->key_offset), oldhead->key_len < PV_SIZE ? 0 :  oldhead->key_len);
 
-            int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
-            strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
-            top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
-            delete[] presuf;
-        #else
-            strcpy(BufTop(nptr), k);
-            strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
-            newhead->key_len = oldhead->key_len - cutoff;
-            newhead->key_offset = top;
-            top += newhead->key_len + 1;
-        #endif
+        // newhead->key_len = oldhead->key_len - cutoff;
+        // newhead->key_offset = top;
+        // memset(newhead->key_prefix, 0, PV_SIZE); //cutoff can't be longer than length right? yes
+        // strncpy(newhead->key_prefix, presuf + cutoff, min(PV_SIZE, (int)newhead->key_len));
+
+        // int sufLength = oldhead->key_len - cutoff - PV_SIZE; if (sufLength < 0) sufLength = 0;
+        // strncpy(newbase + top, presuf + cutoff + PV_SIZE, sufLength); //ends at nullbyte, even if 0
+        // top += sufLength + 1; //if key can fit into prefix, then there will be a null_byte place holder
+        // delete[] presuf;
+        int old_i = cutoff;
+        int new_i = 0;
+        int new_len = key_len - cutoff;
+        memset(newhead->key_prefix, 0, PV_SIZE);
+        if (cutoff < PV_SIZE) {
+            while (old_i < PV_SIZE && old_i < key_len) {
+                newhead->key_prefix[new_i] = oldhead->key_prefix[old_i];
+                old_i++;
+                new_i++;
+            }
+            if (old_i == key_len) {
+                newhead->key_len = new_len;
+                newhead->key_offset = top;
+                *(newbase + top) = '\0';
+                top += 1;
+                continue;
+            }
+        }
+
+        char *suffix = PageOffset(nptr, oldhead->key_offset);
+        int suffix_i = 0;
+        if (cutoff > PV_SIZE) {
+            suffix_i = cutoff - PV_SIZE;
+            ;
+        }
+        if (new_i < PV_SIZE) {
+            while (new_i < PV_SIZE && new_i < new_len) {
+                newhead->key_prefix[new_i] = suffix[suffix_i];
+                new_i++;
+                suffix_i++;
+            }
+        }
+
+        int sufLength = new_len - PV_SIZE;
+        if (sufLength < 0) sufLength = 0;
+        strncpy(newbase + top, suffix + suffix_i, sufLength);
+        newhead->key_len = new_len;
+        newhead->key_offset = top;
+        top += sufLength + 1;
+#else
+        // strcpy(BufTop(nptr), k);
+        strcpy(newbase + top, PageOffset(nptr, oldhead->key_offset) + cutoff);
+        newhead->key_len = oldhead->key_len - cutoff;
+        newhead->key_offset = top;
+        top += newhead->key_len + 1;
+#endif
+
         // if (newhead->key_len > 32)
         //     cout << "wrong update" << endl;
     }
@@ -140,6 +183,7 @@ inline void CopyToNewPageStd(Node *nptr, int low, int high, char *newbase, uint1
 #ifdef PV
 inline long word_cmp(Stdhead* header,const char* key, int keylen) {
 
+
     int cmp_len = min(PV_SIZE, keylen);
     for (int idx = 0; idx < cmp_len; ++idx) {
         int cmp = key[idx] - header->key_prefix[idx];
@@ -147,7 +191,6 @@ inline long word_cmp(Stdhead* header,const char* key, int keylen) {
             return cmp;
     }
     return 0;
-
     // return *(int *)(key) - *(int*)(header->key_prefix);
 }
 
@@ -159,6 +202,7 @@ long pvComp(Stdhead* header,const char* key, int keylen, Node *cursor) {
     }
     return cmp;
 }
+
 #endif
 //returns position
 #ifdef UBS
@@ -211,6 +255,7 @@ inline int unrolledBinarySearch(Node *cursor, const char *key, int keylen, bool 
     //     if (pvComp(low - delta, key, keylen, cursor) >= 0)
     //     low -= delta;
     // }
+
 
     if (cmp == 0) return org - low;
 

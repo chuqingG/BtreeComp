@@ -1,1 +1,0 @@
-/usr/bin/c++  -O0 -Wall -g2 -ggdb  -O0 -Wall -g2 -ggdb CMakeFiles/BenchmarkDSK.dir/benchmark/benchmark_disk.cpp.o -o BenchmarkDSK  tree_disk/libbtree_disk_std.a 

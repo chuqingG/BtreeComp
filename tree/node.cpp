@@ -162,6 +162,7 @@ void printKeys(Node *node, bool compressed) {
             char prefix[PV_SIZE + 1] = {0};
             strncpy(prefix, head->key_prefix,PV_SIZE);
             cout << prefix;
+
             #endif
             cout  << PageOffset(node, head->key_offset) << ",";
         }

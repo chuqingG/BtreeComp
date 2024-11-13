@@ -216,6 +216,7 @@ findNodeResult find_node(NodePkB *node, const char *searchKey, int keylen,
         curr++;
     }
     if (high - low > 1) {
+        // cout << high << ", " << low << endl;
         return find_bit_tree(node, searchKey, keylen, low, high, offset, equal);
     }
 

@@ -110,8 +110,12 @@ void read_dataset(vector<string> &values, string filename, int max_number = -1) 
     if (max_number < 0)
         max_number = INT_MAX;
     while (std::getline(in, str) && counter < max_number) {
-        if (str.size() > 0)
+        if (str.size() > 0) {
+            #if defined FN
+                str += "\0\0\0\0";
+            #endif
             values.push_back(str);
+        }
         counter++;
     }
     if (!counter) {
@@ -136,7 +140,14 @@ int read_dataset_char(vector<char *> &values, string filename, int max_keylen, i
         std::getline(in, str);
         int len = str.size();
         int real_len = min(len, max_keylen);
-        char *cptr = new char[real_len + 1];
+
+        #if defined FN
+            char *cptr = new char[real_len + PV_SIZE + 1];
+            *(int*) (cptr + real_len + 1) = 0;
+        #else 
+            char *cptr = new char[real_len + 1];
+        #endif
+
         // strcpy(cptr, str.data());
         strncpy(cptr, str.data(), real_len);
         cptr[real_len] = '\0';

@@ -1,5 +1,6 @@
 #include "btree_std.h"
 #include "../compression/compression_std.cpp"
+#include <cassert>
 
 // Initialise the BPTree Node
 BPTree::BPTree(bool head_compression, bool tail_compression) {
@@ -114,7 +115,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
                     // memcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_i->key_offset), sizeof(char) * head_i->key_len + 1);
                     strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
                     strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_i->key_offset));
-                    delete[] decomp_key;
+                    delete decomp_key;
                 }
                 entries += leaf->size - pos;
                 leaf = leaf->next;
@@ -133,7 +134,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
         char *decomp_key = new char[leaf->prefix->size + head_pos->key_len + 1];
         strncpy(decomp_key, leaf->prefix->addr, leaf->prefix->size);
         strcpy(decomp_key + leaf->prefix->size, PageOffset(leaf, head_pos->key_offset));
-        delete[] decomp_key;
+        delete decomp_key;
 
         entries++;
         pos++;
@@ -143,6 +144,7 @@ int BPTree::searchRangeHead(const char *kmin, const char *kmax) {
 
 void BPTree::insert(char *x) {
     int keylen = strlen(x);
+
     Node *search_path[max_level];
     int path_level = 0;
     Node *leaf = search_leaf_node_for_insert(_root, x, keylen, search_path, path_level);
@@ -175,15 +177,17 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
             }
             insert_nonleaf(parent, path, parentlevel - 1, &currsplit);
         }
+
     }
     else {
         Item *newkey = &(childsplit->promotekey);
         int insertpos;
         bool equal = false;
+
         if (this->head_comp) {
             insertpos = search_insert_pos(node, newkey->addr + node->prefix->size,
                                           newkey->size - node->prefix->size,
-                                          0, node->size - 1, equal);
+                                          0, node->size - 1, equal);//KP
         }
         else {
             insertpos = search_insert_pos(node, newkey->addr, newkey->size, 0, node->size - 1, equal);
@@ -191,7 +195,7 @@ void BPTree::insert_nonleaf(Node *node, Node **path,
         // Insert promotekey into node->keys[insertpos]
         if (this->head_comp) {
             InsertKeyStd(node, insertpos, newkey->addr + node->prefix->size,
-                         newkey->size - node->prefix->size);
+                         newkey->size - node->prefix->size);//KP
         }
         else {
             InsertKeyStd(node, insertpos, newkey->addr, newkey->size);
@@ -286,10 +290,10 @@ int BPTree::split_point(Node *node) {
             if (i + 1 < size) {
                 Stdhead *h_i = GetHeaderStd(node, i);
                 Stdhead *h_i1 = GetHeaderStd(node, i + 1);
-#ifdef KN
-                int cur_len = tail_compress_length(h_i->key_prefix, h_i1->key_prefix, PageOffset(node, h_i->key_offset), PageOffset(node, h_i1->key_offset), h_i->key_len, h_i1->key_len);
+#ifdef PV
+    int cur_len = tail_compress_length(h_i->key_prefix, h_i1->key_prefix, PageOffset(node, h_i->key_offset), PageOffset(node, h_i1->key_offset), h_i->key_len, h_i1->key_len);
 #else
-                int cur_len = tail_compress_length(PageOffset(node, h_i->key_offset),
+    int cur_len = tail_compress_length(PageOffset(node, h_i->key_offset),
                                                    PageOffset(node, h_i1->key_offset),
                                                    h_i->key_len, h_i1->key_len);
 #endif
@@ -329,7 +333,6 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     else {
         InsertKeyStd(node, insertpos, newkey, newkey_len);
     }
-
     // Insert the new right node to its parent
     InsertNode(node, insertpos + 1, childsplit->right);
 
@@ -339,27 +342,39 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     char *firstright = PageOffset(node, head_fr->key_offset);
     int pkey_len;
     char *pkey_buf;
-    if (this->head_comp && node->prefix->size) { // promote key
+    if (this->head_comp && node->prefix->size) { 
         pkey_len = node->prefix->size + head_fr->key_len;
-        pkey_buf = new char[pkey_len + 1];
+        // pkey_buf = new char[pkey_len + 1];
+        pkey_buf = allocSafeStr(pkey_len + 1);//kp
         strncpy(pkey_buf, node->prefix->addr, node->prefix->size);
-#ifdef PV
-        strncpy(pkey_buf + node->prefix->size, head_fr->key_prefix, min(PV_SIZE, (int)head_fr->key_len));
-        if (head_fr->key_len > PV_SIZE) strcpy(pkey_buf + PV_SIZE + node->prefix->size, firstright);
-#else
-        strcpy(pkey_buf + node->prefix->size, firstright);
-#endif
+        #if defined KP
+            // strncpy(pkey_buf + node->prefix->size, head_fr->key_prefix, PV_SIZE);
+            movNorm(head_fr->key_prefix, (pkey_buf + node->prefix->size));
+            strcpy(pkey_buf + PV_SIZE + node->prefix->size, firstright);
+        #elif defined FN
+            int offset = PV_SIZE + node->prefix->size;
+            movNorm(head_fr->key_prefix, (pkey_buf + node->prefix->size));
+            if (head_fr->key_len > PV_SIZE) copy_norm_to_unnorm(firstright, pkey_buf + offset, head_fr->key_len - PV_SIZE);
+        #else
+            strcpy(pkey_buf + node->prefix->size, firstright);
+        #endif
     }
     else {
         pkey_len = head_fr->key_len;
-        pkey_buf = new char[pkey_len + 1];
-#ifdef PV
-        strncpy(pkey_buf, head_fr->key_prefix, min(PV_SIZE, pkey_len));
-        if (head_fr->key_len > PV_SIZE) strcpy(pkey_buf + PV_SIZE, firstright);
-#else
-        strcpy(pkey_buf, firstright);
-#endif
+        // pkey_buf = new char[pkey_len + 1];
+        pkey_buf = allocSafeStr(pkey_len + 1);//kn
+        #if defined KP
+            // strncpy(pkey_buf, head_fr->key_prefix, PV_SIZE);
+            movNorm(head_fr->key_prefix, pkey_buf);
+            strcpy(pkey_buf + PV_SIZE, firstright);
+        #elif defined FN
+            movNorm(head_fr->key_prefix, pkey_buf);
+            if (pkey_len > PV_SIZE) copy_norm_to_unnorm(firstright, pkey_buf + PV_SIZE, pkey_len - PV_SIZE);
+        #else
+            strcpy(pkey_buf, firstright);
+        #endif
     }
+    fillNull(pkey_buf, pkey_len);
     newsplit.promotekey.addr = pkey_buf;
     newsplit.promotekey.size = pkey_len;
     newsplit.promotekey.newallocated = true;
@@ -387,7 +402,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
                              rightprefix_len - node->prefix->size, right->space_top);
 
             char *newpfx = new char[rightprefix_len + 1];
-            if (rightprefix_len > 0) strncpy(newpfx, newsplit.promotekey.addr, rightprefix_len);
+            strncpy(newpfx, newsplit.promotekey.addr, rightprefix_len);
             newpfx[rightprefix_len] = '\0';
             UpdatePfxItem(right, newpfx, rightprefix_len, true);
         }
@@ -395,10 +410,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
             // Assign the previous prefix to the new right node
             if (node->prefix->size > 0) {
                 char *newpfx = new char[node->prefix->size + 1];
-                if (node->prefix->size > 0)
-                    *newpfx = '\0';
-                else
-                    strcpy(newpfx, node->prefix->addr);
+                strcpy(newpfx, node->prefix->addr);
                 UpdatePfxItem(right, newpfx, node->prefix->size, true);
             }
             CopyToNewPageStd(node, split + 1, node->size, right->base, 0, right->space_top);
@@ -434,7 +446,10 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     node->size = split;
     node->space_top = left_top;
     UpdateBase(node, left_base);
-
+#ifdef UBS
+    calculateBSMetaData(node);
+    calculateBSMetaData(right);
+#endif
     node->ptrs = leftptrs;
     node->ptr_cnt = split + 1;
 
@@ -445,6 +460,7 @@ splitReturn_new BPTree::split_nonleaf(Node *node, int pos, splitReturn_new *chil
     node->highkey = new Item(newsplit.promotekey);
     delete right->lowkey;
     right->lowkey = new Item(newsplit.promotekey);
+
 
     // Set next pointers
     Node *next = node->next;
@@ -486,65 +502,94 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
 
     // calculate the separator
     Stdhead *head_fr = GetHeaderStd(node, split);
-    char *firstright = PageOffset(node, head_fr->key_offset); // this definitely needs change for PV
+    char *firstright = PageOffset(node, head_fr->key_offset); //this definitely needs change for PV
     char *s;
     int s_len;
     if (this->tail_comp) {
         Stdhead *head_ll = GetHeaderStd(node, split - 1);
         char *lastleft = PageOffset(node, head_ll->key_offset);
 #ifdef PV
-        s_len = tail_compress_length(head_ll->key_prefix, head_fr->key_prefix, lastleft, firstright,
-                                     head_ll->key_len, head_fr->key_len);
+            s_len = tail_compress_length(head_ll->key_prefix, head_fr->key_prefix, lastleft, firstright,
+                                        head_ll->key_len, head_fr->key_len);
 #else
-        s_len = tail_compress_length(lastleft, firstright,
+            s_len = tail_compress_length(lastleft, firstright,
                                      head_ll->key_len, head_fr->key_len);
 #endif
         if (this->head_comp && node->prefix->size) {
             int pfxlen = node->prefix->size;
-            s = new char[s_len + pfxlen + 1];
+            // s = new char[s_len + pfxlen + 1];
+            s = allocSafeStr(s_len + pfxlen + 1);
             strncpy(s, node->prefix->addr, pfxlen);
-#ifdef PV
-            strncpy(s + pfxlen, head_fr->key_prefix, min(s_len, PV_SIZE));
-            if (s_len > PV_SIZE) strncpy(s + pfxlen + PV_SIZE, firstright, s_len - PV_SIZE);
-#else
-            strncpy(s + pfxlen, firstright, s_len);
-#endif
+            #if defined KP
+                // strncpy(s + pfxlen, head_fr->key_prefix, min(s_len, PV_SIZE));
+                movNorm(head_fr->key_prefix, (s + pfxlen));
+                if (s_len > PV_SIZE) strncpy(s + pfxlen + PV_SIZE, firstright, s_len - PV_SIZE); 
+            #elif defined FN
+                int offset = pfxlen + PV_SIZE;
+                movNorm(head_fr->key_prefix, (s + pfxlen));    
+                if (s_len > PV_SIZE) copy_norm_to_unnorm(firstright, s + offset, s_len - PV_SIZE);
+            #else
+                strncpy(s + pfxlen, firstright, s_len);
+            #endif
             s_len += pfxlen;
         }
         else {
-            s = new char[s_len + 1];
-#ifdef PV
-            strncpy(s, head_fr->key_prefix, min(s_len, PV_SIZE));
-            if (s_len > PV_SIZE) strncpy(s + PV_SIZE, firstright, s_len - PV_SIZE); // copy until nullbyte
-#else
-            strncpy(s, firstright, s_len);
-#endif
+            // s = new char[s_len + 1];
+            s = allocSafeStr(s_len + 1);
+            #if defined KP
+                // strncpy(s, head_fr->key_prefix, min(s_len, PV_SIZE));
+                movNorm(head_fr->key_prefix, s);
+                if (s_len > PV_SIZE) strncpy(s + PV_SIZE, firstright, s_len - PV_SIZE); //copy until nullbyte
+            #elif defined FN
+                movNorm(head_fr->key_prefix, s);
+                if (s_len > PV_SIZE) copy_norm_to_unnorm(firstright, s + PV_SIZE, s_len - PV_SIZE);
+            #else
+                strncpy(s, firstright, s_len);
+            #endif
         }
-        s[s_len] = '\0';
+        // s_len = ceilLen(s_len); //enforce divisble by 4 invariant
+        fillNull(s, s_len);
+        //s[s_len] = '\0';
     }
     else {
         if (this->head_comp && node->prefix->size) {
-            s_len = node->prefix->size + head_fr->key_len;
-            s = new char[s_len + 1];
+            s_len =  head_fr->key_len;
+            // s = new char[s_len + 1];
+            s = allocSafeStr(s_len + node->prefix->size + 1);
             strncpy(s, node->prefix->addr, node->prefix->size);
-#ifdef PV
-            strncpy(s + node->prefix->size, head_fr->key_prefix, PV_SIZE); // prefix
-            strcpy(s + PV_SIZE + node->prefix->size, firstright);          // suffix
-#else
-            strcpy(s + node->prefix->size, firstright);
-#endif
+            #if defined KP
+                // strncpy(s + node->prefix->size, head_fr->key_prefix, PV_SIZE); //prefix
+                movNorm(head_fr->key_prefix, (s + node->prefix->size));
+                strcpy(s + PV_SIZE + node->prefix->size, firstright); //suffix
+            #elif defined FN
+                int offset = PV_SIZE + node->prefix->size;
+                movNorm(head_fr->key_prefix, (s + node->prefix->size));
+                if (s_len > PV_SIZE)  copy_norm_to_unnorm(firstright, s + offset, s_len - PV_SIZE);
+            #else
+                strcpy(s + node->prefix->size, firstright);
+            #endif
+            s_len += node->prefix->size;
         }
         else {
             s_len = head_fr->key_len;
-            s = new char[s_len + 1];
-#ifdef PV
-            strncpy(s, head_fr->key_prefix, PV_SIZE);
-            strcpy(s + PV_SIZE, firstright); // copy until nullbyte
-#else
-            strcpy(s, firstright);
-#endif
+            // s = new char[s_len + 1];
+            s = allocSafeStr(s_len + 1);
+            #if defined KP
+                // strncpy(s, head_fr->key_prefix,PV_SIZE);
+                movNorm(head_fr->key_prefix, s);
+                strcpy(s + PV_SIZE, firstright); //copy until nullbyte
+            #elif defined FN
+                movNorm(head_fr->key_prefix, s);
+                if (s_len > PV_SIZE) copy_norm_to_unnorm(firstright, s + PV_SIZE, s_len - PV_SIZE);
+            #else
+                strcpy(s, firstright);
+            #endif
         }
+        // s_len = ceilLen(s_len); //enforce divisble by 4 invariant
+        fillNull(s, s_len);
+        //s[s_len] = '\0';
     }
+    //s_len = adjustLen(s_len, 0);
     newsplit.promotekey.addr = s;
     newsplit.promotekey.size = s_len;
     newsplit.promotekey.newallocated = true;
@@ -586,6 +631,10 @@ splitReturn_new BPTree::split_leaf(Node *node, char *newkey, int newkey_len) {
     node->space_top = left_top;
     UpdateBase(node, left_base);
 
+#ifdef UBS
+    calculateBSMetaData(node);
+    calculateBSMetaData(right);
+#endif
     // set key bound
     delete right->highkey;
     right->highkey = new Item(*node->highkey);
@@ -626,40 +675,53 @@ bool BPTree::check_split_condition(Node *node, int keylen) {
 
 int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low, int high,
                               bool &equal) {
-#ifdef KN
-    if (keylen < PV_SIZE) keylen = PV_SIZE;
-#endif
+#ifdef UBS
+    if (cursor->size == 0) return 0; //optimize constant < 4
+    long cmp = 0;
+    int pos =  unrolledBinarySearch(cursor, key, keylen, cmp);
+    if (cmp == 0) {
+       equal = true;
+        while (pos < high) { //linear search
+            Stdhead *header = GetHeaderStd(cursor, pos + 1);
+            if (pvComp(header, key, keylen, cursor)) break;
+            pos++;
+        }
+        return pos + 1;
+    } 
+    else return cmp > 0 ? pos + 1 : pos;
+#else
+    // assert(keylen >= PV_SIZE);
+    int prefix = bswap(*(int *)key);
     while (low <= high) {
         int mid = low + (high - low) / 2;
 
         Stdhead *header = GetHeaderStd(cursor, mid);
 
-#ifdef KN
-        long cmp = pvComp(header, key, keylen, cursor);
-#else
+        #ifdef KN
+        long cmp = knComp(header, prefix, key, keylen, cursor);
+        #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
-#endif
+        #endif
 
         if (cmp == 0) {
             equal = true;
             while (mid < high) {
                 Stdhead *header = GetHeaderStd(cursor, mid + 1);
 
-#ifdef KN
-                long cmp = word_cmp(header, key, keylen);
-                if (cmp != 0)
+                #ifdef KN
+                    long cmp = word_cmp(header, prefix, keylen);
+                    if (cmp != 0) break;
+                    else if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                                        keylen, header->key_len)) {
+                        break;
+                    }
+                #else
+                    if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
+                                    keylen, header->key_len))
+                        // return the last one if keys are equal
                     break;
-                else if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
-                                      keylen, header->key_len)) {
-                    break;
-                }
-#else
-                if (char_cmp_new(key, PageOffset(cursor, header->key_offset),
-                                 keylen, header->key_len))
-                    // return the last one if keys are equal
-                    break;
-#endif
+                #endif
 
                 mid++;
             }
@@ -671,6 +733,7 @@ int BPTree::search_insert_pos(Node *cursor, const char *key, int keylen, int low
             high = mid - 1;
     }
     return high + 1;
+#endif
 }
 
 Node *BPTree::search_leaf_node(Node *searchroot, const char *key, int keylen) {
@@ -746,20 +809,27 @@ int BPTree::char_cmp_count(const char *a, const char *b, int alen, int blen) {
 // TODO:merge these search function
 int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
                            int low, int high, bool isleaf) {
-#ifdef KN
-    if (keylen < PV_SIZE) keylen = PV_SIZE; // in PV, key can't be less than 4 bytes
-#endif
+#ifdef UBS
+    long cmp = 0;
+    int pos =  unrolledBinarySearch(cursor, key, keylen, cmp);
+    if (cmp == 0) return isleaf ? pos : pos + 1; //right node of key
+    else return isleaf ? -1 : cmp > 0 ? pos + 1 : pos; //not found in leaf, or branch node right child
+#else
+    // assert(keylen >= PV_SIZE);
+
+    int prefix = bswap(*(int *)key);
+
     while (low <= high) {
         int mid = low + (high - low) / 2;
         Stdhead *header = GetHeaderStd(cursor, mid);
-
+        
 #ifndef TRACK_DISTANCE
-#ifdef KN
-        long cmp = pvComp(header, key, keylen, cursor);
-#else
+    #ifdef KN
+        long cmp = knComp(header, prefix, key, keylen, cursor);
+    #else
         int cmp = char_cmp_new(key, PageOffset(cursor, header->key_offset),
                                keylen, header->key_len);
-#endif
+    #endif
 #else
         int cmp = char_cmp_count(key, PageOffset(cursor, header->key_offset),
                                  keylen, header->key_len);
@@ -772,6 +842,7 @@ int BPTree::search_in_node(Node *cursor, const char *key, int keylen,
             high = mid - 1;
     }
     return isleaf ? -1 : high + 1;
+#endif
 }
 
 /*
@@ -831,8 +902,8 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
     // Condition when node is None
     if (x == NULL)
         return;
-    else if (depth > 1)
-        return;
+    // else if (x->IS_LEAF)
+    //     return;
     // Loop to print the depths of the
     // current node
     for (int i = 1; i < depth; ++i) {
@@ -848,10 +919,10 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
         // Otherwise print
         // the blank spaces
         else {
-            // cout << " "
-            //      << " "
-            //      << " "
-            //      << " ";
+            cout << " "
+                 << " "
+                 << " "
+                 << " ";
         }
     }
 
@@ -866,18 +937,18 @@ void BPTree::printTree(Node *x, vector<bool> flag, bool compressed, int depth,
     // the last node of
     // the exploring depth
     else if (isLast) {
-        // cout << "+--- ";
+        cout << "+--- ";
         printKeys(x, compressed);
-        // cout << endl;
+        cout << endl;
 
         // No more childrens turn it
         // to the non-exploring depth
         flag[depth] = false;
     }
     else {
-        // cout << "+--- ";
+        cout << "+--- ";
         printKeys(x, compressed);
-        // cout << endl;
+        cout << endl;
     }
 
     for (auto i = 0; i < x->ptr_cnt; i++)

@@ -11,7 +11,9 @@
 #include "../tree/btree_myisam.cpp"
 #include "../tree/btree_wt.cpp"
 #include "../tree/btree_pkb.cpp"
-// #include "art.hpp"
+#ifdef ART_TEST
+#include "art.hpp"
+#endif
 // using namespace std;
 
 struct TreeStatistics {
@@ -114,12 +116,12 @@ public:
             char *max = sorted_values.at(minIdxs[i] + range_size);
             // cout << "search: [" << min << ", " << max << "]" << endl;
             int entries = _tree->searchRange(min, max);
-            // int expected = count_range(sorted_values, minIdxs[i], range_size);
-            // if (entries != expected) {
-            //     cout << "Failure number of entries " << entries << " , expected "
-            //          << expected << endl;
-            //     return false;
-            // }
+            int expected = count_range(sorted_values, minIdxs[i], range_size);
+            if (entries != expected) {
+                cout << "Failure number of entries " << entries << " , expected "
+                     << expected << endl;
+                return false;
+            }
         }
         return true;
     }
@@ -229,7 +231,6 @@ public:
         int count = 0;
         for (uint32_t i = 0; i < values.size(); ++i)
             if (_tree->search(values.at(i)) == -1) {
-
                 count++;
             }
         cout << "count:" << count << endl;
@@ -283,8 +284,6 @@ public:
 
     void Insert(const vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); ++i) {
-            // if (i == values.size() - 1)
-            //     cout << "stop here" << endl;
             _tree->insert(values.at(i));
             // vector<bool> flag(i + 1);
             // _tree->printTree(_tree->getRoot(), flag, true);
@@ -296,7 +295,7 @@ public:
     bool Search(const std::vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); ++i)
             if (_tree->search(values[i]) == -1) {
-                cout << "Cannot find " << values[i] << endl;
+                // cout << "Cannot find " << values[i] << endl;
                 return false;
             }
 #ifdef TRACK_DISTANCE
@@ -369,10 +368,11 @@ public:
     bool Search(const std::vector<char *> &values) override {
         int count = 0;
         for (uint32_t i = 0; i < values.size(); ++i)
-            if (_tree->search(values[i]) == -1)
-                count++;
-        // return false;
-        cout << "count: " << count << endl;
+            if (_tree->search(values[i]) == -1) {
+                // count++;
+                return false;
+            }
+        // cout << "count: " << count << endl;
         return true;
     }
 
@@ -424,23 +424,20 @@ public:
     void Insert(const vector<char *> &values) override {
         for (uint32_t i = 0; i < values.size(); ++i) {
             _tree->insert(values.at(i));
-            // vector<bool> flag(i + 1);
-            // _tree->printTree(_tree->getRoot(), flag, true);
         }
+        // vector<bool> flag(values.size() + 1);
+        // _tree->printTree(_tree->getRoot(), flag, true);
     }
 
-    // bool Search(const std::vector<char *> &values) override {
-    //     for (uint32_t i = 0; i < values.size(); ++i)
-    //         if (_tree->search(values.at(i)) == -1)
-    //             return false;
-    //     return true;
-    // }
     bool Search(const std::vector<char *> &values) override {
         int count = 0;
-        for (uint32_t i = 0; i < values.size(); ++i)
-            if (_tree->search(values.at(i)) == -1)
-                count++;
-        cout << "count:" << count << endl;
+        for (uint32_t i = 0; i < values.size(); ++i) {
+            if (_tree->search(values[i]) == -1) {
+                // count++;
+                return false;
+            }
+        }
+        // cout << "count: " << count << endl;
         return true;
     }
 
@@ -453,12 +450,6 @@ public:
             char *max = sorted_values.at(minIdxs[i] + range_size);
             // cout << "search: [" << min << ", " << max << "]" << endl;
             int entries = _tree->searchRange(min, max);
-            // int expected = count_range(sorted_values, minIdxs[i], range_size);
-            // if (entries != expected) {
-            //     cout << "Failure number of entries " << entries << " , expected "
-            //          << expected << endl;
-            //     return false;
-            // }
         }
         return true;
     }
@@ -477,7 +468,6 @@ private:
 /*
 External tester
 */
-
 // class ARTBenchmark : public Benchmark {
 // public:
 //     ~ARTBenchmark() override {
@@ -523,3 +513,4 @@ External tester
 // protected:
 //     art::art<int> _tree;
 // };
+

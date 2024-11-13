@@ -1,2 +1,0 @@
-/usr/bin/ar qc libbtree_myisam.a CMakeFiles/btree_myisam.dir/btree_myisam.cpp.o
-/usr/bin/ranlib libbtree_myisam.a

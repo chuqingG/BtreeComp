@@ -20,7 +20,7 @@
 #define KN
 // #define KP //KN Key-prefix normalization only
 // #define PN //KN Partial normalization
-#define FN //KN Full normalization
+// #define FN //KN Full normalization
 
 // Setup
 #define SPLIT_STRATEGY_SPACE

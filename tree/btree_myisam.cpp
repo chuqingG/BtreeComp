@@ -61,7 +61,7 @@ int BPTreeMyISAM::searchRange(const char *kmin, const char *kmax) {
     int entries = 0;
 
     Item prevkey, curkey;
-    prevkey.addr = new char[min_len + 1];
+    prevkey.addr = new char[min_len + 1];//leak
     strcpy(prevkey.addr, kmin);
     prevkey.size = min_len;
     prevkey.newallocated = true;
@@ -74,15 +74,18 @@ int BPTreeMyISAM::searchRange(const char *kmin, const char *kmax) {
             leaf = leaf->next;
 
             MyISAMhead *head_first = GetHeaderMyISAM(leaf, 0);
-            prevkey.addr = PageOffset(leaf, head_first->key_offset);
+            if (prevkey.newallocated) delete[] prevkey.addr;
+            prevkey.addr = PageOffset(leaf, head_first->key_offset); //leak
             prevkey.size = head_first->key_len;
+            prevkey.newallocated = false;
             continue;
             // prevkey = leaf->keys.at(0).value;
         }
         // build current key
         MyISAMhead *h_pos = GetHeaderMyISAM(leaf, pos);
         curkey.size = h_pos->pfx_len + h_pos->key_len;
-        curkey.addr = new char[curkey.size + 1];
+        if (curkey.newallocated) delete[] curkey.addr;
+        curkey.addr = new char[curkey.size + 1]; //leak
         curkey.newallocated = true;
 
         strncpy(curkey.addr, prevkey.addr, h_pos->pfx_len);
@@ -92,8 +95,8 @@ int BPTreeMyISAM::searchRange(const char *kmin, const char *kmax) {
             break;
 
         // delete the previous allocated memory
-        if (pos)
-            delete prevkey.addr;
+        if (prevkey.newallocated)
+            delete[] prevkey.addr;
         prevkey = curkey;
         entries++;
         pos++;

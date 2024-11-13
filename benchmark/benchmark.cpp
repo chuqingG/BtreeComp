@@ -60,11 +60,13 @@ const std::vector<std::tuple<std::string, Benchmark *>> kIndexStructures{
     {"Btree-Head", new BPTreeHeadCompBenchmark()},
     {"Btree-Tail", new BPTreeTailCompBenchmark()},
     {"Btree-He+Tail", new BPTreeHeadTailCompBenchmark()},
-    // {"Btree-WT", new BPTreeWTBenchmark()},
-    // {"Btree-My", new BPTreeMyISAMBenchmark()},
-    // {"Btree-PkB", new BPTreePkBBenchmark()},
-    // {"Btree-DB2", new BPTreeDB2Benchmark()},
-    //{"Other-ART", new ARTBenchmark()},
+    {"Btree-WT", new BPTreeWTBenchmark()},
+    {"Btree-My", new BPTreeMyISAMBenchmark()},
+    {"Btree-PkB", new BPTreePkBBenchmark()},
+    {"Btree-DB2", new BPTreeDB2Benchmark()},
+#ifdef ART_TEST
+    {"Other-ART", new ARTBenchmark()},
+#endif
 };
 
 auto RunBenchmarkIteration(std::vector<char *> values,
@@ -276,7 +278,7 @@ void PerformanceBenchmarkResults(
                   << std::endl;
         if (benchmark == BenchmarkTypes::RANGE) {
             std::cout << "Index Structure\t|      Min\t|      Max\t|      Avg\t|      "
-                         "Med\t| M Ops/s (Avg)\t| Ops/s (Med)\t|"
+                         "Med\t| Ops/s (Avg)\t| Ops/s (Med)\t|"
                       << std::endl;
         }
         else {

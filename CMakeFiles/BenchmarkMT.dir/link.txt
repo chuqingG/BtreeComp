@@ -1,1 +1,0 @@
-/usr/bin/c++  -O0 -Wall -g2 -ggdb  -O0 -Wall -g2 -ggdb CMakeFiles/BenchmarkMT.dir/benchmark/benchmark_mt.cpp.o -o BenchmarkMT  tree_mt/libbtree_std_mt.a 
